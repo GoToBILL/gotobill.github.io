@@ -18,6 +18,12 @@ import "prismjs/plugins/line-numbers/prism-line-numbers.css"
 import React from "react"
 import CodeBlock from "./src/components/CodeBlock"
 
+// Google Tag Manager
+if (typeof window !== 'undefined') {
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
+}
+
 export const wrapRootElement = ({ element }) => {
   return element
 }
