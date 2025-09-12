@@ -14,9 +14,7 @@ import "./src/style.css"
 import "prismjs/themes/prism-tomorrow.css"
 import "prismjs/plugins/line-numbers/prism-line-numbers.css"
 
-// Add copy button to code blocks
-import React from "react"
-import CodeBlock from "./src/components/CodeBlock"
+// Add copy button to code blocks (React는 브라우저 환경에서 사용되지 않음)
 
 // Google Tag Manager
 if (typeof window !== 'undefined') {
