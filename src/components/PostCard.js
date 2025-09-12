@@ -13,7 +13,7 @@ const Card = styled.article`
   &:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-lg);
-    border-color: var(--color-primary);
+    border-color: #3182F6;
   }
 `;
 
@@ -65,15 +65,16 @@ const Tags = styled.div`
 `;
 
 const Tag = styled.span`
-  background: var(--color-background-secondary);
-  color: var(--color-text-light);
+  background: #E8F2FF;
+  color: #3182F6;
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-size: 0.875rem;
+  font-weight: 500;
   transition: all 0.2s ease;
   
   &:hover {
-    background: var(--color-primary);
+    background: #3182F6;
     color: white;
   }
 `;
