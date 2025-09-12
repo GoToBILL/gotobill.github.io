@@ -34,7 +34,7 @@ const SiteTitle = styled.h1`
     color: var(--color-text);
     text-decoration: none;
     font-weight: 900;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #3182F6 0%, #0066FF 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
