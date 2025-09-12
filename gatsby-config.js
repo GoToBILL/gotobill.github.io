@@ -141,18 +141,8 @@ module.exports = {
         icon: `src/images/gatsby-icon.png`, // This path is relative to the root of the site.
       },
     },
-    {
-      resolve: `gatsby-plugin-google-gtag`,
-      options: {
-        trackingIds: [
-          "G-XXXXXXXXXX", // Google Analytics 4 측정 ID (나중에 실제 ID로 교체)
-        ],
-        pluginConfig: {
-          head: true,
-          respectDNT: true,
-        },
-      },
-    },
+    // Google Analytics는 GTM에서 관리 (gatsby-ssr.js에 GTM 설정됨)
+    // GTM ID: GTM-5GMPQ27F
     `gatsby-plugin-sitemap`,
   ],
 }
