@@ -9,26 +9,23 @@ import AnimatedPostCard from "../components/AnimatedPostCard"
 import Search from "../components/Search"
 
 const HeroSection = styled(motion.section)`
-  margin-bottom: 3rem;
+  margin-bottom: 0.5rem;
+  margin-top: -3.0rem;
 `;
 
 const HeroContent = styled.div`
   position: relative;
   z-index: 10;
-  text-align: left;
-  padding: 2rem 0;
+  padding: 0.5rem 0;
   width: 100%;
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  
-  @media (max-width: 768px) {
-    flex-direction: column;
-  }
+  flex-direction: column;
+  align-items: flex-end;
 `;
 
 const HeroTextWrapper = styled.div`
-  flex: 1;
+  margin-bottom: 1.5rem;
+  width: 100%;
 `;
 
 const HeroTitle = styled(motion.h1)`
@@ -71,7 +68,6 @@ const GitHubLink = styled(motion.a)`
   text-decoration: none;
   transition: all 0.3s ease;
   font-size: 0.9rem;
-  align-self: center;
   
   &:hover {
     border-color: #3182F6;
@@ -82,10 +78,6 @@ const GitHubLink = styled(motion.a)`
   svg {
     width: 16px;
     height: 16px;
-  }
-  
-  @media (max-width: 768px) {
-    margin-top: 1.5rem;
   }
 `;
 
@@ -167,7 +159,7 @@ const BlogIndex = ({ data, location }) => {
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.4, duration: 0.5 }}
             >
-              기술에 대한 이야기를 정리하는 블로그입니다.
+              개발하며 배운 것들을 정리하고 공유하는 기술 블로그
             </HeroDescription>
           </HeroTextWrapper>
           <GitHubLink

@@ -33,7 +33,7 @@ const Seo = ({ description, title, image, article, children }) => {
 
   return (
     <>
-      <title>{defaultTitle ? `${title} | ${defaultTitle}` : title}</title>
+      <title>{defaultTitle && title !== defaultTitle ? `${title} | ${defaultTitle}` : title}</title>
       <meta name="description" content={metaDescription} />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <meta charSet="utf-8" />
