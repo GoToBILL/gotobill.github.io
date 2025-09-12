@@ -17,6 +17,17 @@ const HeroContent = styled.div`
   z-index: 10;
   text-align: left;
   padding: 2rem 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
+`;
+
+const HeroTextWrapper = styled.div`
   flex: 1;
 `;
 
@@ -60,7 +71,7 @@ const GitHubLink = styled(motion.a)`
   text-decoration: none;
   transition: all 0.3s ease;
   font-size: 0.9rem;
-  margin-top: 2rem;
+  align-self: center;
   
   &:hover {
     border-color: #3182F6;
@@ -71,6 +82,10 @@ const GitHubLink = styled(motion.a)`
   svg {
     width: 16px;
     height: 16px;
+  }
+  
+  @media (max-width: 768px) {
+    margin-top: 1.5rem;
   }
 `;
 
@@ -139,20 +154,22 @@ const BlogIndex = ({ data, location }) => {
         transition={{ duration: 0.6 }}
       >
         <HeroContent>
-          <HeroTitle
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-          >
-            <span className="highlight">끊임없이 노력</span>하고 <span className="highlight">성장</span>하는 개발자, <span className="highlight">주병주</span>입니다.
-          </HeroTitle>
-          <HeroDescription
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-          >
-            기술에 대한 이야기를 정리하는 블로그입니다.
-          </HeroDescription>
+          <HeroTextWrapper>
+            <HeroTitle
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+            >
+              <span className="highlight">끊임없이 노력</span>하고 <span className="highlight">성장</span>하는 개발자, <span className="highlight">주병주</span>입니다.
+            </HeroTitle>
+            <HeroDescription
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+            >
+              기술에 대한 이야기를 정리하는 블로그입니다.
+            </HeroDescription>
+          </HeroTextWrapper>
           <GitHubLink
             href="https://github.com/gotobill"
             target="_blank"

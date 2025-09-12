@@ -20,7 +20,7 @@ const Card = styled(motion.article)`
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(90deg, #3182F6 0%, #0066FF 100%);
     transform: translateX(-100%);
     transition: transform 0.3s ease;
   }
@@ -78,15 +78,16 @@ const Tags = styled(motion.div)`
 `;
 
 const Tag = styled(motion.span)`
-  background: var(--color-background-secondary);
-  color: var(--color-text-light);
+  background: #E8F2FF;
+  color: #3182F6;
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
   
   &:hover {
-    background: var(--color-primary);
+    background: #3182F6;
     color: white;
   }
 `;
