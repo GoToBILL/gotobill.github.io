@@ -11,7 +11,7 @@ const Wrapper = styled.div`
 `;
 
 const Header = styled.header`
-  padding: 2rem 0;
+  padding: 0.75rem 0;
   border-bottom: 1px solid var(--color-border);
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(10px);
@@ -27,7 +27,7 @@ const HeaderContent = styled.div`
 `;
 
 const SiteTitle = styled.h1`
-  font-size: ${props => props.isRoot ? '2.5rem' : '1.5rem'};
+  font-size: ${props => props.isRoot ? '1.75rem' : '1.25rem'};
   margin: 0;
   
   a {
