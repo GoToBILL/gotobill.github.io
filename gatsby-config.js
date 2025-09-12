@@ -14,7 +14,7 @@ module.exports = {
       name: `GoToBill`,
       summary: `개발자 GoToBill의 기술 블로그`,
     },
-    description: `JVM, Java, 성능 최적화 등 개발 이야기를 다루는 기술 블로그`,
+    description: `개발 이야기를 다루는 기술 블로그`,
     siteUrl: `https://gotobill.github.io`,
     social: {
       github: `gotobill`,
