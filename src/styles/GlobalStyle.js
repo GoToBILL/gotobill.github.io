@@ -53,6 +53,7 @@ const GlobalStyle = createGlobalStyle`
     line-height: 1.3;
     margin-top: 2rem;
     margin-bottom: 1rem;
+    color: var(--color-text);
   }
 
   h1 {

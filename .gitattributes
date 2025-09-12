@@ -1,0 +1,50 @@
+# Linguist overrides for GitHub language statistics
+# Mark generated/build files as vendored to exclude from language stats
+
+# JavaScript build files
+*.js linguist-vendored
+*.js.map linguist-vendored
+*.js.LICENSE.txt linguist-vendored
+
+# CSS build files  
+*.css linguist-vendored
+*.css.map linguist-vendored
+
+# HTML build files
+*.html linguist-vendored
+
+# Other build artifacts
+webpack-runtime-*.js linguist-vendored
+webpack-runtime-*.js.map linguist-vendored
+app-*.js linguist-vendored
+app-*.js.map linguist-vendored
+framework-*.js linguist-vendored
+framework-*.js.map linguist-vendored
+component---*.js linguist-vendored
+component---*.js.map linguist-vendored
+commons-*.js linguist-vendored
+commons-*.js.map linguist-vendored
+chunk-map.json linguist-vendored
+webpack.stats.json linguist-vendored
+
+# Mark source files as not vendored (to be counted)
+src/**/*.js linguist-vendored=false
+src/**/*.jsx linguist-vendored=false
+src/**/*.ts linguist-vendored=false
+src/**/*.tsx linguist-vendored=false
+gatsby-*.js linguist-vendored=false
+
+# Mark documentation as documentation
+*.md linguist-documentation
+README.md linguist-documentation
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
