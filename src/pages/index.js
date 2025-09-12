@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion"
 import Layout from "../components/layout"
 import Seo from "../components/seo"
 import AnimatedPostCard from "../components/AnimatedPostCard"
-import Hero3D from "../components/Hero3D"
 import Search from "../components/Search"
 
 const HeroSection = styled(motion.section)`
@@ -23,7 +22,7 @@ const HeroContent = styled.div`
 const HeroTitle = styled(motion.h1)`
   font-size: 3rem;
   margin-bottom: 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3182F6 0%, #0066FF 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -44,6 +43,21 @@ const PostList = styled(motion.div)`
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+`;
+
+const PostCount = styled.div`
+  padding: 1rem 1.5rem;
+  background: var(--color-background-secondary);
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-size: 0.95rem;
+  color: var(--color-text-light);
+  
+  strong {
+    color: var(--color-primary);
+    font-weight: 600;
+  }
 `;
 
 const EmptyMessage = styled.p`
@@ -77,12 +91,6 @@ const itemVariants = {
 const BlogIndex = ({ data, location }) => {
   const siteTitle = data.site.siteMetadata?.title || `Title`
   const posts = data.allMarkdownRemark.nodes
-  const [show3D, setShow3D] = React.useState(false)
-  
-  React.useEffect(() => {
-    // 3D 컴포넌트를 클라이언트 사이드에서만 렌더링
-    setShow3D(true)
-  }, [])
 
   if (posts.length === 0) {
     return (
@@ -101,14 +109,13 @@ const BlogIndex = ({ data, location }) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        {show3D && <Hero3D />}
         <HeroContent>
           <HeroTitle
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.5 }}
           >
-            Welcome to My Dev Blog
+            GoToBill
           </HeroTitle>
           <HeroDescription
             initial={{ y: 20, opacity: 0 }}
@@ -119,6 +126,10 @@ const BlogIndex = ({ data, location }) => {
           </HeroDescription>
         </HeroContent>
       </HeroSection>
+      
+      <PostCount>
+        총 <strong>{posts.length}개</strong>의 포스트가 있습니다
+      </PostCount>
       
       <Search posts={posts} />
       

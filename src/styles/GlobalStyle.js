@@ -2,9 +2,9 @@ import { createGlobalStyle } from 'styled-components';
 
 const GlobalStyle = createGlobalStyle`
   :root {
-    --color-primary: #3B82F6;
-    --color-primary-dark: #2563EB;
-    --color-text: #1F2937;
+    --color-primary: #3182F6;
+    --color-primary-dark: #0066FF;
+    --color-text: #191F28;
     --color-text-light: #6B7280;
     --color-background: #FFFFFF;
     --color-background-secondary: #F9FAFB;
@@ -46,6 +46,18 @@ const GlobalStyle = createGlobalStyle`
     background-color: var(--color-background);
     line-height: 1.7;
     font-weight: 400;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  
+  /* 코드 블록과 입력 필드는 선택 가능 */
+  pre, code, input, textarea {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
   }
 
   h1, h2, h3, h4, h5, h6 {

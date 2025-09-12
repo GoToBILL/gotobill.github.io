@@ -36,17 +36,31 @@ const Bio = () => {
         className="bio-avatar"
         layout="fixed"
         formats={["auto", "webp", "avif"]}
-        src="../images/profile-pic.png"
+        src="../images/ju.jpg"
         width={50}
         height={50}
         quality={95}
         alt="Profile picture"
       />
       {author?.name && (
-        <p>
-          Written by <strong>{author.name}</strong> {author?.summary || null}
-          {` `}
-        </p>
+        <div>
+          <p>
+            Written by <strong>{author.name}</strong>
+          </p>
+          <p style={{ fontSize: '0.9rem', color: 'var(--color-text-light)', marginTop: '0.25rem' }}>
+            JVM, Java, 성능 최적화 등 개발 이야기를 다루는 기술 블로그
+          </p>
+          {social?.github && (
+            <a 
+              href={`https://github.com/${social.github}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ marginTop: '0.5rem', display: 'inline-block' }}
+            >
+              GitHub @{social.github}
+            </a>
+          )}
+        </div>
       )}
     </div>
   )
