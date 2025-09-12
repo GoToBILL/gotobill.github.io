@@ -138,7 +138,7 @@ module.exports = {
         // https://css-tricks.com/meta-theme-color-and-trickery/
         // theme_color: `#663399`,
         display: `minimal-ui`,
-        icon: `src/images/gatsby-icon.png`, // This path is relative to the root of the site.
+        icon: `./icon.png`, // This path is relative to the root of the site.
       },
     },
     // Google Analytics는 GTM에서 관리 (gatsby-ssr.js에 GTM 설정됨)
