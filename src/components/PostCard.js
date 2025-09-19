@@ -2,6 +2,12 @@ import React from 'react'
 import { Link } from 'gatsby'
 import styled from 'styled-components'
 
+const CardLink = styled(Link)`
+  text-decoration: none;
+  color: inherit;
+  display: block;
+`;
+
 const Card = styled.article`
   background: var(--color-background);
   border: 1px solid var(--color-border);
@@ -9,7 +15,8 @@ const Card = styled.article`
   padding: 1.5rem;
   margin-bottom: 2rem;
   transition: all 0.3s ease;
-  
+  cursor: pointer;
+
   &:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-lg);
@@ -20,14 +27,11 @@ const Card = styled.article`
 const Title = styled.h2`
   font-size: 1.5rem;
   margin: 0 0 0.5rem 0;
-  
-  a {
-    color: var(--color-text);
-    text-decoration: none;
-    
-    &:hover {
-      color: var(--color-primary);
-    }
+  color: var(--color-text);
+  transition: color 0.3s ease;
+
+  ${Card}:hover & {
+    color: var(--color-primary);
   }
 `;
 
@@ -72,8 +76,8 @@ const Tag = styled.span`
   font-size: 0.875rem;
   font-weight: 500;
   transition: all 0.2s ease;
-  
-  &:hover {
+
+  ${Card}:hover & {
     background: #3182F6;
     color: white;
   }
@@ -82,31 +86,31 @@ const Tag = styled.span`
 const PostCard = ({ post }) => {
   const title = post.frontmatter.title || post.fields.slug
   const readTime = Math.ceil(post.wordCount?.words / 200) || 5
-  
+
   return (
-    <Card>
-      <header>
-        <Title>
-          <Link to={post.fields.slug}>{title}</Link>
-        </Title>
-        <Meta>
-          <Date>{post.frontmatter.date}</Date>
-          <ReadTime>{readTime} min read</ReadTime>
-        </Meta>
-      </header>
-      <Description
-        dangerouslySetInnerHTML={{
-          __html: post.frontmatter.description || post.excerpt,
-        }}
-      />
-      {post.frontmatter.tags && (
-        <Tags>
-          {post.frontmatter.tags.map(tag => (
-            <Tag key={tag}>#{tag}</Tag>
-          ))}
-        </Tags>
-      )}
-    </Card>
+    <CardLink to={post.fields.slug}>
+      <Card>
+        <header>
+          <Title>{title}</Title>
+          <Meta>
+            <Date>{post.frontmatter.date}</Date>
+            <ReadTime>{readTime} min read</ReadTime>
+          </Meta>
+        </header>
+        <Description
+          dangerouslySetInnerHTML={{
+            __html: post.frontmatter.description || post.excerpt,
+          }}
+        />
+        {post.frontmatter.tags && (
+          <Tags>
+            {post.frontmatter.tags.map(tag => (
+              <Tag key={tag}>#{tag}</Tag>
+            ))}
+          </Tags>
+        )}
+      </Card>
+    </CardLink>
   )
 }
 

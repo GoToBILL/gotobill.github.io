@@ -9,22 +9,22 @@ const ToggleButton = styled(motion.button)`
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: ${props => props.isDark ? '#1F2937' : '#FFF'};
-  border: 2px solid ${props => props.isDark ? '#374151' : 'var(--color-border)'};
+  background: ${props => props.$isDark ? '#1F2937' : '#FFF'};
+  border: 2px solid ${props => props.$isDark ? '#374151' : 'var(--color-border)'};
   box-shadow: var(--shadow-lg);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  
+
   svg {
     width: 24px;
     height: 24px;
-    fill: ${props => props.isDark ? '#FCA311' : '#1F2937'};
+    fill: ${props => props.$isDark ? '#FCA311' : '#1F2937'};
   }
   
-  @media (max-width: 768px) {
+  @media (max-width: 1500px) {
     width: 50px;
     height: 50px;
     bottom: 1rem;
@@ -55,7 +55,7 @@ const DarkModeToggle = () => {
   
   return (
     <ToggleButton
-      isDark={isDark}
+      $isDark={isDark}
       onClick={toggleTheme}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}

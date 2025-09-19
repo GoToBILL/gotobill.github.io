@@ -27,7 +27,7 @@ const HeaderContent = styled.div`
 `;
 
 const SiteTitle = styled.h1`
-  font-size: ${props => props.isRoot ? '1.75rem' : '1.25rem'};
+  font-size: ${props => props.$isRoot ? '1.75rem' : '1.25rem'};
   margin: 0;
   
   a {
@@ -78,7 +78,7 @@ const Layout = ({ location, title, children }) => {
       <Wrapper>
         <Header>
           <HeaderContent>
-            <SiteTitle isRoot={isRootPath}>
+            <SiteTitle $isRoot={isRootPath}>
               <Link to="/">{title}</Link>
             </SiteTitle>
           </HeaderContent>

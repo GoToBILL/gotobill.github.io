@@ -33,14 +33,11 @@ const Card = styled(motion.article)`
 const Title = styled.h2`
   font-size: 1.5rem;
   margin: 0 0 0.5rem 0;
-  
-  a {
-    color: var(--color-text);
-    text-decoration: none;
-    
-    &:hover {
-      color: var(--color-primary);
-    }
+  color: var(--color-text);
+  transition: color 0.3s ease;
+
+  ${Card}:hover & {
+    color: var(--color-primary);
   }
 `;
 
@@ -126,50 +123,52 @@ const tagVariants = {
 const AnimatedPostCard = ({ post, index }) => {
   const title = post.frontmatter.title || post.fields.slug
   const readTime = Math.ceil(post.wordCount?.words / 200) || 5
-  
+
   return (
-    <Card
-      variants={cardVariants}
-      initial="hidden"
-      animate="visible"
-      whileHover="hover"
-      custom={index}
-      transition={{ delay: index * 0.1 }}
-    >
-      <header>
-        <Title>
-          <Link to={post.fields.slug}>{title}</Link>
-        </Title>
-        <Meta>
-          <Date>{post.frontmatter.date}</Date>
-          <ReadTime>{readTime} min read</ReadTime>
-        </Meta>
-      </header>
-      <Description
-        dangerouslySetInnerHTML={{
-          __html: post.frontmatter.description || post.excerpt,
-        }}
-      />
-      {post.frontmatter.tags && (
-        <Tags>
-          {post.frontmatter.tags.map((tag, i) => (
-            <Tag
-              key={tag}
-              variants={tagVariants}
-              whileHover="hover"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ 
-                opacity: 1, 
-                scale: 1,
-                transition: { delay: 0.3 + i * 0.05 }
-              }}
-            >
-              #{tag}
-            </Tag>
-          ))}
-        </Tags>
-      )}
-    </Card>
+    <Link to={post.fields.slug} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+      <Card
+        variants={cardVariants}
+        initial="hidden"
+        animate="visible"
+        whileHover="hover"
+        custom={index}
+        transition={{ delay: index * 0.1 }}
+      >
+        <header>
+          <Title>
+            <span>{title}</span>
+          </Title>
+          <Meta>
+            <Date>{post.frontmatter.date}</Date>
+            <ReadTime>{readTime} min read</ReadTime>
+          </Meta>
+        </header>
+        <Description
+          dangerouslySetInnerHTML={{
+            __html: post.frontmatter.description || post.excerpt,
+          }}
+        />
+        {post.frontmatter.tags && (
+          <Tags>
+            {post.frontmatter.tags.map((tag, i) => (
+              <Tag
+                key={tag}
+                variants={tagVariants}
+                whileHover="hover"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{
+                  opacity: 1,
+                  scale: 1,
+                  transition: { delay: 0.3 + i * 0.05 }
+                }}
+              >
+                #{tag}
+              </Tag>
+            ))}
+          </Tags>
+        )}
+      </Card>
+    </Link>
   )
 }
 
