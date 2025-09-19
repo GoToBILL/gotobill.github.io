@@ -1,6 +1,6 @@
 ---
 title: "JVM과 JIT 컴파일러: 자바 성능 최적화의 핵심"
-date: "2025-01-12"
+date: "2025-09-12"
 description: "JVM의 JIT 컴파일러 동작 원리와 티어드 컴파일, 최적화 기법들을 심도있게 다룹니다"
 tags: ["JVM", "Java", "Performance", "Optimization"]
 ---
