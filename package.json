@@ -36,8 +36,11 @@
     "prismjs": "^1.29.0",
     "react": "^18.1.0",
     "react-dom": "^18.1.0",
+    "remark-github-alerts": "^0.1.1",
+    "remark-github-blockquote-alert": "^2.0.0",
     "styled-components": "^6.1.19",
-    "three": "^0.180.0"
+    "three": "^0.180.0",
+    "to-gatsby-remark-plugin": "^0.1.0"
   },
   "devDependencies": {
     "gh-pages": "^6.3.0",
