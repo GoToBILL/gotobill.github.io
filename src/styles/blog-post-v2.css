@@ -19,7 +19,7 @@
   bottom: -3px;
   width: 60px;
   height: 3px;
-  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  background: linear-gradient(90deg, #3b82f6, #1e40af);
   border-radius: 2px;
 }
 
@@ -177,10 +177,10 @@
 .blog-post-content blockquote {
   position: relative;
   border: none;
-  border-left: 4px solid #6366f1;
+  border-left: 4px solid #3b82f6;
   margin: 2rem 0;
   padding: 1.5rem 1.75rem;
-  background: linear-gradient(to right, rgba(99, 102, 241, 0.03), rgba(99, 102, 241, 0.01));
+  background: linear-gradient(to right, rgba(59, 130, 246, 0.03), rgba(59, 130, 246, 0.01));
   border-radius: 0 12px 12px 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   font-style: normal;
@@ -205,13 +205,13 @@
   left: 0;
   width: 4px;
   height: 100%;
-  background: linear-gradient(180deg, #6366f1, #8b5cf6);
+  background: linear-gradient(180deg, #3b82f6, #1e40af);
   border-radius: 2px;
 }
 
 .blog-post-content blockquote:hover {
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.1);
-  background: linear-gradient(to right, rgba(99, 102, 241, 0.05), rgba(99, 102, 241, 0.02));
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.1);
+  background: linear-gradient(to right, rgba(59, 130, 246, 0.05), rgba(59, 130, 246, 0.02));
 }
 
 /* 강조 텍스트 */
