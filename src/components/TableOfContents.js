@@ -4,9 +4,12 @@ import styled from 'styled-components'
 const TOCWrapper = styled.div`
   position: fixed;
   right: 40px;
-  top: 300px;
+  top: 12vh;
   width: 200px;
-  height: 600px;
+  height: 70vh;
+  max-height: 600px;
+  border-radius: 12px;
+  overflow: hidden;
 
   @media (max-width: 1150px) {
     display: none;
@@ -18,13 +21,31 @@ const ProgressBar = styled.div`
   left: 0;
   top: 0;
   width: 3px;
-  height: ${props => (props.$progress || 0) * 6}px;
-  max-height: 600px;
-  background: #3b82f6;
-  border-radius: ${props => props.$progress >= 99 ? '12px 0 0 12px' : '12px 0 0 0'};
-  transition: height 0.2s ease-out;
+  height: ${props => (props.$progress || 0)}%;
+  max-height: 100%;
+  background: linear-gradient(to bottom, #3b82f6, #1e40af);
+  border-radius: 12px 0 0 12px;
+  transition: height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1001;
   pointer-events: none;
+  overflow: hidden;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 2s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
 `;
 
 const TOCContainer = styled.nav`
@@ -36,9 +57,9 @@ const TOCContainer = styled.nav`
   overflow-y: auto;
   overflow-x: hidden;
   padding: 1rem;
-  background: white;
+  background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);  /* 은은한 그라데이션 */
   border-radius: 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #e2e8f0;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   z-index: 1000;
 
@@ -55,16 +76,6 @@ const TOCContainer = styled.nav`
   }
 `;
 
-const TOCTitle = styled.h2`
-  font-size: 0.875rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #6b7280;
-  margin: 0 0 1rem 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e5e7eb;
-`;
 
 const TOCList = styled.ul`
   list-style: none;
@@ -73,33 +84,61 @@ const TOCList = styled.ul`
 `;
 
 const TOCItem = styled.li`
-  margin: 0;
-  padding-left: ${props => (props.$depth - 2) * 1}rem;
+  margin: 0.1rem -0.5rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+  background: ${props => props.$isActive
+    ? 'rgba(59, 130, 246, 0.06)'  /* 활성 항목 배경 - 파란색 */
+    : 'transparent'};
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: ${props => props.$isActive
+      ? 'rgba(59, 130, 246, 0.1)'  /* 활성 항목 호버시 더 진하게 - 파란색 */
+      : 'rgba(243, 244, 246, 0.5)'};  /* 비활성 항목 호버시 연한 회색 */
+  }
 `;
 
 const TOCLink = styled.a`
   display: block;
-  padding: 0.25rem 0;
+  padding-left: ${props => (props.$depth - 2) * 1}rem;
   color: ${props => {
-    if (props.$isActive) return '#3b82f6';
-    if (props.$isH2) return '#3b82f6';
-    return '#6b7280';
+    if (props.$isActive) return '#3b82f6';  /* 파란색 */
+    if (props.$isH2) return '#1e293b';  /* 진한 회색 */
+    return '#64748b';  /* 중간 회색 */
   }};
   font-size: ${props => props.$isH2 ? '0.85rem' : '0.8rem'};
   text-decoration: none;
   font-weight: ${props => {
-    if (props.$isActive) return '700';
-    if (props.$isH2) return '700';
+    if (props.$isActive) return '600';  /* 활성 항목은 조금 덜 굵게 */
+    if (props.$isH2) return '500';  /* H2도 중간 굵기 */
     return '400';
   }};
   line-height: 1.4;
   transition: all 0.15s ease;
+  /* position: relative; */
+
+  /* Text wrapping for long titles */
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  white-space: normal;
+  hyphens: auto;
+
+  /* Dot indicator for sub-items */
+  /* &::before {
+    content: ${props => props.$depth > 2 ? '"•"' : '""'};
+    position: absolute;
+    left: ${props => 0.75 + (props.$depth - 3) * 0.75}rem;
+    color: ${props => props.$isActive ? '#4338ca' : '#cbd5e1'};
+    font-size: 0.6rem;
+    top: 50%;
+    transform: translateY(-50%);
+  } */
 
   &:hover {
-    color: #2563eb;
+    color: ${props => props.$isActive ? '#2563eb' : '#1e293b'};
     transform: translateX(2px);
   }
-
 `;
 
 // Store progress outside React to prevent resets
@@ -187,7 +226,9 @@ const TableOfContents = memo(() => {
         .map(({ id }) => document.getElementById(id))
         .filter(Boolean)
 
-      let currentActiveId = null
+      if (headingElements.length === 0) return
+
+      let currentActiveId = headings[0].id
 
       // Find the heading currently in viewport
       for (let i = headingElements.length - 1; i >= 0; i--) {
@@ -198,12 +239,10 @@ const TableOfContents = memo(() => {
         }
       }
 
-      if (currentActiveId) {
-        setActiveId(currentActiveId)
-      }
+      setActiveId(currentActiveId)
     }
 
-    window.addEventListener('scroll', handleScroll)
+    window.addEventListener('scroll', handleScroll, { passive: true })
     handleScroll()
 
     return () => window.removeEventListener('scroll', handleScroll)
@@ -263,12 +302,17 @@ const TableOfContents = memo(() => {
       <TOCContainer ref={tocRef}>
         <TOCList>
           {headings.map((heading) => (
-            <TOCItem key={heading.id} $depth={heading.depth}>
+            <TOCItem
+              key={heading.id}
+              $depth={heading.depth}
+              $isActive={activeId === heading.id}
+            >
               <TOCLink
                 href={`#${heading.id}`}
                 onClick={(e) => scrollToHeading(e, heading.id)}
                 $isActive={activeId === heading.id}
                 $isH2={heading.depth === 2}
+                $depth={heading.depth}
               >
                 {heading.text}
               </TOCLink>
