@@ -132,26 +132,7 @@ const PostContent = styled.section`
     }
   }
 
-  blockquote {
-    position: relative;
-    padding: 1.25rem 1.5rem;
-    margin: 2rem 0;
-    background: rgba(139, 92, 246, 0.08);
-    border-radius: 8px;
-    color: #475569;
-    font-style: italic;
-
-    &::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 4px;
-      background: #8b5cf6;
-      border-radius: 8px 0 0 8px;
-    }
-  }
+  /* blockquote 스타일은 blog-post-v2.css에서 처리 */
 
   img {
     max-width: 100%;

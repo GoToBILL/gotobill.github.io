@@ -20,7 +20,7 @@ const Card = styled(motion.article)`
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, #3182F6 0%, #0066FF 100%);
+    background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
     transform: translateX(-100%);
     transition: transform 0.3s ease;
   }

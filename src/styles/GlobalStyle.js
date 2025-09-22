@@ -2,8 +2,8 @@ import { createGlobalStyle } from 'styled-components';
 
 const GlobalStyle = createGlobalStyle`
   :root {
-    --color-primary: #3182F6;
-    --color-primary-dark: #0066FF;
+    --color-primary: #3b82f6;
+    --color-primary-dark: #2563eb;
     --color-text: #191F28;
     --color-text-light: #6B7280;
     --color-background: #FFFFFF;
@@ -125,13 +125,7 @@ const GlobalStyle = createGlobalStyle`
     }
   }
 
-  blockquote {
-    border-left: 4px solid var(--color-primary);
-    padding-left: 1.5rem;
-    margin: 1.5rem 0;
-    font-style: italic;
-    color: var(--color-text-light);
-  }
+  /* blockquote 스타일 제거 - blog-post-v2.css에서 처리 */
 
   ul, ol {
     margin-left: 2rem;

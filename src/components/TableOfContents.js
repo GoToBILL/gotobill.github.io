@@ -3,7 +3,7 @@ import styled from 'styled-components'
 
 const TOCWrapper = styled.div`
   position: fixed;
-  right: 40px;
+  left: calc(50% + 440px); /* 중앙 + 본문 절반(400px) + 간격(40px) */
   top: 12vh;
   width: 200px;
   height: 70vh;
@@ -11,7 +11,7 @@ const TOCWrapper = styled.div`
   border-radius: 12px;
   overflow: hidden;
 
-  @media (max-width: 1150px) {
+  @media (max-width: 1300px) {
     display: none;
   }
 `;
@@ -57,10 +57,13 @@ const TOCContainer = styled.nav`
   overflow-y: auto;
   overflow-x: hidden;
   padding: 1rem;
-  background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);  /* 은은한 그라데이션 */
+  background: linear-gradient(135deg,
+    var(--color-background, #ffffff) 0%,
+    var(--color-background-secondary, #fafafa) 100%
+  );
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--color-border, #e2e8f0);
+  box-shadow: var(--shadow-lg, 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06));
   z-index: 1000;
 
   /* Hide scrollbar but allow scrolling */
@@ -88,14 +91,27 @@ const TOCItem = styled.li`
   padding: 0.3rem 0.5rem;
   border-radius: 6px;
   background: ${props => props.$isActive
-    ? 'rgba(59, 130, 246, 0.06)'  /* 활성 항목 배경 - 파란색 */
+    ? 'rgba(59, 130, 246, 0.1)'
     : 'transparent'};
   transition: background 0.2s ease;
 
   &:hover {
     background: ${props => props.$isActive
-      ? 'rgba(59, 130, 246, 0.1)'  /* 활성 항목 호버시 더 진하게 - 파란색 */
-      : 'rgba(243, 244, 246, 0.5)'};  /* 비활성 항목 호버시 연한 회색 */
+      ? 'rgba(59, 130, 246, 0.15)'
+      : 'rgba(156, 163, 175, 0.1)'};
+  }
+
+  /* 다크 모드 */
+  [data-theme="dark"] & {
+    background: ${props => props.$isActive
+      ? 'rgba(96, 165, 250, 0.15)'
+      : 'transparent'};
+
+    &:hover {
+      background: ${props => props.$isActive
+        ? 'rgba(96, 165, 250, 0.2)'
+        : 'rgba(156, 163, 175, 0.15)'};
+    }
   }
 `;
 
@@ -103,9 +119,9 @@ const TOCLink = styled.a`
   display: block;
   padding-left: ${props => (props.$depth - 2) * 1}rem;
   color: ${props => {
-    if (props.$isActive) return '#3b82f6';  /* 파란색 */
-    if (props.$isH2) return '#1e293b';  /* 진한 회색 */
-    return '#64748b';  /* 중간 회색 */
+    if (props.$isActive) return 'var(--color-primary, #3b82f6)';
+    if (props.$isH2) return 'var(--color-text, #1e293b)';
+    return 'var(--color-text-light, #64748b)';
   }};
   font-size: ${props => props.$isH2 ? '0.85rem' : '0.8rem'};
   text-decoration: none;
@@ -136,7 +152,9 @@ const TOCLink = styled.a`
   } */
 
   &:hover {
-    color: ${props => props.$isActive ? '#2563eb' : '#1e293b'};
+    color: ${props => props.$isActive
+      ? 'var(--color-primary-dark, #2563eb)'
+      : 'var(--color-text, #1e293b)'};
     transform: translateX(2px);
   }
 `;

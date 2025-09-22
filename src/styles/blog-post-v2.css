@@ -4,11 +4,11 @@
   position: relative;
   font-size: 1.8rem;
   font-weight: 700;
-  color: #1a202c;
+  color: var(--color-text, #1a202c);
   margin-top: 3rem;
   margin-bottom: 1.5rem;
   padding-bottom: 0.75rem;
-  border-bottom: 3px solid #e2e8f0;
+  border-bottom: 3px solid var(--color-border, #e2e8f0);
   letter-spacing: -0.02em;
 }
 
@@ -27,7 +27,7 @@
 .blog-post-content h3 {
   font-size: 1.375rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text, #1e293b);
   margin-top: 2rem;
   margin-bottom: 1rem;
   letter-spacing: -0.015em;
@@ -74,19 +74,53 @@
 .blog-post-content h3 {
   font-size: 1.375rem;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--color-text, #0f172a);
   margin-top: 2.25rem;
   margin-bottom: 1rem;
   padding-bottom: 0.25rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
   display: inline-block;
   width: 100%;
+}
+
+/* h4 스타일 */
+.blog-post-content h4 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  padding-left: 0.75rem;
+  border-left: 3px solid #60a5fa;
+  letter-spacing: -0.01em;
+  line-height: 1.5;
+}
+
+/* h5 스타일 */
+.blog-post-content h5 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  padding-left: 1rem;
+  position: relative;
+  letter-spacing: -0.005em;
+  line-height: 1.5;
+}
+
+.blog-post-content h5::before {
+  content: "▸";
+  position: absolute;
+  left: 0;
+  color: #3b82f6;
+  font-size: 0.9rem;
 }
 
 /* 문단 스타일 - 더 읽기 편하게 */
 .blog-post-content p {
   line-height: 1.75;
-  color: #334155;
+  color: var(--color-text, #334155);
   margin-bottom: 1.5rem;
   font-size: 1.0625rem;
   letter-spacing: -0.005em;
@@ -96,7 +130,7 @@
 .blog-post-content > p:first-of-type {
   font-size: 1.125rem;
   line-height: 1.8;
-  color: #1e293b;
+  color: var(--color-text, #1e293b);
   font-weight: 400;
 }
 
@@ -175,39 +209,21 @@
 
 /* 인용구 - 더 우아하게 */
 .blog-post-content blockquote {
-  position: relative;
-  border: none;
-  border-left: 4px solid #3b82f6;
   margin: 2rem 0;
   padding: 1.5rem 1.75rem;
-  background: linear-gradient(to right, rgba(59, 130, 246, 0.03), rgba(59, 130, 246, 0.01));
-  border-radius: 0 12px 12px 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  font-style: normal;
+  background: rgba(59, 130, 246, 0.08);
+  border-radius: 12px;
   color: #475569;
   font-size: 0.98rem;
   line-height: 1.75;
-  transition: all 0.2s ease;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  min-height: 3rem;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
 }
 
 .blog-post-content blockquote p {
   margin: 0;
 }
 
-.blog-post-content blockquote::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
-  background: linear-gradient(180deg, #3b82f6, #1e40af);
-  border-radius: 2px;
-}
+/* ::after 제거 - border-left와 중복 */
 
 .blog-post-content blockquote:hover {
   box-shadow: 0 4px 16px rgba(59, 130, 246, 0.1);
@@ -281,4 +297,77 @@
   border-radius: 8px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   margin: 2rem 0;
+}
+
+/* 다크 모드 스타일 */
+[data-theme="dark"] .blog-post-content h2 {
+  color: #f3f4f6;
+}
+
+[data-theme="dark"] .blog-post-content h3 {
+  color: #e5e7eb;
+  border-bottom-color: #374151;
+}
+
+[data-theme="dark"] .blog-post-content h4 {
+  color: #e5e7eb;
+  border-left-color: #60a5fa;
+}
+
+[data-theme="dark"] .blog-post-content h5 {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .blog-post-content h5::before {
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .blog-post-content p {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .blog-post-content li {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .blog-post-content strong {
+  color: #f3f4f6;
+  background: linear-gradient(to bottom, transparent 60%, rgba(250, 204, 21, 0.15) 60%);
+}
+
+[data-theme="dark"] .blog-post-content :not(pre) > code {
+  background: #374151;
+  color: #fbbf24;
+  border-color: #4b5563;
+}
+
+[data-theme="dark"] .blog-post-content blockquote {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .blog-post-content a {
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .blog-post-content a:hover {
+  color: #93c5fd;
+}
+
+[data-theme="dark"] .blog-post-content hr {
+  background: #374151;
+}
+
+[data-theme="dark"] .blog-post-content th {
+  background: #374151;
+  color: #f3f4f6;
+  border-bottom-color: #4b5563;
+}
+
+[data-theme="dark"] .blog-post-content td {
+  color: #d1d5db;
+  border-bottom-color: #374151;
+}
+
+[data-theme="dark"] .blog-post-content tbody tr:hover {
+  background: #1f2937;
 }
