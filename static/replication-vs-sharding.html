@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>복제 vs 키 분할</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            zoom: 1.3;
+        }
+    </style>
+</head>
+<body class="bg-white p-8">
+    <div class="max-w-7xl mx-auto space-y-8">
+        <!-- 방법 1: 키 분할 -->
+        <div class="space-y-4">
+            <div class="text-2xl font-bold text-center p-3 border-b-2 border-gray-300">키 분할 (Sharding)</div>
+
+            <svg viewBox="0 0 800 400" class="w-full border border-gray-300 rounded bg-gray-50">
+                <!-- Client 1 -->
+                <rect x="50" y="50" width="120" height="80" fill="white" stroke="#666" stroke-width="2" rx="4"/>
+                <text x="110" y="85" text-anchor="middle" font-size="16" font-weight="600">Client 1</text>
+                <text x="110" y="105" text-anchor="middle" font-size="12" fill="#555">100개 키 필요</text>
+
+                <!-- Client 2 -->
+                <rect x="50" y="270" width="120" height="80" fill="white" stroke="#666" stroke-width="2" rx="4"/>
+                <text x="110" y="305" text-anchor="middle" font-size="16" font-weight="600">Client 2</text>
+                <text x="110" y="325" text-anchor="middle" font-size="12" fill="#555">100개 키 필요</text>
+
+                <!-- Server A -->
+                <rect x="520" y="30" width="150" height="100" fill="#fef2f2" stroke="#dc2626" stroke-width="2" rx="4"/>
+                <text x="595" y="65" text-anchor="middle" font-size="18" font-weight="600">Server A</text>
+                <text x="595" y="90" text-anchor="middle" font-size="14" fill="#555">키 1~50</text>
+                <text x="595" y="110" text-anchor="middle" font-size="12" font-weight="600" fill="#dc2626">1M req/sec</text>
+
+                <!-- Server B -->
+                <rect x="520" y="270" width="150" height="100" fill="#fef2f2" stroke="#dc2626" stroke-width="2" rx="4"/>
+                <text x="595" y="305" text-anchor="middle" font-size="18" font-weight="600">Server B</text>
+                <text x="595" y="330" text-anchor="middle" font-size="14" fill="#555">키 51~100</text>
+                <text x="595" y="350" text-anchor="middle" font-size="12" font-weight="600" fill="#dc2626">1M req/sec</text>
+
+                <defs>
+                    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <polygon points="0 0, 10 3, 0 6" fill="#666" />
+                    </marker>
+                </defs>
+
+                <!-- Arrows -->
+                <line x1="170" y1="70" x2="520" y2="70" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+                <text x="345" y="60" text-anchor="middle" font-size="11" fill="#666">키 1~50</text>
+
+                <line x1="170" y1="110" x2="520" y2="300" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+                <text x="280" y="190" text-anchor="middle" font-size="11" fill="#666">키 51~100</text>
+
+                <line x1="170" y1="290" x2="520" y2="100" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+                <text x="280" y="210" text-anchor="middle" font-size="11" fill="#666">키 1~50</text>
+
+                <line x1="170" y1="330" x2="520" y2="330" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+                <text x="345" y="350" text-anchor="middle" font-size="11" fill="#666">키 51~100</text>
+
+                <text x="400" y="200" text-anchor="middle" font-size="15" font-weight="600" fill="#dc2626">모든 Client가</text>
+                <text x="400" y="220" text-anchor="middle" font-size="15" font-weight="600" fill="#dc2626">양쪽 서버 접근</text>
+            </svg>
+
+            <div class="border border-gray-300 p-3 rounded bg-gray-50">
+                <div class="text-base font-semibold">결과: 부하 감소 없음</div>
+                <div class="text-sm text-gray-600 mt-1">각 서버가 모든 요청을 받음</div>
+            </div>
+        </div>
+
+        <!-- 방법 2: 복제 -->
+        <div class="space-y-4">
+            <div class="text-2xl font-bold text-center p-3 border-b-2 border-gray-300">복제 (Replication)</div>
+
+            <svg viewBox="0 0 800 400" class="w-full border border-gray-300 rounded bg-gray-50">
+                <!-- Client 1 -->
+                <rect x="50" y="50" width="120" height="80" fill="white" stroke="#666" stroke-width="2" rx="4"/>
+                <text x="110" y="85" text-anchor="middle" font-size="16" font-weight="600">Client 1</text>
+                <text x="110" y="105" text-anchor="middle" font-size="12" fill="#555">100개 키 필요</text>
+
+                <!-- Client 2 -->
+                <rect x="50" y="270" width="120" height="80" fill="white" stroke="#666" stroke-width="2" rx="4"/>
+                <text x="110" y="305" text-anchor="middle" font-size="16" font-weight="600">Client 2</text>
+                <text x="110" y="325" text-anchor="middle" font-size="12" fill="#555">100개 키 필요</text>
+
+                <!-- Server A -->
+                <rect x="520" y="30" width="180" height="100" fill="#f0fdf4" stroke="#16a34a" stroke-width="2" rx="4"/>
+                <text x="610" y="65" text-anchor="middle" font-size="18" font-weight="600">Server A</text>
+                <text x="610" y="90" text-anchor="middle" font-size="14" fill="#555">키 1~100 전체</text>
+                <text x="610" y="110" text-anchor="middle" font-size="12" font-weight="600" fill="#16a34a">500K req/sec</text>
+
+                <!-- Server B -->
+                <rect x="520" y="270" width="180" height="100" fill="#f0fdf4" stroke="#16a34a" stroke-width="2" rx="4"/>
+                <text x="610" y="305" text-anchor="middle" font-size="18" font-weight="600">Server B</text>
+                <text x="610" y="330" text-anchor="middle" font-size="14" fill="#555">키 1~100 전체</text>
+                <text x="610" y="350" text-anchor="middle" font-size="12" font-weight="600" fill="#16a34a">500K req/sec</text>
+
+                <!-- Arrows -->
+                <line x1="170" y1="90" x2="520" y2="80" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+                <text x="345" y="75" text-anchor="middle" font-size="11" fill="#666">키 1~100</text>
+
+                <line x1="170" y1="310" x2="520" y2="320" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+                <text x="345" y="325" text-anchor="middle" font-size="11" fill="#666">키 1~100</text>
+
+                <text x="400" y="200" text-anchor="middle" font-size="15" font-weight="600" fill="#16a34a">각 Client는</text>
+                <text x="400" y="220" text-anchor="middle" font-size="15" font-weight="600" fill="#16a34a">1개 서버만 접근</text>
+            </svg>
+
+            <div class="border border-gray-300 p-3 rounded bg-gray-50">
+                <div class="text-base font-semibold">결과: 부하 분산 성공</div>
+                <div class="text-sm text-gray-600 mt-1">요청이 서버에 분산됨</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
