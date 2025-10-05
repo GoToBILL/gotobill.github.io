@@ -5,8 +5,6 @@ description: "MySQL과 InnoDB의 내부 아키텍처를 심층 분석합니다. 
 tags: ["MySQL", "InnoDB", "Database", "Architecture", "Performance", "Buffer Pool", "MVCC", "Redo Log"]
 ---
 
-# MySQL 엔진 아키텍처
-
 ## MySQL의 전체 구조
 
 ![전체 아키텍처](./전체아키텍처.png)
