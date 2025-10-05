@@ -1,3 +1,10 @@
+---
+title: "MySQL 엔진 아키텍처"
+date: "2025-10-05"
+description: "MySQL과 InnoDB의 내부 아키텍처를 심층 분석합니다. 스레드 구조, 메모리 할당, 버퍼 풀, 리두 로그, MVCC, Change Buffer, Adaptive Hash Index 등 핵심 개념을 시각화와 함께 상세히 설명합니다."
+tags: ["MySQL", "InnoDB", "Database", "Architecture", "Performance", "Buffer Pool", "MVCC", "Redo Log"]
+---
+
 # MySQL 엔진 아키텍처
 
 ## MySQL의 전체 구조
