@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>패턴별 PHANTOM READ 발생 여부</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Pretendard', sans-serif;
+            padding: 2.5rem;
+            background: #f8fafc;
+            font-size: 20px; /* 여기만 조절 (12px~20px 권장) */
+        }
+
+        .container {
+            max-width: 75rem;
+            margin: 0 auto;
+            background: white;
+            padding: 2.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 0.25rem 0.375rem rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #1a202c;
+            margin-bottom: 1.875rem;
+            font-size: 1.8rem;
+            border-bottom: 3px solid #3b82f6;
+            padding-bottom: 0.75rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        th {
+            background: #f8fafc;
+            padding: 1rem;
+            text-align: center;
+            font-weight: 600;
+            color: #0f172a;
+            border-bottom: 2px solid #e2e8f0;
+            font-size: 1.5rem;
+        }
+
+        td {
+            padding: 1.25rem 1rem;
+            border-bottom: 2px solid #cbd5e1;
+            color: #334155;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: #fafbfc;
+        }
+
+        .pattern-cell {
+            font-weight: 600;
+            color: #0f172a;
+            line-height: 1.8;
+        }
+
+        .arrow {
+            color: #3b82f6;
+            font-size: 1.2rem;
+            margin: 0.25rem 0;
+        }
+
+        .step {
+            background: #e0f2fe;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            display: inline-block;
+            margin: 0.125rem 0;
+            font-size: 1.5rem;
+        }
+
+        .gap-lock-yes {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .gap-lock-no {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .phantom-yes {
+            color: #dc2626;
+            font-weight: 700;
+            background: linear-gradient(to bottom, transparent 60%, rgba(220, 38, 38, 0.15) 60%);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+        }
+
+        .phantom-no {
+            color: #059669;
+            font-weight: 700;
+            background: linear-gradient(to bottom, transparent 60%, rgba(5, 150, 105, 0.15) 60%);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+        }
+
+        .source {
+            color: #475569;
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>패턴별 PHANTOM READ 발생 여부</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>패턴</th>
+                    <th>갭 락</th>
+                    <th>읽는 소스</th>
+                    <th>PHANTOM READ</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="pattern-cell">
+                        <div class="step">SELECT FOR UPDATE</div>
+                        <div class="arrow">↓</div>
+                        <div class="step">INSERT</div>
+                        <div class="arrow">↓</div>
+                        <div class="step">SELECT FOR UPDATE</div>
+                    </td>
+                    <td class="gap-lock-yes">갭 락으로<br>INSERT 차단</td>
+                    <td class="source">실제 테이블</td>
+                    <td><span class="phantom-no">발생 안 함</span></td>
+                </tr>
+                <tr>
+                    <td class="pattern-cell">
+                        <div class="step">SELECT</div>
+                        <div class="arrow">↓</div>
+                        <div class="step">INSERT</div>
+                        <div class="arrow">↓</div>
+                        <div class="step">SELECT</div>
+                    </td>
+                    <td class="gap-lock-no">갭 락 없음</td>
+                    <td class="source">언두 로그<br>(스냅샷 일관성)</td>
+                    <td><span class="phantom-no">발생 안 함</span></td>
+                </tr>
+                <tr>
+                    <td class="pattern-cell">
+                        <div class="step">SELECT</div>
+                        <div class="arrow">↓</div>
+                        <div class="step">INSERT</div>
+                        <div class="arrow">↓</div>
+                        <div class="step">SELECT FOR UPDATE</div>
+                    </td>
+                    <td class="gap-lock-no">갭 락 없음</td>
+                    <td class="source">언두 로그 → 실제 테이블</td>
+                    <td><span class="phantom-yes">발생함</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
