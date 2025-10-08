@@ -1,5 +1,5 @@
 ---
-title: "WebClient 완전 정복 가이드"
+title: "Spring WebClient와 논블로킹 I/O"
 date: "2025-10-08"
 description: "Spring WebClient를 활용한 비동기 HTTP 클라이언트 구현"
 tags: ["Spring", "WebClient", "Reactive", "Netty"]
