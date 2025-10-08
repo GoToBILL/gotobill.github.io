@@ -22,6 +22,9 @@ tags: ["Spring", "WebClient", "Reactive", "Netty"]
 >
 > \
 > Spring 5부터 RestTemplate 대신 WebClient 사용을 권장합니다.
+>
+> \
+> Netty의 이벤트 루프 방식이 어떻게 동작하는지 자세히 알고 싶다면 [Netty 이벤트 루프 완전 정복](../netty-eventloop)을 참고하세요.
 
 ## 의존성 설정
 
@@ -802,3 +805,228 @@ mono.doOnNext(data -> {
 Thread [http-nio-8080-exec-1]: API 호출 시작
 Thread [reactor-http-nio-2]: 응답 수신
 ```
+
+## 실전 예제: 메뉴 추출 API 스레드 분석
+
+실제 운영 중인 메뉴 추출 API의 로그를 통해 WebClient의 비동기 처리를 분석합니다.
+
+### 핵심 요약
+
+**메인 스레드 (http-nio-8080-exec-5)**: Mono 레시피 구성 및 subscribe() 호출 → 즉시 반환 (190ms)
+
+**Netty 스레드 (reactor-http-nio-2)**: 실제 HTTP 요청, 응답 처리, DB 저장 (5.8초)
+
+### 스레드 전환 시점
+
+**Phase 1: 메인 스레드 (http-nio-8080-exec-5)**
+
+```java
+@PostMapping("/menu/extract")
+public ApiResponse<MenuExtractionStartResponse> startMenuExtraction(...) {
+    String requestId = extractionService.startMenuExtraction(userId, storeId, image);
+    return ApiResponse.success(new MenuExtractionStartResponse(requestId));
+    // 190ms만에 응답 반환
+}
+```
+
+```java
+public String startMenuExtraction(Long userId, Long storeId, MultipartFile image) {
+    // 1. Progress 초기화 및 DB 저장 (동기)
+    String requestId = UUID.randomUUID().toString();
+    progressRepository.saveAndFlush(progress);
+
+    // 2. WebClient Mono 생성 (레시피만 만듦)
+    geminiService.extractTextFromImage(imageBytes, mimeType)
+        .doOnNext(...)
+        .map(this::parseExtractedText)
+        .subscribe(...); // 실행 예약만 하고 즉시 다음 라인으로
+
+    log.info("Thread [{}]: 즉시 반환 - Request ID: {}",requestId)
+    return requestId; // 즉시 반환 (5초를 기다리지 않음!)
+}
+```
+
+**로그:**
+```
+19:04:04.039 [http-nio-8080-exec-5] 메뉴 추출 시작
+19:04:04.121 [http-nio-8080-exec-5] Gemini API 호출 시작
+19:04:04.229 [http-nio-8080-exec-5] 즉시 반환 - Request ID: dcf4cb95-...
+```
+
+**Phase 2: Netty 스레드 (reactor-http-nio-2)**
+
+Netty 스레드가 비동기로 처리 시작
+
+```java
+public Mono<String> extractTextFromImage(byte[] imageBytes, String mimeType) {
+    log.info("Thread [{}]: Gemini API 호출 시작 - 이미지 크기: {} bytes",
+            Thread.currentThread().getName(), imageBytes.length);
+
+    String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+    Map<String, Object> requestBody = buildGeminiRequest(base64Image, mimeType);
+
+    return webClient.post()
+            .uri("/models/{model}:generateContent?key={key}", modelName, apiKey)
+            .bodyValue(requestBody)
+            .retrieve()
+            .bodyToMono(Map.class)
+            .doOnNext(response ->
+                log.info("Thread [{}]: Gemini API 응답 수신", Thread.currentThread().getName())
+            )
+            .map(this::extractTextFromResponse)
+            .doOnError(error ->
+                log.error("Thread [{}]: Gemini API 호출 실패 - {}",
+                        Thread.currentThread().getName(), error.getMessage(), error)
+            );
+}
+
+```
+
+```java
+geminiService.extractTextFromImage(imageBytes, mimeType)
+    .doOnNext(text -> {
+        log.info("텍스트 파싱 시작"); // reactor-http-nio-2
+        progressRepository.save(progress); // Netty 스레드에서 DB 쿼리
+    })
+    .map(this::parseExtractedText) // reactor-http-nio-2
+    .subscribe(
+        items -> {
+            log.info("DB 저장 요청 - {} 개 아이템", items.size());
+            menuPersistenceService.saveMenuItemsWithProgress(storeId, items, requestId);
+        },
+        error -> log.error("메뉴 추출 실패")
+    );
+```
+
+**로그:**
+```
+19:04:09.976 [reactor-http-nio-2] Gemini API 응답 수신
+19:04:09.977 [reactor-http-nio-2] 텍스트 추출 성공
+19:04:09.977 [reactor-http-nio-2] 텍스트 파싱 시작
+19:04:09.981 [reactor-http-nio-2] DB 저장 요청 - 14 개 아이템
+19:04:09.983 [reactor-http-nio-2] DB 트랜잭션 시작
+19:04:10.024 [reactor-http-nio-2] DB 트랜잭션 완료 - 14개 아이템 추가
+```
+
+### 전체 흐름 다이어그램
+
+```
+[Client 요청]
+    ↓
+[http-nio-8080-exec-5] ← 메인 스레드
+    ↓
+    1. 컨트롤러 진입
+    2. Progress 초기화 (DB 저장)
+    3. WebClient Mono 생성 (레시피만)
+    4. subscribe() 호출 (실행 예약)
+    5. requestId 즉시 반환 ← 190ms
+    ↓
+[Client 응답 완료]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[reactor-http-nio-2] ← Netty 스레드
+    ↓
+    1. HTTP 요청 전송
+    2. Gemini API 응답 수신
+    3. JSON 파싱
+    4. DTO 변환
+    5. DB 저장 (14개 INSERT)
+    6. Progress 완료 처리
+    ↓
+[완료]
+```
+
+### 핵심 포인트
+
+**1. subscribe()의 두 얼굴**
+
+```java
+geminiService.extractTextFromImage(...)
+    .subscribe(...); // 호출은 메인 스레드, 실행은 Netty 스레드
+
+log.info("즉시 반환"); // subscribe() 후 바로 실행됨
+```
+
+- **subscribe() 호출**: http-nio-8080-exec-5
+- **subscribe 내부 콜백**: reactor-http-nio-2
+
+**2. 메인 스레드는 블로킹 안 됨**
+
+시간 증거:
+- 메인 스레드 종료: 19:04:04.229
+- Netty 응답 수신: 19:04:09.976
+- **차이: 5.7초** ← 메인 스레드는 기다리지 않았음!
+
+**3. Netty 스레드에서 DB 작업**
+
+```
+19:04:09.981 [reactor-http-nio-2] DB 저장 요청
+Hibernate: insert into food_items ...
+```
+
+모든 DB 쿼리가 Netty 스레드에서 실행됩니다.
+
+>
+> **트랜잭션 주의**
+>
+> \
+> Netty 스레드는 메인 스레드와 **다른 스레드**입니다.
+>
+> \
+> `@Transactional`은 스레드 로컬 방식으로 동작하므로, 메인 스레드의 트랜잭션은 Netty 스레드에 적용되지 않습니다.
+>
+> \
+> subscribe() 내부에서 DB 작업이 필요하면 **별도 트랜잭션 서비스**를 호출해야 합니다.
+
+**올바른 예:**
+```java
+public String startExtraction(...) {
+    progressRepository.save(progress);
+
+    webClient.get()...subscribe(items -> {
+        persistenceService.saveMenuItems(items);  // 새 트랜잭션 시작
+    });
+
+    return requestId;
+}
+
+@Service
+public class PersistenceService {
+    @Transactional  // Netty 스레드에서 새 트랜잭션 시작
+    public void saveMenuItems(List<MenuItem> items) {
+        menuRepository.saveAll(items);
+    }
+}
+```
+
+**4. 실행 시간 비교**
+
+동기 방식 (RestTemplate):
+```
+사용자 대기: 5.8초
+```
+
+비동기 방식 (WebClient):
+```
+사용자 대기: 190ms
+백그라운드 처리: 5.8초
+```
+
+### 결론
+
+**Mono는 레시피**
+
+```java
+Mono<String> recipe = webClient.get()...  // 실행 안 됨 (메인 스레드)
+recipe.subscribe();                       // 실행 예약 (메인 스레드)
+// 실제 실행은 Netty 스레드에서
+```
+
+**스레드 전환 자동**
+
+개발자가 스레드를 명시적으로 관리할 필요 없음. WebClient가 알아서 Netty 스레드로 전환합니다.
+**논블로킹의 이점**
+
+메인 스레드는 즉시 반환하고, Netty 스레드가 백그라운드에서 처리. 사용자는 5초가 아닌 190ms만 대기합니다.
+
