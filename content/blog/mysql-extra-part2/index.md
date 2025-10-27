@@ -29,23 +29,68 @@ WHERE de.from_date>'2005-01-01' AND e.emp_no<10904;
 
 ### 조인 버퍼 종류
 
-**Block Nested Loop**
+**Block Nested Loop (BNL)**
 
 ```
 Using join buffer (Block Nested Loop)
 ```
 
-- 단순 조인 버퍼
-- 드리븐 테이블을 풀 스캔하면서 조인 수행
+**언제 사용되나?**
 
-**Batched Key Access**
+드리븐 테이블에 조인 조건에 맞는 인덱스가 없을 때 사용됩니다.
+
+**동작 방식**
+
+```sql
+-- dept_emp: 30만 건, employees: 10만 건
+-- employees에 dept_no 인덱스 없음
+SELECT *
+FROM dept_emp de
+INNER JOIN employees e ON de.dept_no = e.dept_no
+WHERE de.from_date > '2005-01-01';
+```
+
+1. dept_emp에서 조건에 맞는 1만 건을 조인 버퍼에 저장
+2. employees 테이블을 처음부터 끝까지 스캔하면서 버퍼의 1만 건과 비교
+3. 인덱스가 없어서 매번 풀 스캔 필요
+
+**문제점**: 드리븐 테이블을 반복 풀 스캔하여 비효율적
+
+---
+
+**Batched Key Access (BKA)**
 
 ```
 Using join buffer (Batched Key Access)
 ```
 
-- 인덱스를 사용하는 조인 버퍼
-- MRR과 함께 동작하여 디스크 접근 최적화
+**언제 사용되나?**
+
+드리븐 테이블에 인덱스가 있고, MRR 최적화를 사용할 때입니다.
+
+**동작 방식**
+
+```sql
+-- dept_emp: 30만 건, employees: 10만 건
+-- employees에 dept_no 인덱스 있음
+SET optimizer_switch='mrr=on,mrr_cost_based=off,batched_key_access=on';
+
+SELECT *
+FROM dept_emp de
+INNER JOIN employees e ON de.dept_no = e.dept_no
+WHERE de.from_date > '2005-01-01';
+```
+
+1. dept_emp에서 조건에 맞는 레코드들의 dept_no를 버퍼에 모음
+   - 예: [d001, d003, d001, d005, d003, ...]
+2. dept_no를 정렬하여 중복 제거
+   - 정렬 후: [d001, d003, d005, ...]
+3. 정렬된 순서대로 employees의 인덱스를 한 번에 조회 (MRR)
+4. 디스크 랜덤 I/O를 순차 I/O로 변환
+
+**장점**: 인덱스를 사용하면서도 디스크 접근을 최적화
+
+---
 
 **hash join (MySQL 8.0.18+)**
 
@@ -53,8 +98,32 @@ Using join buffer (Batched Key Access)
 Using join buffer (hash join)
 ```
 
-- 해시 조인 사용
-- 대용량 데이터 조인에 효율적
+**언제 사용되나?**
+
+등호(=) 조인이고 인덱스가 없을 때 자동으로 사용됩니다. BNL보다 훨씬 빠릅니다.
+
+**동작 방식**
+
+```sql
+-- dept_emp: 30만 건, employees: 10만 건
+-- employees에 dept_no 인덱스 없음
+SELECT *
+FROM dept_emp de
+INNER JOIN employees e ON de.dept_no = e.dept_no
+WHERE de.from_date > '2005-01-01';
+```
+
+1. **Build Phase**: dept_emp에서 1만 건을 읽어 해시 테이블 생성
+   ```
+   해시 테이블:
+   hash(d001) → [레코드1, 레코드5, ...]
+   hash(d003) → [레코드2, 레코드7, ...]
+   hash(d005) → [레코드3, ...]
+   ```
+
+2. **Probe Phase**: employees를 스캔하면서 해시 테이블 조회
+   - employees의 dept_no = 'd001' → 해시 테이블에서 hash(d001) 조회 (O(1))
+   - 일치하는 레코드들과 조인
 
 ### 성능 개선
 
