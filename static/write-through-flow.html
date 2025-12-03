@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Write-Through 쓰기 흐름</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            padding: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            width: 800px;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 24px;
+            padding: 50px 60px;
+        }
+
+        .flow-section {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .flow-title {
+            text-align: center;
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            background: rgba(59, 130, 246, 0.15);
+            border: 2px solid #60a5fa;
+            color: #60a5fa;
+        }
+
+        .diagram {
+            position: relative;
+            height: 420px;
+        }
+
+        .node {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .node-icon {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .node-icon img {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+        }
+
+        .node-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .app-node {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            border-radius: 14px;
+            color: #c7d2fe;
+            font-size: 20px;
+            font-weight: 700;
+            box-shadow: 0 6px 30px rgba(67, 56, 202, 0.4);
+        }
+
+        .arrows-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 삼각형 배치: MySQL 상단 왼쪽, Redis 하단 왼쪽, APP 중앙 오른쪽 */
+        .mysql {
+            left: 30px;
+            top: 10px;
+        }
+
+        .redis {
+            left: 30px;
+            bottom: 10px;
+        }
+
+        .app {
+            right: 30px;
+            top: 170px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="flow-section">
+                <div class="flow-title">Write-Through</div>
+                <div class="diagram">
+                    <div class="node mysql">
+                        <div class="node-icon">
+                            <img src="mysql.svg" alt="MySQL">
+                        </div>
+                        <span class="node-label">MySQL</span>
+                    </div>
+
+                    <div class="node redis">
+                        <div class="node-icon">
+                            <img src="Redis 배경 제거.png" alt="Redis">
+                        </div>
+                        <span class="node-label">Redis</span>
+                    </div>
+
+                    <div class="node app">
+                        <div class="app-node">APP</div>
+                    </div>
+
+                    <svg class="arrows-svg" viewBox="0 0 400 420">
+                        <defs>
+                            <marker id="arrow-yellow" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto">
+                                <path d="M0,0 L4,2 L0,4 L0.7,2 Z" fill="#fbbf24"/>
+                            </marker>
+                            <marker id="arrow-green" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto">
+                                <path d="M0,0 L4,2 L0,4 L0.7,2 Z" fill="#4ade80"/>
+                            </marker>
+                        </defs>
+
+                        <!-- 1. APP -> Redis (캐시 저장) -->
+                        <line x1="270" y1="280" x2="120" y2="360" stroke="#fbbf24" stroke-width="3" marker-end="url(#arrow-yellow)"/>
+                        <text x="245" y="355" text-anchor="middle" font-size="20" font-weight="600" fill="#fbbf24">1. 캐시 저장</text>
+
+                        <!-- 2. APP -> MySQL (DB 저장) -->
+                        <line x1="270" y1="140" x2="120" y2="60" stroke="#4ade80" stroke-width="3" marker-end="url(#arrow-green)"/>
+                        <text x="245" y="75" text-anchor="middle" font-size="20" font-weight="600" fill="#4ade80">2. DB 저장</text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
