@@ -1,7 +1,7 @@
 ---
 title: "MySQL 히스토그램으로 쿼리 성능 개선하기"
 date: "2025-10-18"
-description: "MySQL 8.0 히스토그램을 활용하여 데이터 분포를 정확히 파악하고 실행 계획을 개선하는 방법을 실무 예제와 함께 설명합니다."
+description: "MySQL 8.0 히스토그램을 활용하여 데이터 분포를 정확히 파악하고 실행 계획을 개선하는 방법을 예제와 함께 설명합니다."
 tags: ["MySQL", "Database", "Performance", "Histogram", "Optimizer"]
 ---
 
@@ -336,7 +336,7 @@ WHERE user_id = 1001          -- 인덱스 있음
 
 user_id는 인덱스를 사용하고, amount와 status는 히스토그램으로 정확도를 높입니다.
 
-## 실무 가이드
+## 활용 가이드
 
 ### MySQL 8.0.19 미만 버전 주의
 
@@ -418,7 +418,7 @@ ANALYZE TABLE orders UPDATE HISTOGRAM ON product_id;
 4. 인덱스가 있는 칼럼은 인덱스 다이브를 사용하므로 히스토그램이 불필요합니다.
 5. MySQL 8.0.19 미만 버전은 풀 테이블 스캔이 발생하므로 주의해야 합니다.
 
-**실무 권장 사항**
+**권장 사항**
 
 ```sql
 -- 인덱스 없는 칼럼 중 WHERE/JOIN 조건에 자주 사용되는 칼럼

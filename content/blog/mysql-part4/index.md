@@ -95,7 +95,7 @@ CREATE TABLE test_table (fd1 INT, fd2 INT) ENGINE=INNODB;
 
 #### 주요 백그라운드 스레드 종류
 
-**로그 스레드 (Log Thread)**
+**로그 스레드** (Log Thread)
 
 변경 내역(Redo Log, Undo Log)을 디스크에 기록하여 장애 복구와 데이터 일관성을 보장합니다.
 
@@ -103,7 +103,7 @@ CREATE TABLE test_table (fd1 INT, fd2 INT) ENGINE=INNODB;
 - 누가, 언제, 무엇을 변경했는지 기록
 - 문제 발생 시 이 기록을 보고 복구
 
-**쓰기 스레드 (Write Thread)**
+**쓰기 스레드** (Write Thread)
 
 버퍼 풀의 더티 페이지(변경된 데이터)를 실제 데이터 파일로 내려씁니다.
 
@@ -118,7 +118,7 @@ SHOW VARIABLES LIKE 'innodb_write_io_threads';
 SET GLOBAL innodb_write_io_threads = 4;
 ```
 
-**읽기 스레드 (Read Thread)**
+**읽기 스레드** (Read Thread)
 
 데이터를 디스크에서 버퍼 풀로 읽어오는 작업을 **보조**합니다.
 
@@ -301,7 +301,7 @@ COMMIT은 데이터 영속성 보장이 필수:
 리두 로그가 먼저 디스크에 기록되는 이유:
 - 장애 발생 시 리두 로그만 있으면 복구 가능
 - 실제 데이터 파일은 나중에 써도 안전함
-- 이를 **WAL (Write Ahead Log)** 원칙이라고 함
+- 이를 **WAL** (Write Ahead Log) 원칙이라고 함
 
 실제 데이터 파일 기록은 왜 백그라운드로?
 - 여러 변경사항을 모아서 한 번에 쓰면 효율적
@@ -391,7 +391,7 @@ SHOW VARIABLES LIKE 'innodb_buffer_pool_size';
 
 #### 주요 메모리 영역
 
-**정렬 버퍼 (Sort Buffer)**
+**정렬 버퍼** (Sort Buffer)
 
 `ORDER BY`, `GROUP BY` 시 사용
 
@@ -404,7 +404,7 @@ SET GLOBAL sort_buffer_size = 10485760;  -- 10MB
 -- 클라이언트 1000개 시 = 10GB 메모리 사용!
 ```
 
-**조인 버퍼 (Join Buffer)**
+**조인 버퍼** (Join Buffer)
 
 테이블 조인 시 사용
 
@@ -439,7 +439,7 @@ COMMIT;  -- 이때 캐시 → 디스크 바이너리 로그 파일로 기록
 
 둘 다 변경사항을 기록하지만 용도가 다릅니다.
 
-**리두 로그 (Redo Log)**
+**리두 로그** (Redo Log)
 - 목적: 장애 복구 (Crash Recovery)
 - 대상: InnoDB 전용
 - 내용: 물리적 변경 (어떤 페이지의 어떤 위치를)
@@ -447,7 +447,7 @@ COMMIT;  -- 이때 캐시 → 디스크 바이너리 로그 파일로 기록
 - 위치: 글로벌 메모리 (InnoDB 리두 로그 버퍼)
 - 예시: `페이지 100, 오프셋 50에 값 0x1234 기록`
 
-**바이너리 로그 (Binary Log)**
+**바이너리 로그** (Binary Log)
 - 목적: 복제(Replication), 백업/복구
 - 대상: MySQL 전체 (모든 스토리지 엔진)
 - 내용: 논리적 변경 (어떤 SQL을 실행했는지)
@@ -767,7 +767,7 @@ SELECT * FROM mysql.component;
 
 ## 자동 데드락 감지
 
-- 잠금 대기 목록을 **그래프(Wait-for List)** 형태로 관리
+- 잠금 대기 목록을 **그래프** (Wait-for List) 형태로 관리
 - 데드락 감지 스레드가 잠금 대기 그래프를 검사해 교착 상태에 빠진 트랜잭션들 중 하나를 강제 종료
     - **언두 로그를 더 적게 가진 트랜잭션**이 일반적으로 롤백의 대상이 됨
         → 롤백을 해도 언두 처리를 해야 할 내용이 적기 때문
@@ -988,7 +988,7 @@ LSN은 리두 로그의 **논리적 위치**를 나타내는 단조 증가하는
 - 리두 로그 파일은 물리적으로 **순환**하지만, LSN은 논리적으로 **계속 증가**
 - InnoDB는 주기적으로 **체크포인트 이벤트**를 발생시켜 더티 페이지를 디스크에 동기화
 - 체크포인트가 발생하면 체크포인트 LSN보다 작은 리두 로그 엔트리와 연결된 더티 페이지가 디스크로 기록됨
-- **체크포인트 에이지(Checkpoint Age)** = 현재 LSN - 마지막 체크포인트 LSN
+- **체크포인트 에이지** (Checkpoint Age) = 현재 LSN - 마지막 체크포인트 LSN
   - 이 값이 활성 리두 로그의 크기를 나타냄
   - 이 값이 전체 리두 로그 크기에 가까워지면 **쓰기 작업이 지연**될 수 있음
 
@@ -1020,7 +1020,7 @@ UPDATE users SET age = 31 WHERE id = 1;
 #### 플러시 리스트 플러시
 
 - 오래된 리두 로그 공간이 지워지려면 반드시 InnoDB 버퍼 풀의 **더티 페이지가 먼저 디스크와 동기화**돼야함
-- 주기적으로 **플러시 리스트(Flush_list)** 플러시 함수를 호출
+- 주기적으로 **플러시 리스트** (Flush_list) 플러시 함수를 호출
 	- 오래전에 변경된 데이터 페이지 순서대로 디스크에 동기화
 - `innodb_page_cleaners`
 	- **클리너 스레드** (더티 페이지를 디스크로 동기화하는 스레드)의 개수를 조정
@@ -1072,7 +1072,7 @@ UPDATE users SET age = 31 WHERE id = 1;
 
 #### LRU 리스트 플러시
 
-- LRU 리스트에서 사용 빈도가 낮은 데이터 페이지를 제거할 때 **LRU 리스트(LRU_list)** 플러시 함수를 사용
+- LRU 리스트에서 사용 빈도가 낮은 데이터 페이지를 제거할 때 **LRU 리스트** (LRU_list) 플러시 함수를 사용
 - LRU 리스트의 끝에서 최대 `innodb_lru_scan_depth`만큼 페이지를 스캔
 - 클린 페이지는 즉시 프리 리스트로, 더티 페이지는 디스크에 동기화
 - 버퍼 풀 인스턴스마다 스캔하기 때문에 스캔은 `innodb_buffer_pool_instances * innodb_lru_scan_depth` 수만큼 수행
@@ -1080,7 +1080,7 @@ UPDATE users SET age = 31 WHERE id = 1;
 ### 버퍼 풀 상태 백업 및 복구
 
 - 버퍼 풀에 쿼리들이 사용할 데이터가 이미 준비되어 있어야 성능이 좋음
-	- **워밍업(Warming Up)** : 버퍼 풀에 데이터가 적재되어있는 상태
+	- **워밍업** (Warming Up) : 버퍼 풀에 데이터가 적재되어있는 상태
 	- 몇십 배의 쿼리 처리 속도를 보임
 - `innodb_buffer_pool_dump_now`, `innodb_buffer_pool_load_now`
 	- 서버를 재시작 하는 과정에서 버퍼 풀의 상태를 백업한 뒤 복구
@@ -1117,7 +1117,7 @@ UPDATE users SET age = 31 WHERE id = 1;
 
 **왜 리두 로그만으로는 부족한가?**
 
-리두 로그는 **변경된 내용(delta)**만 기록합니다. 예를 들어:
+리두 로그는 **변경된 내용**(delta)만 기록합니다. 예를 들어:
 ```
 리두 로그: "13번 페이지의 100번째 바이트를 'A'에서 'B'로 변경"
 ```
@@ -1172,7 +1172,7 @@ UPDATE users SET age = 31 WHERE id = 1;
 
 ### 언두 테이블스페이스 관리
 
-- **언두 테이블스페이스(Undo Tablespace)** : 언두 로그가 저장되는 공간
+- **언두 테이블스페이스** (Undo Tablespace) : 언두 로그가 저장되는 공간
 - 시스템 테이블스페이스 외부의 별도 로그 파일에 기록되도록 개선됨
 
 #### 언두 테이블스페이스 구조
@@ -1333,7 +1333,7 @@ OS 페이지 캐시 (ib_logfile0, ib_logfile1의 메모리 캐시)
 위험: MySQL이나 서버 장애 시 최대 1초치 데이터 손실
 ```
 
-**`1` - 가장 안전하지만 가장 느림 (기본값, 권장)**
+**`1`** - 가장 안전하지만 가장 느림 (기본값, 권장)
 ```
 동작: 커밋마다 write + fsync
 
@@ -1373,7 +1373,7 @@ OS 페이지 캐시 (ib_logfile0, ib_logfile1의 메모리 캐시)
 - 리두 로그 아카이빙을 통해 리두 로그가 덮어쓰인다고 해도 **백업이 실패하지 않도록** 함
 - `innodb_redo_log_archive_dirs`로 아카이빙된 리두 로그가 저장될 디렉토리를 설정
 - `innodb_redo_log_archive_start`
-	- **UDF(User Defined Function)**
+	- **UDF** (User Defined Function)
 	- 첫 번째 파라미터는 리두 로그를 아카이빙할 디렉토리
 	- 두 번째 파라미터는 서브디렉토리 (`innodb_redo_log_archive_dirs`)
 	- `DO innodb_redo_log_archive_start('backup', '20251003');`
@@ -1433,7 +1433,7 @@ OS 페이지 캐시 (ib_logfile0, ib_logfile1의 메모리 캐시)
 
 **2. 조인이나 LIKE 패턴 검색이 많은 경우**
 
-해시 인덱스는 **동등 비교(=)**만 가능합니다.
+해시 인덱스는 **동등 비교** (=)만 가능합니다.
 
 ```sql
 -- 효과 있음
@@ -1447,7 +1447,7 @@ SELECT * FROM orders o JOIN users u ON o.user_id = u.id;  -- 조인
 
 **3. 데이터 접근이 골고루 분산된 경우**
 
-어댑티브 해시 인덱스는 **자주 접근하는 데이터(핫 데이터)**에만 생성됩니다.
+어댑티브 해시 인덱스는 **자주 접근하는 데이터** (핫 데이터)에만 생성됩니다.
 
 ```
 시나리오: 1억 건 중 매번 다른 데이터 조회
@@ -1568,7 +1568,7 @@ SELECT * FROM products WHERE id IN (1, 2, 3, 4, 5);
 
 - **왜 MySQL이 종료됐는지 확인하는 유일한 방법**
 - `Received SHUTDOWN from user ...` : 누군가 MySQL 서버를 종료시킨 경우
-- 종료 메시지가 없거나 스택 트레이스가 출력되는 경우 **세그멘테이션 폴트(Segmentation fault)**
+- 종료 메시지가 없거나 스택 트레이스가 출력되는 경우 **세그멘테이션 폴트** (Segmentation fault)
 
 ## 제너럴 쿼리 로그 파일
 

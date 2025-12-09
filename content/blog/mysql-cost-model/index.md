@@ -1,7 +1,7 @@
 ---
 title: "MySQL 코스트 모델 이해하기"
 date: "2025-10-19"
-description: "MySQL 옵티마이저가 실행 계획의 비용을 계산하는 코스트 모델의 동작 원리와 실무 활용 방법을 설명합니다."
+description: "MySQL 옵티마이저가 실행 계획의 비용을 계산하는 코스트 모델의 동작 원리와 활용 방법을 설명합니다."
 tags: ["MySQL", "Database", "Performance", "Optimizer", "Cost Model"]
 ---
 
@@ -121,7 +121,7 @@ FROM mysql.engine_cost;
 
 ## 단위 작업 비용이 미치는 영향
 
-각 비용을 조정하면 옵티마이저의 선택이 달라집니다. 하지만 **실무에서는 절대 함부로 변경하지 마세요.**
+각 비용을 조정하면 옵티마이저의 선택이 달라집니다. 하지만 **절대 함부로 변경하지 마세요.**
 
 ### row_evaluate_cost
 
@@ -418,7 +418,7 @@ F) -> Index lookup on s using PRIMARY (emp_no=e.emp_no)
 
 즉, employees 테이블에서 233명을 찾았고, 각 사람마다 salaries 테이블을 조회(10건씩)하여 총 233번 반복했다는 의미입니다.
 
-**실무 활용**
+**활용 방법**
 
 ```sql
 -- 1. 먼저 EXPLAIN으로 실행 계획 확인
