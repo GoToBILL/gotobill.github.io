@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tomcat Connector & Container 관계도</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            padding: 40px;
+            color: #e2e8f0;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 40px;
+            color: #f8fafc;
+        }
+        .diagram {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+        }
+        .row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .box {
+            padding: 20px 30px;
+            border-radius: 16px;
+            text-align: center;
+            font-weight: 600;
+            min-width: 180px;
+        }
+        .coyote {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+        .catalina {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        .adapter {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+            border: 1px solid rgba(234, 179, 8, 0.3);
+        }
+        .component {
+            background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            margin: 0 10px;
+            min-width: 140px;
+        }
+        .sub-component {
+            background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%);
+            border: 1px solid rgba(14, 165, 233, 0.3);
+            margin: 0 8px;
+            padding: 15px 20px;
+            font-size: 14px;
+            min-width: 100px;
+        }
+        .title {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            font-size: 12px;
+            opacity: 0.8;
+            font-weight: 400;
+        }
+        .arrow-down {
+            display: flex;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        .arrow-down svg {
+            width: 24px;
+            height: 40px;
+        }
+        .section-label {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .section {
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .section-title {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .horizontal-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .arrow-right {
+            color: #64748b;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tomcat Connector & Container 관계도</h1>
+
+        <div class="diagram">
+            <!-- Coyote Section -->
+            <div class="section">
+                <div class="section-title">Coyote (Connector)</div>
+                <div class="row">
+                    <div class="box coyote">
+                        <div class="title">Connector</div>
+                        <div class="subtitle">HTTP/AJP 프로토콜 처리</div>
+                    </div>
+                </div>
+                <div class="row" style="margin-bottom: 0;">
+                    <div class="box sub-component">
+                        <div>ProtocolHandler</div>
+                    </div>
+                    <div class="box sub-component">
+                        <div>Endpoint</div>
+                    </div>
+                    <div class="box sub-component">
+                        <div>Processor</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="arrow-down">
+                <svg viewBox="0 0 24 40">
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+                        </marker>
+                    </defs>
+                    <line x1="12" y1="0" x2="12" y2="35" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+                </svg>
+            </div>
+
+            <!-- CoyoteAdapter -->
+            <div class="row">
+                <div class="box adapter">
+                    <div class="title">CoyoteAdapter</div>
+                    <div class="subtitle">Request/Response 변환</div>
+                </div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="arrow-down">
+                <svg viewBox="0 0 24 40">
+                    <line x1="12" y1="0" x2="12" y2="35" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+                </svg>
+            </div>
+
+            <!-- Catalina Section -->
+            <div class="section">
+                <div class="section-title">Catalina (Container)</div>
+                <div class="horizontal-flow">
+                    <div class="box component">
+                        <div class="title">Engine</div>
+                        <div class="subtitle">요청 라우팅</div>
+                    </div>
+                    <span class="arrow-right">→</span>
+                    <div class="box component">
+                        <div class="title">Host</div>
+                        <div class="subtitle">가상 호스트</div>
+                    </div>
+                    <span class="arrow-right">→</span>
+                    <div class="box component">
+                        <div class="title">Context</div>
+                        <div class="subtitle">웹 애플리케이션</div>
+                    </div>
+                    <span class="arrow-right">→</span>
+                    <div class="box component">
+                        <div class="title">Wrapper</div>
+                        <div class="subtitle">서블릿</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

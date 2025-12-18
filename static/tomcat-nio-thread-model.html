@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tomcat NIO Connector 스레드 모델</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #e2e8f0;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #f8fafc;
+        }
+        .diagram {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 25px;
+        }
+        .flow-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .flow-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+        .box {
+            padding: 14px 24px;
+            border-radius: 14px;
+            text-align: center;
+            font-weight: 600;
+            min-width: 140px;
+        }
+        .client {
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d3d 100%);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+        }
+        .acceptor {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+        .poller {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+            border: 1px solid rgba(234, 179, 8, 0.3);
+        }
+        .worker {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        .queue {
+            background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%);
+            border: 1px solid rgba(14, 165, 233, 0.3);
+            min-width: 200px;
+        }
+        .title {
+            font-size: 18px;
+            margin-bottom: 3px;
+        }
+        .subtitle {
+            font-size: 14px;
+            opacity: 0.8;
+            font-weight: 400;
+        }
+        .count {
+            font-size: 13px;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+        .arrow-down {
+            display: flex;
+            justify-content: center;
+        }
+        .arrow-down svg {
+            width: 24px;
+            height: 28px;
+        }
+        .arrow-right {
+            color: #64748b;
+            font-size: 28px;
+        }
+        .section {
+            border: 1px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 14px;
+            padding: 15px 20px;
+        }
+        .section-title {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .worker-pool {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .worker-item {
+            padding: 10px 18px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            font-size: 15px;
+        }
+        .description {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        .desc-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 15px;
+        }
+        .desc-title {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 6px;
+            color: #e2e8f0;
+        }
+        .desc-text {
+            font-size: 14px;
+            color: #94a3b8;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>NIO Connector 스레드 모델</h1>
+
+        <div class="diagram">
+            <div class="flow-container">
+                <!-- Clients -->
+                <div class="flow-row">
+                    <div class="box client">
+                        <div class="title">Client 1</div>
+                    </div>
+                    <div class="box client">
+                        <div class="title">Client 2</div>
+                    </div>
+                    <div class="box client">
+                        <div class="title">Client N</div>
+                    </div>
+                </div>
+
+                <div class="arrow-down">
+                    <svg viewBox="0 0 24 28">
+                        <defs>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+                            </marker>
+                        </defs>
+                        <line x1="12" y1="0" x2="12" y2="24" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    </svg>
+                </div>
+
+                <!-- Acceptor -->
+                <div class="section">
+                    <div class="section-title">Connection Accept</div>
+                    <div class="flow-row">
+                        <div class="box acceptor">
+                            <div class="title">Acceptor</div>
+                            <div class="subtitle">연결 수락</div>
+                            <div class="count">1~2 스레드</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="arrow-down">
+                    <svg viewBox="0 0 24 28">
+                        <line x1="12" y1="0" x2="12" y2="24" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    </svg>
+                </div>
+
+                <!-- Poller -->
+                <div class="section">
+                    <div class="section-title">Event Multiplexing (Selector)</div>
+                    <div class="flow-row">
+                        <div class="box poller">
+                            <div class="title">Poller</div>
+                            <div class="subtitle">I/O 이벤트 감지</div>
+                            <div class="count">1~2 스레드</div>
+                        </div>
+                        <span class="arrow-right">→</span>
+                        <div class="box queue">
+                            <div class="title">Socket Channel Queue</div>
+                            <div class="subtitle">읽기 가능한 소켓 대기</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="arrow-down">
+                    <svg viewBox="0 0 24 28">
+                        <line x1="12" y1="0" x2="12" y2="24" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    </svg>
+                </div>
+
+                <!-- Worker Pool -->
+                <div class="section">
+                    <div class="section-title">Request Processing (Thread Pool)</div>
+                    <div class="worker-pool">
+                        <div class="worker-item">Worker 1</div>
+                        <div class="worker-item">Worker 2</div>
+                        <div class="worker-item">Worker 3</div>
+                        <div class="worker-item">...</div>
+                        <div class="worker-item">Worker N</div>
+                    </div>
+                    <div style="text-align: center; margin-top: 10px; font-size: 12px; color: #64748b;">
+                        maxThreads (기본값: 200)
+                    </div>
+                </div>
+            </div>
+
+            <div class="description">
+                <div class="desc-card">
+                    <div class="desc-title">Acceptor</div>
+                    <div class="desc-text">ServerSocket.accept()로 새 연결 수락. 수락된 소켓을 Poller에 등록.</div>
+                </div>
+                <div class="desc-card">
+                    <div class="desc-title">Poller</div>
+                    <div class="desc-text">Selector로 I/O 이벤트 감지. 읽기 가능한 소켓을 Worker에 전달.</div>
+                </div>
+                <div class="desc-card">
+                    <div class="desc-title">Worker Thread</div>
+                    <div class="desc-text">HTTP 파싱, 서블릿 실행, 응답 생성. 실제 요청 처리 담당.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

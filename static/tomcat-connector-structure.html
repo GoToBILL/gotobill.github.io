@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tomcat Connector 내부 구조</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            padding: 30px;
+            color: #e2e8f0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 25px;
+            color: #f8fafc;
+        }
+        .diagram {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 30px;
+        }
+        .flow-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .client-box {
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d3d 100%);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 14px;
+            padding: 16px 28px;
+            text-align: center;
+            width: fit-content;
+            margin: 0 auto;
+        }
+        .client-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .client-subtitle {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+        .arrow-down {
+            display: flex;
+            justify-content: center;
+        }
+        .arrow-down svg {
+            width: 24px;
+            height: 32px;
+        }
+        .connector-wrapper {
+            border: 2px solid rgba(99, 102, 241, 0.4);
+            border-radius: 20px;
+            padding: 25px;
+            position: relative;
+        }
+        .connector-label {
+            position: absolute;
+            top: -12px;
+            left: 30px;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            padding: 4px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #818cf8;
+            letter-spacing: 1px;
+        }
+        .component-row {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .component-box {
+            border-radius: 14px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .protocol-handler {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+        .endpoint {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        .processor {
+            background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%);
+            border: 1px solid rgba(14, 165, 233, 0.3);
+        }
+        .component-info {
+            flex: 1;
+        }
+        .component-name {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .component-desc {
+            font-size: 15px;
+            opacity: 0.9;
+        }
+        .component-detail {
+            text-align: right;
+            max-width: 280px;
+        }
+        .detail-title {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 4px;
+        }
+        .detail-list {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.85);
+            line-height: 1.5;
+        }
+        .inner-arrow {
+            display: flex;
+            justify-content: center;
+            padding: 4px 0;
+        }
+        .inner-arrow svg {
+            width: 20px;
+            height: 24px;
+        }
+        .container-box {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+            border: 1px solid rgba(234, 179, 8, 0.3);
+            border-radius: 14px;
+            padding: 16px 28px;
+            text-align: center;
+            width: fit-content;
+            margin: 0 auto;
+        }
+        .container-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .container-subtitle {
+            font-size: 14px;
+            opacity: 0.85;
+            margin-top: 4px;
+        }
+        .summary {
+            margin-top: 25px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        .summary-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .summary-title {
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 8px;
+            color: #e2e8f0;
+        }
+        .summary-text {
+            font-size: 14px;
+            color: #94a3b8;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Connector (Coyote) 내부 구조</h1>
+
+        <div class="diagram">
+            <div class="flow-container">
+                <!-- Client -->
+                <div class="client-box">
+                    <div class="client-title">Client Request</div>
+                    <div class="client-subtitle">HTTP/1.1, HTTP/2, AJP</div>
+                </div>
+
+                <div class="arrow-down">
+                    <svg viewBox="0 0 24 32">
+                        <defs>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+                            </marker>
+                        </defs>
+                        <line x1="12" y1="0" x2="12" y2="28" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    </svg>
+                </div>
+
+                <!-- Connector Wrapper -->
+                <div class="connector-wrapper">
+                    <div class="connector-label">CONNECTOR (COYOTE)</div>
+
+                    <div class="component-row">
+                        <!-- ProtocolHandler -->
+                        <div class="component-box protocol-handler">
+                            <div class="component-info">
+                                <div class="component-name">ProtocolHandler</div>
+                                <div class="component-desc">프로토콜별 요청 처리 전략 결정</div>
+                            </div>
+                            <div class="component-detail">
+                                <div class="detail-title">구현체</div>
+                                <div class="detail-list">
+                                    Http11NioProtocol (기본)<br>
+                                    Http2Protocol<br>
+                                    AjpNioProtocol
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="inner-arrow">
+                            <svg viewBox="0 0 20 24">
+                                <line x1="10" y1="0" x2="10" y2="20" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+                            </svg>
+                        </div>
+
+                        <!-- Endpoint -->
+                        <div class="component-box endpoint">
+                            <div class="component-info">
+                                <div class="component-name">Endpoint</div>
+                                <div class="component-desc">소켓 연결 및 I/O 스레드 관리</div>
+                            </div>
+                            <div class="component-detail">
+                                <div class="detail-title">관리 대상</div>
+                                <div class="detail-list">
+                                    Acceptor Thread<br>
+                                    Poller Thread<br>
+                                    Worker Thread Pool
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="inner-arrow">
+                            <svg viewBox="0 0 20 24">
+                                <line x1="10" y1="0" x2="10" y2="20" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+                            </svg>
+                        </div>
+
+                        <!-- Processor -->
+                        <div class="component-box processor">
+                            <div class="component-info">
+                                <div class="component-name">Processor</div>
+                                <div class="component-desc">HTTP 메시지 파싱 및 응답 생성</div>
+                            </div>
+                            <div class="component-detail">
+                                <div class="detail-title">처리 내용</div>
+                                <div class="detail-list">
+                                    요청 라인/헤더 파싱<br>
+                                    Request/Response 생성<br>
+                                    Keep-Alive 처리
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="arrow-down">
+                    <svg viewBox="0 0 24 32">
+                        <line x1="12" y1="0" x2="12" y2="28" stroke="#64748b" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    </svg>
+                </div>
+
+                <!-- Container -->
+                <div class="container-box">
+                    <div class="container-title">Container (Catalina)</div>
+                    <div class="container-subtitle">Engine - Host - Context - Wrapper - Servlet</div>
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="summary">
+                <div class="summary-card">
+                    <div class="summary-title">ProtocolHandler</div>
+                    <div class="summary-text">
+                        어떤 프로토콜로 통신할지 결정합니다. Spring Boot는 Http11NioProtocol이 기본입니다.
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-title">Endpoint</div>
+                    <div class="summary-text">
+                        실제 소켓 I/O를 담당합니다. Acceptor, Poller, Worker 스레드를 관리하는 주체입니다.
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-title">Processor</div>
+                    <div class="summary-text">
+                        바이트 스트림을 HTTP 객체로 변환합니다. 요청 처리 후 Keep-Alive 여부를 판단합니다.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

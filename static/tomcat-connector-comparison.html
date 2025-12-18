@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tomcat Connector 비교표</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            padding: 30px;
+            color: #e2e8f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            color: #f8fafc;
+        }
+        .table-wrapper {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 30px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 16px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        th {
+            font-size: 15px;
+            font-weight: 600;
+            color: #f8fafc;
+        }
+        th:first-child {
+            text-align: left;
+        }
+        td:first-child {
+            text-align: left;
+            font-weight: 500;
+            color: #94a3b8;
+        }
+        .header-bio {
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d3d 100%);
+            border-radius: 12px 0 0 12px;
+        }
+        .header-nio {
+            background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%);
+        }
+        .header-nio2 {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+        }
+        .header-apr {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+            border-radius: 0 12px 12px 0;
+        }
+        .header-sub {
+            font-size: 13px;
+            font-weight: 400;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+        .code {
+            font-family: 'SF Mono', monospace;
+            font-size: 13px;
+            color: #fbbf24;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .yes {
+            color: #34d399;
+            font-weight: 600;
+        }
+        .no {
+            color: #f87171;
+            font-weight: 600;
+        }
+        .blocking {
+            color: #f87171;
+        }
+        .non-blocking {
+            color: #34d399;
+        }
+        .na {
+            color: #64748b;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .legend {
+            margin-top: 25px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        .legend-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .legend-title {
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 8px;
+            color: #e2e8f0;
+        }
+        .legend-text {
+            font-size: 14px;
+            color: #94a3b8;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tomcat Connector 비교표</h1>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 22%"></th>
+                        <th class="header-bio" style="width: 19.5%">
+                            BIO
+                            <div class="header-sub">Java Blocking Connector</div>
+                        </th>
+                        <th class="header-nio" style="width: 19.5%">
+                            NIO
+                            <div class="header-sub">Java NIO Connector</div>
+                        </th>
+                        <th class="header-nio2" style="width: 19.5%">
+                            NIO2
+                            <div class="header-sub">Java NIO2 Connector</div>
+                        </th>
+                        <th class="header-apr" style="width: 19.5%">
+                            APR
+                            <div class="header-sub">APR/Native Connector</div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>클래스명</td>
+                        <td><span class="code">Http11Protocol</span></td>
+                        <td><span class="code">Http11NioProtocol</span></td>
+                        <td><span class="code">Http11Nio2Protocol</span></td>
+                        <td><span class="code">Http11AprProtocol</span></td>
+                    </tr>
+                    <tr>
+                        <td>Tomcat 버전</td>
+                        <td>3.x 이상</td>
+                        <td>6.x 이상</td>
+                        <td>8.x 이상</td>
+                        <td>5.5.x 이상</td>
+                    </tr>
+                    <tr>
+                        <td>다중 연결 관리<br><span style="font-size: 12px; color: #64748b;">(Support Polling)</span></td>
+                        <td><span class="no">NO</span></td>
+                        <td><span class="yes">YES</span></td>
+                        <td><span class="yes">YES</span></td>
+                        <td><span class="yes">YES</span></td>
+                    </tr>
+                    <tr>
+                        <td>Polling 크기</td>
+                        <td><span class="na">N/A</span></td>
+                        <td>maxConnections</td>
+                        <td>maxConnections</td>
+                        <td>maxConnections</td>
+                    </tr>
+                    <tr>
+                        <td>요청 헤더 읽기</td>
+                        <td><span class="blocking">Blocking</span></td>
+                        <td><span class="non-blocking">Non Blocking</span></td>
+                        <td><span class="non-blocking">Non Blocking</span></td>
+                        <td><span class="blocking">Blocking</span></td>
+                    </tr>
+                    <tr>
+                        <td>요청 Body 읽기</td>
+                        <td><span class="blocking">Blocking</span></td>
+                        <td><span class="blocking">Blocking</span></td>
+                        <td><span class="blocking">Blocking</span></td>
+                        <td><span class="blocking">Blocking</span></td>
+                    </tr>
+                    <tr>
+                        <td>응답 헤더/Body 쓰기</td>
+                        <td><span class="blocking">Blocking</span></td>
+                        <td><span class="blocking">Blocking</span></td>
+                        <td><span class="blocking">Blocking</span></td>
+                        <td><span class="blocking">Blocking</span></td>
+                    </tr>
+                    <tr>
+                        <td>다음 요청 대기<br><span style="font-size: 12px; color: #64748b;">(Keep-Alive)</span></td>
+                        <td><span class="blocking">Blocking</span></td>
+                        <td><span class="non-blocking">Non Blocking</span></td>
+                        <td><span class="non-blocking">Non Blocking</span></td>
+                        <td><span class="non-blocking">Non Blocking</span></td>
+                    </tr>
+                    <tr>
+                        <td>SSL 지원</td>
+                        <td>Java SSL</td>
+                        <td>Java SSL</td>
+                        <td>Java SSL</td>
+                        <td>OpenSSL</td>
+                    </tr>
+                    <tr>
+                        <td>SSL Handshake</td>
+                        <td><span class="blocking">Blocking</span></td>
+                        <td><span class="non-blocking">Non Blocking</span></td>
+                        <td><span class="non-blocking">Non Blocking</span></td>
+                        <td><span class="blocking">Blocking</span></td>
+                    </tr>
+                    <tr>
+                        <td>최대 연결 수</td>
+                        <td>maxConnections</td>
+                        <td>maxConnections</td>
+                        <td>maxConnections</td>
+                        <td>maxConnections</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="legend">
+                <div class="legend-card">
+                    <div class="legend-title">다중 연결 관리 (Support Polling)</div>
+                    <div class="legend-text">
+                        하나의 스레드가 여러 연결을 관리할 수 있는지 여부.<br>
+                        BIO는 연결당 1개 스레드가 필요하지만, NIO/NIO2/APR은 수천 개 연결을 소수의 스레드로 관리 가능.
+                    </div>
+                </div>
+                <div class="legend-card">
+                    <div class="legend-title">다음 요청 대기 (Keep-Alive)</div>
+                    <div class="legend-text">
+                        Keep-Alive 연결에서 다음 요청을 기다리는 방식.<br>
+                        Blocking이면 스레드가 대기하며 점유, Non Blocking이면 스레드 반환 후 이벤트로 감지.
+                    </div>
+                </div>
+                <div class="legend-card">
+                    <div class="legend-title">SSL Handshake</div>
+                    <div class="legend-text">
+                        HTTPS 연결 시 암호화 협상 방식.<br>
+                        Non Blocking이면 핸드셰이크 중에도 다른 연결 처리 가능.
+                    </div>
+                </div>
+                <div class="legend-card">
+                    <div class="legend-title">APR의 OpenSSL</div>
+                    <div class="legend-text">
+                        APR은 네이티브 OpenSSL을 사용해 Java SSL보다 빠른 암호화 성능 제공.<br>
+                        단, 별도 네이티브 라이브러리 설치 필요.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

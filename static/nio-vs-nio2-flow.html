@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIO vs NIO2 요청 처리 흐름</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            padding: 30px;
+            color: #e2e8f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            color: #f8fafc;
+        }
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+        .panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 25px;
+        }
+        .panel-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .nio-title {
+            color: #60a5fa;
+        }
+        .nio2-title {
+            color: #34d399;
+        }
+        .flow {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .step {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .step-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        .nio .step-num {
+            background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%);
+        }
+        .nio2 .step-num {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+        }
+        .step-content {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .step-title {
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 6px;
+        }
+        .step-desc {
+            font-size: 13px;
+            color: #94a3b8;
+            line-height: 1.5;
+        }
+        .step-code {
+            font-family: 'SF Mono', monospace;
+            font-size: 12px;
+            color: #fbbf24;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-top: 8px;
+        }
+        .arrow {
+            display: flex;
+            justify-content: center;
+            padding: 2px 0;
+        }
+        .arrow svg {
+            width: 20px;
+            height: 20px;
+        }
+        .blocking-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%);
+            color: white;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-left: 8px;
+        }
+        .nonblocking-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            color: white;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-left: 8px;
+        }
+        .os-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            color: white;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-left: 8px;
+        }
+        .section-divider {
+            border-top: 1px dashed rgba(255, 255, 255, 0.15);
+            margin: 15px 0;
+            position: relative;
+        }
+        .section-label {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a2e;
+            padding: 0 10px;
+            font-size: 12px;
+            color: #64748b;
+        }
+        .summary {
+            margin-top: 30px;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 25px;
+        }
+        .summary-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .summary-table th,
+        .summary-table td {
+            padding: 14px 18px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .summary-table th {
+            font-size: 14px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+        .summary-table td {
+            font-size: 15px;
+        }
+        .summary-table tr:last-child td {
+            border-bottom: none;
+        }
+        .highlight-nio {
+            color: #60a5fa;
+        }
+        .highlight-nio2 {
+            color: #34d399;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>NIO vs NIO2 요청 처리 흐름</h1>
+
+        <div class="comparison">
+            <!-- NIO Panel -->
+            <div class="panel nio">
+                <div class="panel-title nio-title">NIO (Selector 기반)</div>
+                <div class="flow">
+                    <div class="step">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <div class="step-title">클라이언트 요청 도착</div>
+                            <div class="step-desc">데이터가 NIC → 커널 수신 버퍼에 도착</div>
+                        </div>
+                    </div>
+
+                    <div class="arrow">
+                        <svg viewBox="0 0 20 20"><path d="M10 3 L10 17 M5 12 L10 17 L15 12" stroke="#64748b" stroke-width="2" fill="none"/></svg>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <div class="step-title">Poller가 이벤트 감지 <span class="os-badge">epoll</span></div>
+                            <div class="step-desc">Selector.select()가 "읽기 가능" 이벤트 반환</div>
+                            <div class="step-code">selector.select(); // 이벤트 감지만</div>
+                        </div>
+                    </div>
+
+                    <div class="arrow">
+                        <svg viewBox="0 0 20 20"><path d="M10 3 L10 17 M5 12 L10 17 L15 12" stroke="#64748b" stroke-width="2" fill="none"/></svg>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-num">3</div>
+                        <div class="step-content">
+                            <div class="step-title">Worker 스레드에 작업 할당</div>
+                            <div class="step-desc">Poller가 ThreadPool에 작업 전달</div>
+                            <div class="step-code">executor.execute(socketProcessor);</div>
+                        </div>
+                    </div>
+
+                    <div class="arrow">
+                        <svg viewBox="0 0 20 20"><path d="M10 3 L10 17 M5 12 L10 17 L15 12" stroke="#64748b" stroke-width="2" fill="none"/></svg>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-num">4</div>
+                        <div class="step-content">
+                            <div class="step-title">Worker가 직접 read() <span class="blocking-badge">블로킹</span></div>
+                            <div class="step-desc">커널 버퍼 → 유저 버퍼 복사<br>복사 완료까지 Worker 스레드 대기</div>
+                            <div class="step-code">channel.read(buffer); // 여기서 복사</div>
+                        </div>
+                    </div>
+
+                    <div class="section-divider">
+                        <span class="section-label">비즈니스 로직</span>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-num">5</div>
+                        <div class="step-content">
+                            <div class="step-title">Spring 코드 실행</div>
+                            <div class="step-desc">HTTP 파싱 → Controller → Service → Repository</div>
+                        </div>
+                    </div>
+
+                    <div class="section-divider">
+                        <span class="section-label">응답 전송</span>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-num">6</div>
+                        <div class="step-content">
+                            <div class="step-title">Worker가 직접 write() <span class="blocking-badge">블로킹</span></div>
+                            <div class="step-desc">유저 버퍼 → 커널 송신 버퍼 복사</div>
+                            <div class="step-code">channel.write(response); // 여기서 복사</div>
+                        </div>
+                    </div>
+
+                    <div class="arrow">
+                        <svg viewBox="0 0 20 20"><path d="M10 3 L10 17 M5 12 L10 17 L15 12" stroke="#64748b" stroke-width="2" fill="none"/></svg>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-num">7</div>
+                        <div class="step-content">
+                            <div class="step-title">OS가 네트워크 전송 <span class="os-badge">커널</span></div>
+                            <div class="step-desc">커널 송신 버퍼 → NIC → 클라이언트</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NIO2 Panel -->
+            <div class="panel nio2">
+                <div class="panel-title nio2-title">NIO2 (Async I/O)</div>
+                <div class="flow">
+                    <div class="step">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <div class="step-title">클라이언트 요청 도착</div>
+                            <div class="step-desc">데이터가 NIC → 커널 수신 버퍼에 도착</div>
+                        </div>
+                    </div>
+
+                    <div class="arrow">
+                        <svg viewBox="0 0 20 20"><path d="M10 3 L10 17 M5 12 L10 17 L15 12" stroke="#64748b" stroke-width="2" fill="none"/></svg>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <div class="step-title">OS가 read 완료 <span class="os-badge">커널이 처리</span></div>
+                            <div class="step-desc">커널 버퍼 → 유저 버퍼 복사까지 OS가 수행</div>
+                            <div class="step-code">// OS가 백그라운드에서 완료</div>
+                        </div>
+                    </div>
+
+                    <div class="arrow">
+                        <svg viewBox="0 0 20 20"><path d="M10 3 L10 17 M5 12 L10 17 L15 12" stroke="#64748b" stroke-width="2" fill="none"/></svg>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-num">3</div>
+                        <div class="step-content">
+                            <div class="step-title">콜백 호출 <span class="nonblocking-badge">논블로킹</span></div>
+                            <div class="step-desc">I/O 완료 후 Worker 스레드에서 콜백 실행<br>buffer에 이미 데이터 있음</div>
+                            <div class="step-code">handler.completed(result, attachment);</div>
+                        </div>
+                    </div>
+
+                    <div class="section-divider">
+                        <span class="section-label">비즈니스 로직</span>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-num">4</div>
+                        <div class="step-content">
+                            <div class="step-title">Spring 코드 실행</div>
+                            <div class="step-desc">HTTP 파싱 → Controller → Service → Repository</div>
+                        </div>
+                    </div>
+
+                    <div class="section-divider">
+                        <span class="section-label">응답 전송</span>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-num">5</div>
+                        <div class="step-content">
+                            <div class="step-title">write 요청 + 콜백 등록 <span class="nonblocking-badge">논블로킹</span></div>
+                            <div class="step-desc">요청만 하고 즉시 리턴</div>
+                            <div class="step-code">channel.write(buf, handler); // 바로 리턴</div>
+                        </div>
+                    </div>
+
+                    <div class="arrow">
+                        <svg viewBox="0 0 20 20"><path d="M10 3 L10 17 M5 12 L10 17 L15 12" stroke="#64748b" stroke-width="2" fill="none"/></svg>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-num">6</div>
+                        <div class="step-content">
+                            <div class="step-title">OS가 write + 네트워크 전송 <span class="os-badge">커널</span></div>
+                            <div class="step-desc">유저 버퍼 → 커널 버퍼 → NIC → 클라이언트<br>완료 시 콜백 호출</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="summary">
+            <div class="summary-title">핵심 차이점</div>
+            <table class="summary-table">
+                <tr>
+                    <th style="width: 25%">구분</th>
+                    <th style="width: 37.5%">NIO</th>
+                    <th style="width: 37.5%">NIO2</th>
+                </tr>
+                <tr>
+                    <td>이벤트 감지</td>
+                    <td class="highlight-nio">Poller (Selector.select)</td>
+                    <td class="highlight-nio2">없음 (OS가 완료 통지)</td>
+                </tr>
+                <tr>
+                    <td>read/write 수행</td>
+                    <td class="highlight-nio">Worker 스레드가 직접</td>
+                    <td class="highlight-nio2">OS 커널이 수행</td>
+                </tr>
+                <tr>
+                    <td>I/O 중 스레드</td>
+                    <td class="highlight-nio">블로킹 대기</td>
+                    <td class="highlight-nio2">다른 일 가능</td>
+                </tr>
+                <tr>
+                    <td>비유</td>
+                    <td class="highlight-nio">"준비되면 알려줘, 내가 가져갈게"</td>
+                    <td class="highlight-nio2">"다 되면 가져다줘"</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

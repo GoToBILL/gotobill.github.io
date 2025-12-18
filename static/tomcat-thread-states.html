@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java Thread 상태 다이어그램</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            padding: 40px;
+            color: #e2e8f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 40px;
+            color: #f8fafc;
+        }
+        .diagram {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+        }
+        .state-diagram {
+            position: relative;
+            height: 560px;
+        }
+        .state-box {
+            position: absolute;
+            padding: 18px 28px;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 18px;
+            text-align: center;
+            min-width: 130px;
+        }
+        .state-new {
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d3d 100%);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .state-runnable {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            top: 140px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .state-running {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            top: 260px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .state-blocked {
+            background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            top: 260px;
+            left: 60px;
+        }
+        .state-waiting {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+            border: 1px solid rgba(234, 179, 8, 0.3);
+            top: 260px;
+            right: 120px;
+        }
+        .state-timed-waiting {
+            background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%);
+            border: 1px solid rgba(14, 165, 233, 0.3);
+            top: 400px;
+            right: 120px;
+        }
+        .state-terminated {
+            background: linear-gradient(135deg, #581c87 0%, #7c3aed 100%);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .subtitle {
+            font-size: 14px;
+            font-weight: 400;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+
+        /* SVG Arrows */
+        svg.arrows {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .arrow-line {
+            stroke: #64748b;
+            stroke-width: 2;
+            fill: none;
+        }
+        .arrow-head {
+            fill: #64748b;
+        }
+        .arrow-label {
+            font-size: 14px;
+            fill: #94a3b8;
+        }
+
+        .legend {
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px 15px;
+            border-radius: 10px;
+        }
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .legend-text {
+            font-size: 15px;
+        }
+        .legend-title {
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 2px;
+        }
+        .legend-desc {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Java Thread 상태 다이어그램</h1>
+
+        <div class="diagram">
+            <div class="state-diagram">
+                <svg class="arrows" viewBox="0 0 1120 560">
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" class="arrow-head"/>
+                        </marker>
+                    </defs>
+
+                    <!-- NEW -> RUNNABLE -->
+                    <path d="M 560 65 L 560 130" class="arrow-line" marker-end="url(#arrowhead)"/>
+                    <text x="570" y="100" class="arrow-label">start()</text>
+
+                    <!-- RUNNABLE -> RUNNING -->
+                    <path d="M 560 195 L 560 250" class="arrow-line" marker-end="url(#arrowhead)"/>
+                    <text x="570" y="225" class="arrow-label">스케줄링</text>
+
+                    <!-- RUNNING -> RUNNABLE -->
+                    <path d="M 485 260 Q 440 220 485 175" class="arrow-line" marker-end="url(#arrowhead)"/>
+                    <text x="400" y="218" class="arrow-label">yield()</text>
+
+                    <!-- RUNNING -> BLOCKED -->
+                    <path d="M 490 290 L 205 290" class="arrow-line" marker-end="url(#arrowhead)"/>
+                    <text x="330" y="280" class="arrow-label">락 대기</text>
+
+                    <!-- BLOCKED -> RUNNABLE -->
+                    <path d="M 60 250 L 60 170 L 485 170" class="arrow-line" marker-end="url(#arrowhead)"/>
+                    <text x="200" y="160" class="arrow-label">락 획득</text>
+
+                    <!-- RUNNING -> WAITING -->
+                    <path d="M 630 290 L 830 290" class="arrow-line" marker-end="url(#arrowhead)"/>
+                    <text x="710" y="280" class="arrow-label">wait()</text>
+
+                    <!-- WAITING -> RUNNABLE -->
+                    <path d="M 920 250 Q 920 185 635 170" class="arrow-line" marker-end="url(#arrowhead)"/>
+                    <text x="820" y="195" class="arrow-label">notify()</text>
+
+                    <!-- RUNNING -> TIMED_WAITING -->
+                    <path d="M 630 310 Q 720 360 830 420" class="arrow-line" marker-end="url(#arrowhead)"/>
+                    <text x="730" y="365" class="arrow-label">sleep()</text>
+
+                    <!-- TIMED_WAITING -> RUNNABLE -->
+                    <path d="M 1000 420 L 1060 420 L 1060 170 L 635 170" class="arrow-line" marker-end="url(#arrowhead)"/>
+                    <text x="1070" y="300" class="arrow-label">타임아웃</text>
+
+                    <!-- RUNNING -> TERMINATED -->
+                    <path d="M 560 315 L 560 490" class="arrow-line" marker-end="url(#arrowhead)"/>
+                    <text x="570" y="410" class="arrow-label">완료/예외</text>
+                </svg>
+
+                <div class="state-box state-new">
+                    NEW
+                    <div class="subtitle">생성됨</div>
+                </div>
+                <div class="state-box state-runnable">
+                    RUNNABLE
+                    <div class="subtitle">실행 대기</div>
+                </div>
+                <div class="state-box state-running">
+                    RUNNING
+                    <div class="subtitle">실행 중</div>
+                </div>
+                <div class="state-box state-blocked">
+                    BLOCKED
+                    <div class="subtitle">락 대기</div>
+                </div>
+                <div class="state-box state-waiting">
+                    WAITING
+                    <div class="subtitle">무한 대기</div>
+                </div>
+                <div class="state-box state-timed-waiting">
+                    TIMED_WAITING
+                    <div class="subtitle">시간 제한 대기</div>
+                </div>
+                <div class="state-box state-terminated">
+                    TERMINATED
+                    <div class="subtitle">종료됨</div>
+                </div>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%);"></div>
+                    <div class="legend-text">
+                        <div class="legend-title">BLOCKED</div>
+                        <div class="legend-desc">synchronized 락 획득 대기</div>
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #713f12 0%, #a16207 100%);"></div>
+                    <div class="legend-text">
+                        <div class="legend-title">WAITING</div>
+                        <div class="legend-desc">wait(), join() 호출로 무기한 대기</div>
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%);"></div>
+                    <div class="legend-text">
+                        <div class="legend-title">TIMED_WAITING</div>
+                        <div class="legend-desc">sleep(), wait(ms) 호출로 시간 제한 대기</div>
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #14532d 0%, #15803d 100%);"></div>
+                    <div class="legend-text">
+                        <div class="legend-title">RUNNABLE</div>
+                        <div class="legend-desc">CPU 할당 대기 또는 I/O 대기 상태</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
