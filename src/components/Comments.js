@@ -13,10 +13,10 @@ const Comments = () => {
     const anchor = document.getElementById('comments-anchor')
     
     script.setAttribute('src', 'https://giscus.app/client.js')
-    script.setAttribute('data-repo', 'gotobill/gotobill.github.io')
-    script.setAttribute('data-repo-id', 'YOUR_REPO_ID') // GitHub에서 설정 필요
+    script.setAttribute('data-repo', 'GoToBILL/gotobill.github.io')
+    script.setAttribute('data-repo-id', 'R_kgDONIkYJA')
     script.setAttribute('data-category', 'Announcements')
-    script.setAttribute('data-category-id', 'YOUR_CATEGORY_ID') // GitHub에서 설정 필요
+    script.setAttribute('data-category-id', 'DIC_kwDONIkYJM4Cz8qP')
     script.setAttribute('data-mapping', 'pathname')
     script.setAttribute('data-strict', '0')
     script.setAttribute('data-reactions-enabled', '1')

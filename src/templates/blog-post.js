@@ -6,6 +6,7 @@ import Bio from "../components/bio"
 import Layout from "../components/layout"
 import Seo from "../components/seo"
 import TableOfContents from "../components/TableOfContents"
+import Comments from "../components/Comments"
 import "../styles/blog-post-v2.css"
 
 const PageWrapper = styled.div`
@@ -262,6 +263,7 @@ const BlogPostTemplate = ({
               )}
             </NavList>
           </NavSection>
+          <Comments />
         </PostContainer>
       </PageWrapper>
       <TOCWrapper>
