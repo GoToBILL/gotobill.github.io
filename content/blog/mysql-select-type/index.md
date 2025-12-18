@@ -2,6 +2,7 @@
 title: "MySQL 실행 계획 - id와 select_type"
 date: "2025-10-23"
 description: "MySQL 실행 계획의 id와 select_type 칼럼을 이해하고 쿼리 실행 순서를 파악하는 방법을 설명합니다."
+category: "개발"
 tags: ["MySQL", "Database", "Performance", "Execution Plan"]
 ---
 

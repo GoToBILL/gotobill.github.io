@@ -2,6 +2,7 @@
 title: 'DB와 Cache 사이의 일관성 관리 전략'
 date: '2025-12-02'
 description: 'Cache-Aside, Write-Through 등 캐시 전략별 일관성 문제와 해결 방법을 상세히 알아봅니다.'
+category: "개발"
 tags: ['캐시', 'Redis', '일관성', '데이터베이스', '분산시스템']
 ---
 

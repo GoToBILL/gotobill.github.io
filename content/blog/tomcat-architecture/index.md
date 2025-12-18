@@ -2,6 +2,7 @@
 title: "Tomcat 아키텍처 완벽 가이드"
 date: "2025-12-12"
 description: "Tomcat의 핵심 컴포넌트 구조와 Connector, Container 계층을 상세히 알아봅니다."
+category: "개발"
 tags: ["Tomcat", "Java", "Web Server", "Architecture", "Spring Boot"]
 ---
 

@@ -19,3 +19,22 @@
 - 폰트: `'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif`
 - 화살표: SVG로 구현, `stroke="currentColor"` 또는 색상 직접 지정
 - 참고 파일: `static/semi-sync-vs-async.html`
+
+## 블로그 글 태그 규칙
+
+블로그 글 작성 시 아래 태그 그룹에 맞춰 태그를 선택한다. 새로운 태그가 필요하면 적절한 그룹에 추가하거나 새 그룹을 만든다.
+
+```javascript
+const TAG_GROUPS = {
+  "DB": ["MySQL", "Database", "InnoDB", "Optimizer", "Index", "Lock", "Histogram", "Statistics", "Cost Model", "Execution Plan", "Redis"],
+  "Spring": ["Spring", "Spring Boot", "Spring Data Jpa", "JPA", "@Async"],
+  "Tomcat": ["Tomcat", "Servlet", "Tuning", "Monitoring", "JMX", "Connection Pool"],
+  "Cache": ["Memcached", "캐시", "Cache", "일관성"],
+  "Async": ["NIO", "Netty", "Reactive", "WebFlux", "WebClient", "Non-Blocking", "Blocking", "Event Loop", "비동기", "비동기처리"],
+  "분산시스템": ["분산시스템", "분산 시스템", "CAP이론", "복제", "CDC", "Kafka", "RabbitMQ", "메시지큐", "Debezium", "트랜잭션아웃박스"],
+  "Java": ["Java", "JVM", "Thread", "Concurrency", "가상 스레드"],
+}
+```
+
+- 새 태그 추가 시: `src/pages/index.js`의 `TAG_GROUPS` 상수도 함께 수정
+- category는 "개발" 또는 "일상" 중 선택

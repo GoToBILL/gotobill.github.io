@@ -2,6 +2,7 @@
 title: 'Master-Slave DB 복제 환경에서의 일관성 관리'
 date: '2025-12-02'
 description: 'Master-Slave 구조에서 발생하는 복제 지연 문제와 읽기/쓰기 일관성을 보장하는 전략을 알아봅니다.'
+category: "개발"
 tags: ['데이터베이스', '복제', '일관성', 'MySQL', '분산시스템']
 ---
 

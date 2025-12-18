@@ -2,6 +2,7 @@
 title: "2025년 회고"
 date: "2025-12-18"
 description: "2025년 회고글입니다."
+category: "일상"
 tags: ["Spring Data Jpa", "오픈 소스", "오픈 소스 컨트리뷰터", "취준"]
 ---
 

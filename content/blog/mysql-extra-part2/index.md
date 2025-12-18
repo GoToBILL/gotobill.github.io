@@ -2,6 +2,7 @@
 title: 'MySQL 실행 계획 - Extra 컬럼 완벽 가이드 (2편)'
 date: '2025-10-27'
 description: 'MySQL 실행 계획의 Extra 컬럼 - 조인 버퍼, 임시 테이블, WHERE 필터링 최적화를 알아봅니다.'
+category: "개발"
 tags: ['MySQL', 'Database', 'Performance']
 ---
 

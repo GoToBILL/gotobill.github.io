@@ -2,6 +2,7 @@
 title: 'MySQL 실행 계획 - possible_keys, key, key_len, ref, rows, filtered 컬럼'
 date: '2025-10-26'
 description: 'MySQL 실행 계획에서 인덱스 사용과 비용 예측에 관련된 핵심 컬럼들을 알아봅니다.'
+category: "개발"
 tags: ['MySQL', 'Database', 'Performance']
 ---
 

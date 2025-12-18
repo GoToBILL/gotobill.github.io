@@ -2,6 +2,7 @@
 title: "MySQL 히스토그램으로 쿼리 성능 개선하기"
 date: "2025-10-18"
 description: "MySQL 8.0 히스토그램을 활용하여 데이터 분포를 정확히 파악하고 실행 계획을 개선하는 방법을 예제와 함께 설명합니다."
+category: "개발"
 tags: ["MySQL", "Database", "Performance", "Histogram", "Optimizer"]
 ---
 

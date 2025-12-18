@@ -2,6 +2,7 @@
 title: "Facebook Memcached 아키텍처 (1탄) - 기본 설계와 클러스터 내부 최적화"
 date: "2025-10-01"
 description: "초당 10억 요청을 처리하는 Facebook의 분산 캐시 시스템 기본 아키텍처와 단일 클러스터 내 최적화 전략을 분석합니다."
+category: "개발"
 tags: ["Memcached", "분산 시스템", "캐시", "성능 최적화", "확장성"]
 ---
 

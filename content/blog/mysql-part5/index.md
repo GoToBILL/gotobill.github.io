@@ -2,6 +2,7 @@
 title: "InnoDB 잠금 메커니즘"
 date: "2025-10-06"
 description: "InnoDB의 레코드 락, 갭 락, 넥스트 키 락의 동작 원리와 인덱스와 잠금의 관계를 심층 분석합니다. 잠금 확인 및 해제 방법을 실제 예제와 함께 설명합니다."
+category: "개발"
 tags: ["MySQL", "InnoDB", "Database", "Lock", "Performance", "Index", "Concurrency"]
 ---
 

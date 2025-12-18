@@ -2,6 +2,7 @@
 title: "Blocking & Non-Blocking I/O로 성능 개선하기"
 date: "2025-09-15"
 description: "Blocking & Non-Blocking의 차이를 알고 더 나아가서 성능까지 개선합니다."
+category: "개발"
 tags: ["Blocking", "Non-Blocking", "가상 스레드", "성능 개선"]
 ---
 

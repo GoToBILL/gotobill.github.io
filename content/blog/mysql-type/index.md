@@ -2,6 +2,7 @@
 title: 'MySQL 실행 계획 - type 컬럼 완벽 가이드'
 date: '2025-10-25'
 description: 'MySQL 실행 계획에서 type 컬럼의 12가지 접근 방법을 성능 순서대로 알아봅니다.'
+category: "개발"
 tags: ['MySQL', 'Database', 'Performance']
 ---
 

@@ -2,6 +2,7 @@
 title: 'MySQL 실행 계획 - table, partitions, type 컬럼'
 date: '2025-10-24'
 description: 'MySQL 실행 계획에서 table, partitions, type 컬럼을 이해하고 활용하는 방법을 알아봅니다.'
+category: "개발"
 tags: ['MySQL', 'Database', 'Performance']
 ---
 

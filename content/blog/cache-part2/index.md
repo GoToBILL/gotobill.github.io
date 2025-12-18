@@ -2,6 +2,7 @@
 title: "Facebook Memcached 아키텍처 (2탄) - 대규모 확장과 성능 최적화"
 date: "2025-10-02"
 description: "Facebook Memcached의 지역 내/지역 간 확장 전략, 일관성 유지 메커니즘, 단일 서버 성능 최적화 기법을 분석합니다."
+category: "개발"
 tags: ["Memcached", "분산 시스템", "캐시", "성능 최적화", "확장성", "일관성"]
 ---
 

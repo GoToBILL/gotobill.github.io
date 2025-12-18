@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useState, useMemo } from "react"
 import { graphql } from "gatsby"
 import styled from "styled-components"
 import { motion, AnimatePresence } from "framer-motion"
@@ -7,6 +8,18 @@ import Layout from "../components/layout"
 import Seo from "../components/seo"
 import AnimatedPostCard from "../components/AnimatedPostCard"
 import Search from "../components/Search"
+
+const CATEGORIES = ["전체", "개발", "일상"]
+
+const TAG_GROUPS = {
+  "DB": ["MySQL", "Database", "InnoDB", "Optimizer", "Index", "Lock", "Histogram", "Statistics", "Cost Model", "Execution Plan", "Redis"],
+  "Spring": ["Spring", "Spring Boot", "Spring Data Jpa", "JPA", "@Async"],
+  "Tomcat": ["Tomcat", "Servlet", "Tuning", "Monitoring", "JMX", "Connection Pool"],
+  "Cache": ["Memcached", "캐시", "Cache", "일관성"],
+  "Async": ["NIO", "Netty", "Reactive", "WebFlux", "WebClient", "Non-Blocking", "Blocking", "Event Loop", "비동기", "비동기처리"],
+  "분산시스템": ["분산시스템", "분산 시스템", "CAP이론", "복제", "CDC", "Kafka", "RabbitMQ", "메시지큐", "Debezium", "트랜잭션아웃박스"],
+  "Java": ["Java", "JVM", "Thread", "Concurrency", "가상 스레드"],
+}
 
 const HeroSection = styled(motion.section)`
   margin-bottom: 0.5rem;
@@ -103,6 +116,54 @@ const EmptyMessage = styled.p`
   font-size: 1.125rem;
 `;
 
+const FilterSection = styled.div`
+  margin-bottom: 1.5rem;
+`;
+
+const CategoryTabs = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+`;
+
+const CategoryTab = styled.button`
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: ${props => props.$active ? '#3182F6' : 'var(--color-background-secondary)'};
+  color: ${props => props.$active ? '#ffffff' : 'var(--color-text-light)'};
+
+  &:hover {
+    background: ${props => props.$active ? '#3182F6' : 'var(--color-border)'};
+  }
+`;
+
+const TagFilterWrapper = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+`;
+
+const TagChip = styled.button`
+  padding: 0.35rem 0.75rem;
+  border: 1px solid ${props => props.$active ? '#3182F6' : 'var(--color-border)'};
+  border-radius: 20px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: ${props => props.$active ? 'rgba(49, 130, 246, 0.1)' : 'transparent'};
+  color: ${props => props.$active ? '#3182F6' : 'var(--color-text-light)'};
+
+  &:hover {
+    border-color: #3182F6;
+    color: #3182F6;
+  }
+`;
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -127,6 +188,47 @@ const itemVariants = {
 const BlogIndex = ({ data, location }) => {
   const siteTitle = data.site.siteMetadata?.title || `Title`
   const posts = data.allMarkdownRemark.nodes
+
+  const [activeCategory, setActiveCategory] = useState("전체")
+  const [selectedTags, setSelectedTags] = useState([])
+
+  const categoryFilteredPosts = useMemo(() => {
+    if (activeCategory === "전체") return posts
+    return posts.filter(post => post.frontmatter.category === activeCategory)
+  }, [posts, activeCategory])
+
+  const availableGroups = useMemo(() => {
+    const allTags = new Set()
+    categoryFilteredPosts.forEach(post => {
+      post.frontmatter.tags?.forEach(tag => allTags.add(tag))
+    })
+
+    return Object.keys(TAG_GROUPS).filter(group =>
+      TAG_GROUPS[group].some(tag => allTags.has(tag))
+    )
+  }, [categoryFilteredPosts])
+
+  const filteredPosts = useMemo(() => {
+    if (selectedTags.length === 0) return categoryFilteredPosts
+
+    const expandedTags = selectedTags.flatMap(group => TAG_GROUPS[group] || [group])
+    return categoryFilteredPosts.filter(post =>
+      expandedTags.some(tag => post.frontmatter.tags?.includes(tag))
+    )
+  }, [categoryFilteredPosts, selectedTags])
+
+  const handleCategoryChange = (category) => {
+    setActiveCategory(category)
+    setSelectedTags([])
+  }
+
+  const handleTagToggle = (tag) => {
+    setSelectedTags(prev =>
+      prev.includes(tag)
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    )
+  }
 
   if (posts.length === 0) {
     return (
@@ -177,23 +279,51 @@ const BlogIndex = ({ data, location }) => {
           </GitHubLink>
         </HeroContent>
       </HeroSection>
-      
+
       <PostCount>
-        총 <strong>{posts.length}개</strong>의 포스트가 있습니다
+        총 <strong>{filteredPosts.length}개</strong>의 포스트가 있습니다
       </PostCount>
-      
-      <Search posts={posts} />
-      
+
+      <FilterSection>
+        <CategoryTabs>
+          {CATEGORIES.map(category => (
+            <CategoryTab
+              key={category}
+              $active={activeCategory === category}
+              onClick={() => handleCategoryChange(category)}
+            >
+              {category}
+            </CategoryTab>
+          ))}
+        </CategoryTabs>
+        {availableGroups.length > 0 && (
+          <TagFilterWrapper>
+            {availableGroups.map(group => (
+              <TagChip
+                key={group}
+                $active={selectedTags.includes(group)}
+                onClick={() => handleTagToggle(group)}
+              >
+                {group}
+              </TagChip>
+            ))}
+          </TagFilterWrapper>
+        )}
+      </FilterSection>
+
+      <Search posts={filteredPosts} />
+
       <AnimatePresence>
         <PostList
           variants={containerVariants}
           initial="hidden"
           animate="visible"
+          key={`${activeCategory}-${selectedTags.join(',')}`}
         >
-          {posts.map((post, index) => (
-            <AnimatedPostCard 
-              key={post.fields.slug} 
-              post={post} 
+          {filteredPosts.map((post, index) => (
+            <AnimatedPostCard
+              key={post.fields.slug}
+              post={post}
               index={index}
             />
           ))}
@@ -224,6 +354,7 @@ export const pageQuery = graphql`
           date(formatString: "YYYY년 M월 D일")
           title
           description
+          category
           tags
         }
         wordCount {

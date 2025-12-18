@@ -2,6 +2,7 @@
 title: "Netty 이벤트 루프 완전 정복"
 date: "2025-10-09"
 description: "Netty의 이벤트 루프 방식이 어떻게 수천 개의 연결을 소수의 스레드로 처리하는지 깊이 있게 분석합니다"
+category: "개발"
 tags: ["Netty", "Event Loop", "NIO", "비동기", "네트워크"]
 ---
 

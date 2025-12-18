@@ -2,6 +2,7 @@
 title: "MySQL 테이블 통계 정보 완벽 가이드"
 date: "2025-10-17"
 description: "MySQL 통계 정보가 쿼리 성능에 미치는 영향과 영구 통계 정보 관리 방법을 설명합니다."
+category: "개발"
 tags: ["MySQL", "Database", "Performance", "Statistics", "InnoDB"]
 ---
 

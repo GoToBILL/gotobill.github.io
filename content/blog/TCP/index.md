@@ -2,6 +2,7 @@
 title: "네트워크 기초 정리"
 date: "2025-09-17"
 description: "서버 개발자가 알아야 할 네트워크 기초 지식을 정리합니다."
+category: "개발"
 tags: ["TCP", "Network", "Backend"]
 ---
 

@@ -2,6 +2,7 @@
 title: "Spring WebClient와 논블로킹 I/O"
 date: "2025-10-08"
 description: "Spring WebClient를 활용한 비동기 HTTP 클라이언트 구현"
+category: "개발"
 tags: ["Spring", "WebClient", "Reactive", "Netty"]
 ---
 

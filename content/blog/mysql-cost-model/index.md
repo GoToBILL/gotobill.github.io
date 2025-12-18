@@ -2,6 +2,7 @@
 title: "MySQL 코스트 모델 이해하기"
 date: "2025-10-19"
 description: "MySQL 옵티마이저가 실행 계획의 비용을 계산하는 코스트 모델의 동작 원리와 활용 방법을 설명합니다."
+category: "개발"
 tags: ["MySQL", "Database", "Performance", "Optimizer", "Cost Model"]
 ---
 
