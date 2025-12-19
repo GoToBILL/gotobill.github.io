@@ -18,7 +18,7 @@ const TAG_GROUPS = {
   "Cache": ["Memcached", "캐시", "Cache", "일관성"],
   "Async": ["NIO", "Netty", "Reactive", "WebFlux", "WebClient", "Non-Blocking", "Blocking", "Event Loop", "비동기", "비동기처리"],
   "분산시스템": ["분산시스템", "분산 시스템", "CAP이론", "복제", "CDC", "Kafka", "RabbitMQ", "메시지큐", "Debezium", "트랜잭션아웃박스"],
-  "Java": ["Java", "JVM", "Thread", "Concurrency", "가상 스레드"],
+  "Java": ["Java", "JVM", "Thread", "가상 스레드"],
 }
 
 const HeroSection = styled(motion.section)`

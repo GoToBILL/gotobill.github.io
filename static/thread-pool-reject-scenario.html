@@ -18,7 +18,7 @@
             color: #e2e8f0;
         }
         .container {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
         }
         h1 {
@@ -26,7 +26,10 @@
             font-size: 28px;
             font-weight: 600;
             margin-bottom: 25px;
-            color: #f8fafc;
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         .config-box {
             background: rgba(255, 255, 255, 0.03);
@@ -45,7 +48,8 @@
         .config-values {
             display: flex;
             justify-content: center;
-            gap: 30px;
+            gap: 25px;
+            flex-wrap: wrap;
         }
         .config-item {
             display: flex;
@@ -62,32 +66,70 @@
             font-weight: 600;
             color: #fbbf24;
         }
-        .scenario-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-        .scenario {
+        .phase {
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(20px);
+            border-radius: 24px;
             border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+        .phase-label {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+        .phase-label.connection {
+            background: rgba(129, 140, 248, 0.2);
+            color: #a5b4fc;
+        }
+        .phase-label.processing {
+            background: rgba(74, 222, 128, 0.2);
+            color: #86efac;
+        }
+        .phase-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-left: 12px;
+            border-left: 3px solid #60a5fa;
+        }
+        .scenario-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        @media (max-width: 900px) {
+            .scenario-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 600px) {
+            .scenario-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .scenario {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 16px;
-            padding: 20px;
+            padding: 18px;
         }
         .scenario-header {
             text-align: center;
-            margin-bottom: 15px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
         .scenario-num {
-            font-size: 12px;
+            font-size: 11px;
             color: #64748b;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
         }
         .scenario-title {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
         }
         .scenario-ok .scenario-title { color: #34d399; }
@@ -95,17 +137,17 @@
         .scenario-queue .scenario-title { color: #f97316; }
         .scenario-reject .scenario-title { color: #f87171; }
         .meter {
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
         .meter-label {
             display: flex;
             justify-content: space-between;
-            font-size: 12px;
+            font-size: 11px;
             color: #94a3b8;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
         }
         .meter-bar {
-            height: 24px;
+            height: 22px;
             background: rgba(0, 0, 0, 0.3);
             border-radius: 6px;
             overflow: hidden;
@@ -117,27 +159,20 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
         }
         .fill-green { background: linear-gradient(135deg, #14532d 0%, #15803d 100%); }
         .fill-yellow { background: linear-gradient(135deg, #713f12 0%, #a16207 100%); }
         .fill-orange { background: linear-gradient(135deg, #7c2d12 0%, #c2410c 100%); }
         .fill-red { background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%); }
-        .meter-limit {
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 10px;
-            color: rgba(255,255,255,0.5);
-        }
         .result {
             text-align: center;
-            padding: 12px;
+            padding: 10px;
             border-radius: 10px;
-            font-size: 13px;
-            margin-top: 12px;
+            font-size: 12px;
+            margin-top: 10px;
+            line-height: 1.4;
         }
         .result-ok {
             background: rgba(34, 197, 94, 0.15);
@@ -159,60 +194,30 @@
             border: 1px solid rgba(239, 68, 68, 0.3);
             color: #f87171;
         }
-        .flow-diagram {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 25px;
-        }
-        .flow-title {
-            text-align: center;
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 20px;
-        }
-        .flow-steps {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .flow-step {
-            padding: 12px 20px;
-            border-radius: 10px;
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
             font-size: 13px;
-            text-align: center;
         }
-        .step-request {
-            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d3d 100%);
-            border: 1px solid rgba(148, 163, 184, 0.3);
+        .summary-table th, .summary-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .step-threads {
-            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
-            border: 1px solid rgba(34, 197, 94, 0.3);
-        }
-        .step-connections {
-            background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-        }
-        .step-backlog {
-            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
-            border: 1px solid rgba(234, 179, 8, 0.3);
-        }
-        .step-reject {
-            background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-        }
-        .flow-arrow {
-            color: #64748b;
-            font-size: 20px;
-        }
-        .flow-check {
-            font-size: 11px;
+        .summary-table th {
             color: #94a3b8;
-            margin-top: 4px;
+            font-weight: 500;
+            font-size: 12px;
+        }
+        .summary-table td:first-child {
+            font-family: 'SF Mono', monospace;
+            color: #fbbf24;
+            font-size: 12px;
+        }
+        .highlight {
+            color: #60a5fa;
+            font-weight: 600;
         }
     </style>
 </head>
@@ -224,210 +229,279 @@
             <div class="config-title">설정값 예시</div>
             <div class="config-values">
                 <div class="config-item">
-                    <span class="config-label">maxThreads:</span>
-                    <span class="config-value">200</span>
+                    <span class="config-label">acceptCount:</span>
+                    <span class="config-value">100</span>
                 </div>
                 <div class="config-item">
                     <span class="config-label">maxConnections:</span>
                     <span class="config-value">10000</span>
                 </div>
                 <div class="config-item">
-                    <span class="config-label">acceptCount:</span>
+                    <span class="config-label">maxThreads:</span>
+                    <span class="config-value">200</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">maxQueueSize:</span>
                     <span class="config-value">100</span>
                 </div>
             </div>
         </div>
 
-        <div class="scenario-grid">
-            <!-- Scenario 1: Normal -->
-            <div class="scenario scenario-ok">
-                <div class="scenario-header">
-                    <div class="scenario-num">시나리오 1</div>
-                    <div class="scenario-title">정상 처리</div>
+        <!-- Phase 1: TCP 연결 단계 -->
+        <div class="phase">
+            <span class="phase-label connection">Phase 1: TCP 연결 단계</span>
+            <h2 class="phase-title">연결 수락 시나리오</h2>
+
+            <div class="scenario-grid">
+                <!-- 정상 연결 -->
+                <div class="scenario scenario-ok">
+                    <div class="scenario-header">
+                        <div class="scenario-num">시나리오 1-1</div>
+                        <div class="scenario-title">정상 연결</div>
+                    </div>
+                    <div class="meter">
+                        <div class="meter-label">
+                            <span>Poller 연결 수</span>
+                            <span>500 / 10000</span>
+                        </div>
+                        <div class="meter-bar">
+                            <div class="meter-fill fill-green" style="width: 5%"></div>
+                        </div>
+                    </div>
+                    <div class="meter">
+                        <div class="meter-label">
+                            <span>TCP Backlog</span>
+                            <span>0 / 100</span>
+                        </div>
+                        <div class="meter-bar">
+                            <div class="meter-fill fill-green" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="result result-ok">
+                        Acceptor가 즉시 accept()<br>Poller에 등록
+                    </div>
                 </div>
-                <div class="meter">
-                    <div class="meter-label">
-                        <span>활성 스레드</span>
-                        <span>50 / 200</span>
+
+                <!-- maxConnections 초과 -->
+                <div class="scenario scenario-wait">
+                    <div class="scenario-header">
+                        <div class="scenario-num">시나리오 1-2</div>
+                        <div class="scenario-title">연결 한도 도달</div>
                     </div>
-                    <div class="meter-bar">
-                        <div class="meter-fill fill-green" style="width: 25%">50</div>
+                    <div class="meter">
+                        <div class="meter-label">
+                            <span>Poller 연결 수</span>
+                            <span>10000 / 10000</span>
+                        </div>
+                        <div class="meter-bar">
+                            <div class="meter-fill fill-yellow" style="width: 100%">FULL</div>
+                        </div>
+                    </div>
+                    <div class="meter">
+                        <div class="meter-label">
+                            <span>TCP Backlog</span>
+                            <span>50 / 100</span>
+                        </div>
+                        <div class="meter-bar">
+                            <div class="meter-fill fill-yellow" style="width: 50%">50</div>
+                        </div>
+                    </div>
+                    <div class="result result-wait">
+                        OS TCP Backlog에서 대기<br>연결 종료 시 accept()
                     </div>
                 </div>
-                <div class="meter">
-                    <div class="meter-label">
-                        <span>연결 수</span>
-                        <span>500 / 10000</span>
+
+                <!-- 완전 거절 -->
+                <div class="scenario scenario-reject">
+                    <div class="scenario-header">
+                        <div class="scenario-num">시나리오 1-3</div>
+                        <div class="scenario-title">연결 거절</div>
                     </div>
-                    <div class="meter-bar">
-                        <div class="meter-fill fill-green" style="width: 5%"></div>
+                    <div class="meter">
+                        <div class="meter-label">
+                            <span>Poller 연결 수</span>
+                            <span>10000 / 10000</span>
+                        </div>
+                        <div class="meter-bar">
+                            <div class="meter-fill fill-red" style="width: 100%">FULL</div>
+                        </div>
                     </div>
-                </div>
-                <div class="meter">
-                    <div class="meter-label">
-                        <span>OS Backlog</span>
-                        <span>0 / 100</span>
+                    <div class="meter">
+                        <div class="meter-label">
+                            <span>TCP Backlog</span>
+                            <span>100 / 100</span>
+                        </div>
+                        <div class="meter-bar">
+                            <div class="meter-fill fill-red" style="width: 100%">FULL</div>
+                        </div>
                     </div>
-                    <div class="meter-bar">
-                        <div class="meter-fill fill-green" style="width: 0%"></div>
+                    <div class="result result-reject">
+                        Connection Refused<br>TCP 연결 자체 실패
                     </div>
-                </div>
-                <div class="result result-ok">
-                    즉시 Worker 할당<br>요청 처리 시작
                 </div>
             </div>
 
-            <!-- Scenario 2: Thread Pool Full -->
-            <div class="scenario scenario-wait">
-                <div class="scenario-header">
-                    <div class="scenario-num">시나리오 2</div>
-                    <div class="scenario-title">스레드 부족</div>
-                </div>
-                <div class="meter">
-                    <div class="meter-label">
-                        <span>활성 스레드</span>
-                        <span>200 / 200</span>
-                    </div>
-                    <div class="meter-bar">
-                        <div class="meter-fill fill-yellow" style="width: 100%">FULL</div>
-                    </div>
-                </div>
-                <div class="meter">
-                    <div class="meter-label">
-                        <span>연결 수</span>
-                        <span>5000 / 10000</span>
-                    </div>
-                    <div class="meter-bar">
-                        <div class="meter-fill fill-yellow" style="width: 50%"></div>
-                    </div>
-                </div>
-                <div class="meter">
-                    <div class="meter-label">
-                        <span>OS Backlog</span>
-                        <span>0 / 100</span>
-                    </div>
-                    <div class="meter-bar">
-                        <div class="meter-fill fill-green" style="width: 0%"></div>
-                    </div>
-                </div>
-                <div class="result result-wait">
-                    Poller에서 대기<br>스레드 반환 시 처리
-                </div>
-            </div>
-
-            <!-- Scenario 3: Connection Full -->
-            <div class="scenario scenario-queue">
-                <div class="scenario-header">
-                    <div class="scenario-num">시나리오 3</div>
-                    <div class="scenario-title">연결 한도 초과</div>
-                </div>
-                <div class="meter">
-                    <div class="meter-label">
-                        <span>활성 스레드</span>
-                        <span>200 / 200</span>
-                    </div>
-                    <div class="meter-bar">
-                        <div class="meter-fill fill-orange" style="width: 100%">FULL</div>
-                    </div>
-                </div>
-                <div class="meter">
-                    <div class="meter-label">
-                        <span>연결 수</span>
-                        <span>10000 / 10000</span>
-                    </div>
-                    <div class="meter-bar">
-                        <div class="meter-fill fill-orange" style="width: 100%">FULL</div>
-                    </div>
-                </div>
-                <div class="meter">
-                    <div class="meter-label">
-                        <span>OS Backlog</span>
-                        <span>50 / 100</span>
-                    </div>
-                    <div class="meter-bar">
-                        <div class="meter-fill fill-orange" style="width: 50%">50</div>
-                    </div>
-                </div>
-                <div class="result result-queue">
-                    OS Backlog 대기<br>TCP 3-way 완료 대기
-                </div>
-            </div>
-
-            <!-- Scenario 4: Everything Full -->
-            <div class="scenario scenario-reject">
-                <div class="scenario-header">
-                    <div class="scenario-num">시나리오 4</div>
-                    <div class="scenario-title">완전 거절</div>
-                </div>
-                <div class="meter">
-                    <div class="meter-label">
-                        <span>활성 스레드</span>
-                        <span>200 / 200</span>
-                    </div>
-                    <div class="meter-bar">
-                        <div class="meter-fill fill-red" style="width: 100%">FULL</div>
-                    </div>
-                </div>
-                <div class="meter">
-                    <div class="meter-label">
-                        <span>연결 수</span>
-                        <span>10000 / 10000</span>
-                    </div>
-                    <div class="meter-bar">
-                        <div class="meter-fill fill-red" style="width: 100%">FULL</div>
-                    </div>
-                </div>
-                <div class="meter">
-                    <div class="meter-label">
-                        <span>OS Backlog</span>
-                        <span>100 / 100</span>
-                    </div>
-                    <div class="meter-bar">
-                        <div class="meter-fill fill-red" style="width: 100%">FULL</div>
-                    </div>
-                </div>
-                <div class="result result-reject">
-                    Connection Refused<br>클라이언트 에러 수신
-                </div>
-            </div>
+            <table class="summary-table">
+                <tr>
+                    <th>설정</th>
+                    <th>역할</th>
+                    <th>초과 시</th>
+                </tr>
+                <tr>
+                    <td>maxConnections</td>
+                    <td>Poller가 관리하는 최대 연결 수</td>
+                    <td>TCP Backlog로 대기</td>
+                </tr>
+                <tr>
+                    <td>acceptCount</td>
+                    <td>OS TCP Backlog 큐 크기</td>
+                    <td>Connection Refused</td>
+                </tr>
+            </table>
         </div>
 
-        <div class="flow-diagram">
-            <div class="flow-title">요청 처리 흐름</div>
-            <div class="flow-steps">
-                <div class="flow-step step-request">
-                    요청 도착
+        <!-- Phase 2: 요청 처리 단계 -->
+        <div class="phase">
+            <span class="phase-label processing">Phase 2: 요청 처리 단계</span>
+            <h2 class="phase-title">요청 처리 시나리오 (연결된 소켓에서 HTTP 요청 수신 시)</h2>
+
+            <div class="scenario-grid">
+                <!-- 정상 처리 -->
+                <div class="scenario scenario-ok">
+                    <div class="scenario-header">
+                        <div class="scenario-num">시나리오 2-1</div>
+                        <div class="scenario-title">정상 처리</div>
+                    </div>
+                    <div class="meter">
+                        <div class="meter-label">
+                            <span>활성 Worker 스레드</span>
+                            <span>50 / 200</span>
+                        </div>
+                        <div class="meter-bar">
+                            <div class="meter-fill fill-green" style="width: 25%">50</div>
+                        </div>
+                    </div>
+                    <div class="meter">
+                        <div class="meter-label">
+                            <span>TaskQueue</span>
+                            <span>0 / 100</span>
+                        </div>
+                        <div class="meter-bar">
+                            <div class="meter-fill fill-green" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="result result-ok">
+                        즉시 Worker 할당<br>요청 처리 시작
+                    </div>
                 </div>
-                <span class="flow-arrow">→</span>
-                <div class="flow-step step-connections">
-                    maxConnections<br>
-                    <div class="flow-check">10000 이하?</div>
+
+                <!-- 스레드 부족 - 대기 -->
+                <div class="scenario scenario-wait">
+                    <div class="scenario-header">
+                        <div class="scenario-num">시나리오 2-2</div>
+                        <div class="scenario-title">스레드 부족</div>
+                    </div>
+                    <div class="meter">
+                        <div class="meter-label">
+                            <span>활성 Worker 스레드</span>
+                            <span>200 / 200</span>
+                        </div>
+                        <div class="meter-bar">
+                            <div class="meter-fill fill-yellow" style="width: 100%">FULL</div>
+                        </div>
+                    </div>
+                    <div class="meter">
+                        <div class="meter-label">
+                            <span>TaskQueue</span>
+                            <span>50 / 100</span>
+                        </div>
+                        <div class="meter-bar">
+                            <div class="meter-fill fill-yellow" style="width: 50%">50</div>
+                        </div>
+                    </div>
+                    <div class="result result-wait">
+                        TaskQueue에서 대기<br>스레드 반환 시 처리
+                    </div>
                 </div>
-                <span class="flow-arrow">→</span>
-                <div class="flow-step step-threads">
-                    maxThreads<br>
-                    <div class="flow-check">200 이하?</div>
-                </div>
-                <span class="flow-arrow">→</span>
-                <div class="flow-step step-threads">
-                    Worker 할당<br>
-                    <div class="flow-check">요청 처리</div>
+
+                <!-- 완전 거절 -->
+                <div class="scenario scenario-reject">
+                    <div class="scenario-header">
+                        <div class="scenario-num">시나리오 2-3</div>
+                        <div class="scenario-title">요청 거절</div>
+                    </div>
+                    <div class="meter">
+                        <div class="meter-label">
+                            <span>활성 Worker 스레드</span>
+                            <span>200 / 200</span>
+                        </div>
+                        <div class="meter-bar">
+                            <div class="meter-fill fill-red" style="width: 100%">FULL</div>
+                        </div>
+                    </div>
+                    <div class="meter">
+                        <div class="meter-label">
+                            <span>TaskQueue</span>
+                            <span>100 / 100</span>
+                        </div>
+                        <div class="meter-bar">
+                            <div class="meter-fill fill-red" style="width: 100%">FULL</div>
+                        </div>
+                    </div>
+                    <div class="result result-reject">
+                        RejectedExecutionException<br>HTTP 503 응답
+                    </div>
                 </div>
             </div>
-            <div class="flow-steps" style="margin-top: 15px;">
-                <div class="flow-step step-request" style="visibility: hidden;">
-                    요청 도착
-                </div>
-                <span class="flow-arrow" style="visibility: hidden;">→</span>
-                <div class="flow-step step-backlog">
-                    acceptCount<br>
-                    <div class="flow-check">100 이하?</div>
-                </div>
-                <span class="flow-arrow">→</span>
-                <div class="flow-step step-reject">
-                    Connection<br>Refused
-                </div>
-            </div>
+
+            <table class="summary-table">
+                <tr>
+                    <th>설정</th>
+                    <th>역할</th>
+                    <th>초과 시</th>
+                </tr>
+                <tr>
+                    <td>maxThreads</td>
+                    <td>동시 요청 처리 Worker 스레드 수</td>
+                    <td>TaskQueue에 대기</td>
+                </tr>
+                <tr>
+                    <td>maxQueueSize</td>
+                    <td>스레드 부족 시 대기 큐 크기</td>
+                    <td>RejectedExecutionException</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- 전체 요약 -->
+        <div class="phase">
+            <h2 class="phase-title">전체 흐름 요약</h2>
+            <table class="summary-table">
+                <tr>
+                    <th>단계</th>
+                    <th>대기 장소</th>
+                    <th>관련 설정</th>
+                    <th>초과 시 결과</th>
+                </tr>
+                <tr>
+                    <td>연결 전</td>
+                    <td>TCP Backlog (OS 레벨)</td>
+                    <td>acceptCount</td>
+                    <td>Connection Refused</td>
+                </tr>
+                <tr>
+                    <td>연결 후</td>
+                    <td>Poller (Selector)</td>
+                    <td>maxConnections</td>
+                    <td>TCP Backlog로 밀림</td>
+                </tr>
+                <tr>
+                    <td>요청 대기</td>
+                    <td>TaskQueue (Executor)</td>
+                    <td>maxQueueSize</td>
+                    <td>RejectedExecutionException</td>
+                </tr>
+            </table>
         </div>
     </div>
 </body>

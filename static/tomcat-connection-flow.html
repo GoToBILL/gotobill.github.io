@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tomcat 연결 및 요청 처리 흐름</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: #e2e8f0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 40px;
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            padding-left: 16px;
+            border-left: 4px solid #60a5fa;
+            color: #f1f5f9;
+        }
+
+        .phase {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            margin-bottom: 40px;
+        }
+
+        .flow-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .flow-item {
+            flex: 1;
+            min-width: 140px;
+            max-width: 180px;
+            padding: 20px 15px;
+            border-radius: 16px;
+            text-align: center;
+            position: relative;
+        }
+
+        .flow-item.client {
+            background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .flow-item.backlog {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .flow-item.acceptor {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            border: 1px solid rgba(129, 140, 248, 0.3);
+        }
+
+        .flow-item.poller {
+            background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+
+        .flow-item.queue {
+            background: linear-gradient(135deg, #7c2d12 0%, #c2410c 100%);
+            border: 1px solid rgba(251, 146, 60, 0.3);
+        }
+
+        .flow-item.worker {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            border: 1px solid rgba(74, 222, 128, 0.3);
+        }
+
+        .flow-item.reject {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .flow-item h3 {
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .flow-item .config {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 6px;
+            font-family: 'SF Mono', monospace;
+        }
+
+        .flow-item .desc {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 4px;
+        }
+
+        .arrow {
+            color: #60a5fa;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .comparison-card {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .comparison-card h4 {
+            font-size: 1rem;
+            margin-bottom: 16px;
+            color: #f1f5f9;
+        }
+
+        .comparison-card.standard h4 {
+            color: #94a3b8;
+        }
+
+        .comparison-card.tomcat h4 {
+            color: #60a5fa;
+        }
+
+        .step-list {
+            list-style: none;
+        }
+
+        .step-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .step-list li:last-child {
+            border-bottom: none;
+        }
+
+        .step-num {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .highlight {
+            color: #fbbf24;
+            font-weight: 600;
+        }
+
+        .summary-box {
+            background: rgba(96, 165, 250, 0.1);
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .summary-box h4 {
+            color: #60a5fa;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+        }
+
+        .summary-box p {
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            line-height: 1.6;
+        }
+
+        .config-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 0.85rem;
+        }
+
+        .config-table th, .config-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .config-table th {
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .config-table td:first-child {
+            font-family: 'SF Mono', monospace;
+            color: #fbbf24;
+        }
+
+        .phase-label {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            margin-bottom: 16px;
+        }
+
+        .phase-label.connection {
+            background: rgba(129, 140, 248, 0.2);
+            color: #a5b4fc;
+        }
+
+        .phase-label.processing {
+            background: rgba(74, 222, 128, 0.2);
+            color: #86efac;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tomcat 연결 및 요청 처리 흐름</h1>
+
+        <!-- Phase 1: Connection -->
+        <div class="phase">
+            <span class="phase-label connection">Phase 1: TCP 연결 단계</span>
+            <h2 class="section-title">연결 수락 과정</h2>
+
+            <div class="flow-container">
+                <div class="flow-item client">
+                    <h3>Client</h3>
+                    <div class="desc">TCP 연결 요청</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="flow-item backlog">
+                    <h3>TCP Backlog</h3>
+                    <div class="config">acceptCount=100</div>
+                    <div class="desc">OS 레벨 대기열</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="flow-item acceptor">
+                    <h3>Acceptor</h3>
+                    <div class="config">1-2개 스레드</div>
+                    <div class="desc">accept() 호출</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="flow-item poller">
+                    <h3>Poller</h3>
+                    <div class="config">maxConnections=10000</div>
+                    <div class="desc">Selector 등록</div>
+                </div>
+            </div>
+
+            <table class="config-table">
+                <tr>
+                    <th>설정</th>
+                    <th>역할</th>
+                    <th>초과 시</th>
+                </tr>
+                <tr>
+                    <td>maxConnections</td>
+                    <td>Poller가 관리하는 최대 연결 수</td>
+                    <td>TCP Backlog로 대기</td>
+                </tr>
+                <tr>
+                    <td>acceptCount</td>
+                    <td>OS TCP Backlog 큐 크기</td>
+                    <td>Connection Refused</td>
+                </tr>
+            </table>
+
+            <div class="summary-box">
+                <h4>핵심 포인트</h4>
+                <p>TCP 3-way handshake가 완료된 연결이 <span class="highlight">acceptCount</span> 큐에서 대기합니다.
+                Acceptor가 accept()하면 Poller에 등록되고, <span class="highlight">maxConnections</span>까지 연결을 유지합니다.
+                이 단계에서는 아직 HTTP 요청을 처리하지 않습니다.</p>
+            </div>
+        </div>
+
+        <!-- Phase 2: Request Processing -->
+        <div class="phase">
+            <span class="phase-label processing">Phase 2: 요청 처리 단계</span>
+            <h2 class="section-title">요청 처리 과정</h2>
+
+            <div class="flow-container">
+                <div class="flow-item poller">
+                    <h3>Poller</h3>
+                    <div class="desc">READ 이벤트 감지</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="flow-item worker">
+                    <h3>Worker Thread</h3>
+                    <div class="config">maxThreads=200</div>
+                    <div class="desc">즉시 할당 시도</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="flow-item queue">
+                    <h3>TaskQueue</h3>
+                    <div class="config">maxQueueSize=100</div>
+                    <div class="desc">스레드 부족 시 대기</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="flow-item reject">
+                    <h3>Reject</h3>
+                    <div class="desc">RejectedExecution</div>
+                </div>
+            </div>
+
+            <div class="comparison">
+                <div class="comparison-card standard">
+                    <h4>일반 ThreadPoolExecutor</h4>
+                    <ul class="step-list">
+                        <li><span class="step-num">1</span>corePoolSize까지 스레드 생성</li>
+                        <li><span class="step-num">2</span>core 다 차면 <span class="highlight">큐에 먼저</span> 넣음</li>
+                        <li><span class="step-num">3</span>큐 다 차면 maxPoolSize까지 스레드 추가</li>
+                        <li><span class="step-num">4</span>max도 다 차면 reject</li>
+                    </ul>
+                </div>
+                <div class="comparison-card tomcat">
+                    <h4>Tomcat TaskQueue</h4>
+                    <ul class="step-list">
+                        <li><span class="step-num">1</span>corePoolSize까지 스레드 생성</li>
+                        <li><span class="step-num">2</span>core 다 차면 <span class="highlight">maxPoolSize까지 스레드 먼저</span> 생성</li>
+                        <li><span class="step-num">3</span>max도 다 차면 그제서야 큐에 넣음</li>
+                        <li><span class="step-num">4</span>큐도 다 차면 reject</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="summary-box">
+                <h4>Tomcat이 다른 이유</h4>
+                <p>일반 ThreadPoolExecutor는 큐를 먼저 채우고 스레드를 나중에 만듭니다.
+                하지만 Tomcat은 <span class="highlight">스레드를 먼저 최대한 만들고</span> 큐는 마지막에 씁니다.
+                이렇게 하면 요청이 큐에서 대기하는 시간이 줄어들어 응답 지연이 감소합니다.</p>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="phase">
+            <h2 class="section-title">전체 흐름 요약</h2>
+
+            <table class="config-table">
+                <tr>
+                    <th>단계</th>
+                    <th>대기 장소</th>
+                    <th>설정</th>
+                    <th>초과 시 결과</th>
+                </tr>
+                <tr>
+                    <td>연결 전</td>
+                    <td>TCP Backlog (OS)</td>
+                    <td>acceptCount</td>
+                    <td>Connection Refused</td>
+                </tr>
+                <tr>
+                    <td>연결 후</td>
+                    <td>Poller (Selector)</td>
+                    <td>maxConnections</td>
+                    <td>TCP Backlog로 밀림</td>
+                </tr>
+                <tr>
+                    <td>처리 대기</td>
+                    <td>TaskQueue</td>
+                    <td>maxQueueSize</td>
+                    <td>RejectedExecutionException</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

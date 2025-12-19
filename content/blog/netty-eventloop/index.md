@@ -610,7 +610,7 @@ private int select(long deadlineNanos) throws IOException {
     long timeoutMillis = deadlineToDelayNanos(deadlineNanos + 995000L) / 1000000L;
 
     // 타임아웃이 0 이하면 논블로킹 select
-    return timeoutMillis <= 0 ? selector.selectNow() : selector.select(timeoutMillis);
+    return timeoutMillis <= 0 ? selector.selectNow(): selector.select(timeoutMillis);
     //                          ↑ 즉시 반환           ↑ 타임아웃 대기
 }
 ```
