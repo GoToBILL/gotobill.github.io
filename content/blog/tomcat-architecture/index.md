@@ -219,40 +219,29 @@ Tomcat 8.5+부터 NIO/NIO2도 OpenSSL을 사용할 수 있게 되어 APR의 가�
            protocol="HTTP/1.1"
 
            <!-- Thread Pool -->
-           maxThreads="200"           <!-- 최대 Worker Thread 수 -->
-           minSpareThreads="10"       <!-- 최소 유휴 Thread 수 -->
+           maxThreads="200"           <!-- 최대 Worker Thread 수 (기본값: 200) -->
+           minSpareThreads="10"       <!-- 최소 유휴 Thread 수 (기본값: 10) -->
 
            <!-- Connection Pool -->
-           maxConnections="10000"     <!-- 최대 동시 연결 수 -->
-           acceptCount="100"          <!-- 대기열 크기 (OS backlog) -->
+           maxConnections="10000"     <!-- 최대 동시 연결 수 (기본값: NIO 10000) -->
+           acceptCount="100"          <!-- 대기열 크기, OS backlog (기본값: 100) -->
 
            <!-- Timeout -->
-           connectionTimeout="20000"  <!-- Socket read timeout (ms) -->
-           keepAliveTimeout="60000"   <!-- Keep-Alive timeout -->
+           connectionTimeout="20000"  <!-- 요청 헤더 읽기 타임아웃 (기본값: 20000ms) -->
+           keepAliveTimeout="60000"   <!-- Keep-Alive 타임아웃 (기본값: connectionTimeout) -->
 
            <!-- Keep-Alive -->
-           maxKeepAliveRequests="100" <!-- 하나의 연결에서 최대 요청 수 -->
+           maxKeepAliveRequests="100" <!-- 하나의 연결에서 최대 요청 수 (기본값: 100) -->
 
            <!-- I/O -->
-           compression="on"           <!-- 응답 압축 -->
-           compressionMinSize="2048"  <!-- 압축 최소 크기 -->
+           compression="on"           <!-- 응답 압축 (기본값: off) -->
+           compressionMinSize="2048"  <!-- 압축 최소 크기 (기본값: 2048) -->
            />
 ```
 
-### maxConnections vs maxThreads
+Connector에서 `maxThreads`를 직접 설정하면 내장 ThreadPool을 사용하며, 이 경우 `maxQueueSize`는 `Integer.MAX_VALUE`(사실상 무제한)입니다. `maxQueueSize`를 제어하려면 별도 Executor를 정의해야 합니다.
 
-| 설정 | 설명 |
-|------|------|
-| **maxConnections** | 동시에 유지할 수 있는 TCP 연결 수 (NIO 기본값: 10000) |
-| **maxThreads** | 요청을 처리할 Worker Thread 수 (기본값: 200) |
-
-예: `maxConnections=10000`, `maxThreads=200`이면 10000개 연결 중 200개만 동시 처리, 나머지는 대기합니다.
-
-### acceptCount 동작 원리
-
-- maxConnections 초과 시 OS 레벨 backlog에 대기
-- acceptCount=100이면 큐에 100개까지 대기
-- 큐도 가득차면 클라이언트는 **Connection Refused** 에러 수신
+각 파라미터의 상세 동작 원리는 [Tomcat 요청 처리 흐름과 Thread 모델](/tomcat-request-flow/)에서 다룹니다.
 
 ## Container 계층 구조
 
