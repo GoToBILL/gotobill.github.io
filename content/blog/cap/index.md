@@ -1,5 +1,5 @@
 ---
-title: '분산 시스템의 CAP 이론 완벽 가이드'
+title: '분산 시스템의 CAP 이론'
 date: '2025-11-21'
 description: 'CAP 이론의 핵심 개념부터 적용까지, CP/AP 시스템 설계 전략과 구현 기법을 상세히 알아봅니다.'
 category: "개발"
@@ -159,7 +159,7 @@ public class SynchronousReplicationService {
         List<Node> replicas = getAllReplicas();
 
         // 모든 복제본에 동시 쓰기
-        for (Node node : replicas) {
+        for (Node node: replicas) {
             node.write(key, value); // 블로킹 대기
         }
 
@@ -181,7 +181,7 @@ public class AsynchronousReplicationService {
 
         // 백그라운드로 복제
         executor.submit(() -> {
-            for (Node replica : replicas) {
+            for (Node replica: replicas) {
                 replica.write(key, value);
             }
         });

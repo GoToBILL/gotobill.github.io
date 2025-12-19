@@ -1,5 +1,5 @@
 ---
-title: "Tomcat 성능 튜닝 완벽 가이드"
+title: "Tomcat 성능 튜닝"
 date: "2025-12-14"
 description: "Thread Pool과 OS 레벨에서 Tomcat 성능을 최적화하는 방법을 상세히 알아봅니다."
 category: "개발"

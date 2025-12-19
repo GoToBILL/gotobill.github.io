@@ -1,5 +1,5 @@
 ---
-title: "비동기 처리 완벽 가이드: 메시지 큐부터 CDC까지 5가지 구현 방법"
+title: "비동기 처리: 메시지 큐부터 CDC까지 5가지 구현 방법"
 date: "2025-09-22"
 description: "동기 vs 비동기 처리의 차이점과 5가지 비동기 구현 패턴(스레드, 메시지 큐, 트랜잭션 아웃박스, 배치, CDC)을 코드 예제와 함께 상세히 설명합니다."
 category: "개발"
@@ -387,7 +387,7 @@ public void sendPushAsync(PushData pushData) {
 #### 글로벌 트랜잭션
 - **개념**: 여러 데이터베이스를 하나의 트랜잭션으로 처리
 - **알고리즘**: 2-Phase Commit (2PC)
-- **장단점**: 
+- **장단점**:
   - 장점: DB 변경과 메시지 전송을 하나의 트랜잭션으로 묶음
   - 단점: 성능 저하, 모든 메시징 시스템이 지원하지 않음
 
@@ -464,7 +464,7 @@ while(true) {
 - 두 데이터 저장소 간 일관성을 보장하지만 즉시는 아님
 - **"일정 시간 후에" 일관성 달성**
 #### 예시
-1. 배송기사 : **"배송 완료!"** (배송 시스템에 기록)
+1. 배송기사: **"배송 완료!"** (배송 시스템에 기록)
 2. 고객 앱: **아직 "배송 중"으로 표시** (몇 분 지연)
 3. **최종**: 메시지 전달 후 고객 앱도 "배송 완료"로 변경
 
@@ -512,7 +512,7 @@ public void processMessages() {
     // 아웃박스 테이블에서 대기 메시지 데이터를 순서대로 조회함
     List<MessageData> waitingMessages = selectWaitingMessages();
     
-    for (MessageData m : waitingMessages) {
+    for (MessageData m: waitingMessages) {
         try {
             sendMessage(m); // 메시지를 전송함
             markDone(m.getId()); // 발송 완료 표시함

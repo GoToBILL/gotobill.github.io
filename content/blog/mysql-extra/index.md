@@ -1,5 +1,5 @@
 ---
-title: 'MySQL 실행 계획 - Extra 컬럼 완벽 가이드 (1편)'
+title: 'MySQL 실행 계획 - Extra 컬럼 (1편)'
 date: '2025-10-27'
 description: 'MySQL 실행 계획의 Extra 컬럼에 표시되는 주요 메시지들과 성능 최적화 방법을 알아봅니다.'
 category: "개발"
