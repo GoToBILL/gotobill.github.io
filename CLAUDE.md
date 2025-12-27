@@ -6,7 +6,7 @@
 ## HTML 다이어그램 테마 (static 폴더용)
 
 다이어그램 HTML 만들 때 아래 테마 사용:
-- 다크 배경: `background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)`
+- 다크 배경: `background: #111827` (블로그 다크 모드 배경색과 동일)
 - 카드: 글래스모피즘 (`background: rgba(255, 255, 255, 0.03)`, `backdrop-filter: blur(20px)`, `border-radius: 24px`)
 - 노드 색상:
   - Master: `linear-gradient(135deg, #312e81 0%, #4338ca 100%)` (보라)
