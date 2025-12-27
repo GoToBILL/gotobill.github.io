@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Table</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 48px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .title {
+            text-align: center;
+            color: #e0e7ff;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 36px;
+        }
+
+        .diagram {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            position: relative;
+        }
+
+        .generation-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .gen-label {
+            width: 120px;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .young-label {
+            color: #86efac;
+        }
+
+        .old-label {
+            color: #a5b4fc;
+        }
+
+        .card-label {
+            color: #fbbf24;
+        }
+
+        .memory-blocks {
+            display: flex;
+            gap: 4px;
+            position: relative;
+        }
+
+        .block {
+            width: 44px;
+            height: 44px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .young-block {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            border: 1px solid rgba(134, 239, 172, 0.3);
+        }
+
+        .young-block.referenced {
+            border: 2px solid #86efac;
+            box-shadow: 0 0 12px rgba(134, 239, 172, 0.3);
+        }
+
+        .old-block {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            border: 1px solid rgba(165, 180, 252, 0.3);
+        }
+
+        .old-block.has-ref {
+            border: 2px solid #fbbf24;
+        }
+
+        .card {
+            width: 44px;
+            height: 28px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .card.clean {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .card.dirty {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+            border: 1px solid rgba(251, 191, 36, 0.5);
+            color: #fef3c7;
+        }
+
+        /* Reference arrows using SVG */
+        .arrows-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .arrow-svg {
+            position: absolute;
+            overflow: visible;
+        }
+
+        .reference-info {
+            margin-top: 24px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .info-title {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .info-items {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .info-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .info-icon.dirty {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+        }
+
+        .info-icon.clean {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .ref-arrow {
+            stroke: #fbbf24;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+
+        .defs-container {
+            position: absolute;
+            width: 0;
+            height: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">Card Table</div>
+
+        <!-- SVG Defs for arrow marker -->
+        <svg class="defs-container">
+            <defs>
+                <marker id="arrowhead" markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto">
+                    <polygon points="0 0, 6 2.5, 0 5" fill="#fbbf24"/>
+                </marker>
+            </defs>
+        </svg>
+
+        <div class="diagram">
+            <div class="generation-row">
+                <div class="gen-label young-label">Young Gen</div>
+                <div class="memory-blocks" id="young-blocks">
+                    <div class="block young-block"></div>
+                    <div class="block young-block referenced" id="young-target"></div>
+                    <div class="block young-block"></div>
+                    <div class="block young-block"></div>
+                    <div class="block young-block"></div>
+                </div>
+            </div>
+
+            <div class="generation-row">
+                <div class="gen-label old-label">Old Gen</div>
+                <div class="memory-blocks" id="old-blocks">
+                    <div class="block old-block"></div>
+                    <div class="block old-block has-ref" id="old-source"></div>
+                    <div class="block old-block"></div>
+                    <div class="block old-block"></div>
+                    <div class="block old-block"></div>
+                </div>
+            </div>
+
+            <div class="generation-row">
+                <div class="gen-label card-label">Card Table</div>
+                <div class="memory-blocks">
+                    <div class="card clean">-</div>
+                    <div class="card dirty">D</div>
+                    <div class="card clean">-</div>
+                    <div class="card clean">-</div>
+                    <div class="card clean">-</div>
+                </div>
+            </div>
+
+            <!-- Reference arrow -->
+            <svg style="position: absolute; top: 0; left: 136px; width: 200px; height: 120px; overflow: visible; pointer-events: none;">
+                <path d="M 70 66 L 70 46" class="ref-arrow"/>
+            </svg>
+        </div>
+
+        <div class="reference-info">
+            <div class="info-title">Card Table</div>
+            <div class="info-items">
+                <div class="info-item">
+                    <div class="info-icon dirty"></div>
+                    <span>Dirty: Old가 Young을 참조함 (Minor GC 시 스캔 필요)</span>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon clean"></div>
+                    <span>Clean: 세대 간 참조 없음 (스캔 불필요)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

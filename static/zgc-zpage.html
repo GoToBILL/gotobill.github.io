@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZGC ZPage</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 48px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .title {
+            text-align: center;
+            color: #e0e7ff;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 36px;
+        }
+
+        .section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+
+        .zpage-types {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .zpage-type {
+            flex: 1;
+            min-width: 200px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .zpage-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .zpage-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #e0e7ff;
+        }
+
+        .zpage-icon.small {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+        }
+
+        .zpage-icon.medium {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+        }
+
+        .zpage-icon.large {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+        }
+
+        .zpage-name {
+            color: #e0e7ff;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .zpage-size {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+        }
+
+        .zpage-desc {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+            line-height: 1.5;
+            margin-top: 8px;
+        }
+
+        .zpage-objects {
+            display: flex;
+            gap: 4px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .zpage-object {
+            height: 20px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .zpage-object.small-obj {
+            width: 20px;
+            background: rgba(134, 239, 172, 0.3);
+            border: 1px solid rgba(134, 239, 172, 0.5);
+        }
+
+        .zpage-object.medium-obj {
+            width: 40px;
+            background: rgba(165, 180, 252, 0.3);
+            border: 1px solid rgba(165, 180, 252, 0.5);
+        }
+
+        .zpage-object.large-obj {
+            width: 100%;
+            height: 40px;
+            background: rgba(251, 191, 36, 0.3);
+            border: 1px solid rgba(251, 191, 36, 0.5);
+        }
+
+        .generational-section {
+            margin-top: 32px;
+        }
+
+        .generation-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .generation-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .gen-title {
+            color: #e0e7ff;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .gen-badge {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        .gen-badge.young {
+            background: rgba(134, 239, 172, 0.2);
+            color: #86efac;
+        }
+
+        .gen-badge.old {
+            background: rgba(165, 180, 252, 0.2);
+            color: #a5b4fc;
+        }
+
+        .gen-heap {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .gen-zpage {
+            height: 36px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .gen-zpage.young-page {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            border: 1px solid rgba(134, 239, 172, 0.3);
+        }
+
+        .gen-zpage.old-page {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            border: 1px solid rgba(165, 180, 252, 0.3);
+        }
+
+        .gen-zpage.small {
+            width: 50px;
+        }
+
+        .gen-zpage.medium {
+            width: 70px;
+        }
+
+        .gen-zpage.large {
+            width: 100px;
+        }
+
+        .gen-desc {
+            margin-top: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .comparison-table {
+            margin-top: 32px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d3d 100%);
+        }
+
+        .table-header-cell {
+            padding: 12px 16px;
+            color: #e0e7ff;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            border-right: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .table-header-cell:last-child {
+            border-right: none;
+        }
+
+        .table-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .table-cell {
+            padding: 10px 16px;
+            font-size: 11px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            border-right: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .table-cell:last-child {
+            border-right: none;
+        }
+
+        .table-cell:first-child {
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+        }
+
+        .evolution {
+            margin-top: 32px;
+            padding: 16px;
+            background: rgba(134, 239, 172, 0.1);
+            border: 1px solid rgba(134, 239, 172, 0.3);
+            border-radius: 12px;
+        }
+
+        .evolution-title {
+            color: #86efac;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .evolution-desc {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .evolution-code {
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 11px;
+            color: #86efac;
+        }
+
+        @media (max-width: 600px) {
+            .generation-comparison {
+                grid-template-columns: 1fr;
+            }
+
+            .zpage-types {
+                flex-direction: column;
+            }
+
+            .table-header,
+            .table-row {
+                grid-template-columns: 1fr;
+            }
+
+            .table-header-cell,
+            .table-cell {
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">ZGC ZPage</div>
+
+        <div class="section">
+            <div class="section-title">ZPage 종류</div>
+            <div class="zpage-types">
+                <div class="zpage-type">
+                    <div class="zpage-header">
+                        <div class="zpage-icon small">S</div>
+                        <div>
+                            <div class="zpage-name">Small ZPage</div>
+                            <div class="zpage-size">2MB</div>
+                        </div>
+                    </div>
+                    <div class="zpage-desc">256KB 이하 객체 저장</div>
+                    <div class="zpage-objects">
+                        <div class="zpage-object small-obj"></div>
+                        <div class="zpage-object small-obj"></div>
+                        <div class="zpage-object small-obj"></div>
+                        <div class="zpage-object small-obj"></div>
+                        <div class="zpage-object small-obj"></div>
+                        <div class="zpage-object small-obj"></div>
+                    </div>
+                </div>
+
+                <div class="zpage-type">
+                    <div class="zpage-header">
+                        <div class="zpage-icon medium">M</div>
+                        <div>
+                            <div class="zpage-name">Medium ZPage</div>
+                            <div class="zpage-size">32MB</div>
+                        </div>
+                    </div>
+                    <div class="zpage-desc">256KB ~ 4MB 객체 저장</div>
+                    <div class="zpage-objects">
+                        <div class="zpage-object medium-obj"></div>
+                        <div class="zpage-object medium-obj"></div>
+                        <div class="zpage-object medium-obj"></div>
+                    </div>
+                </div>
+
+                <div class="zpage-type">
+                    <div class="zpage-header">
+                        <div class="zpage-icon large">L</div>
+                        <div>
+                            <div class="zpage-name">Large ZPage</div>
+                            <div class="zpage-size">N x 2MB</div>
+                        </div>
+                    </div>
+                    <div class="zpage-desc">4MB 초과 객체 (1개만 저장)</div>
+                    <div class="zpage-objects">
+                        <div class="zpage-object large-obj">Large Object</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="generational-section">
+            <div class="section-title">Generational ZGC (Java 21+)</div>
+            <div class="generation-comparison">
+                <div class="generation-box">
+                    <div class="gen-title">
+                        Young Generation
+                        <span class="gen-badge young">자주 정리</span>
+                    </div>
+                    <div class="gen-heap">
+                        <div class="gen-zpage young-page small">S</div>
+                        <div class="gen-zpage young-page small">S</div>
+                        <div class="gen-zpage young-page medium">M</div>
+                        <div class="gen-zpage young-page small">S</div>
+                    </div>
+                    <div class="gen-desc">
+                        새 객체 할당<br>
+                        Minor GC로 자주 정리
+                    </div>
+                </div>
+
+                <div class="generation-box">
+                    <div class="gen-title">
+                        Old Generation
+                        <span class="gen-badge old">덜 자주 정리</span>
+                    </div>
+                    <div class="gen-heap">
+                        <div class="gen-zpage old-page medium">M</div>
+                        <div class="gen-zpage old-page large">L</div>
+                        <div class="gen-zpage old-page small">S</div>
+                    </div>
+                    <div class="gen-desc">
+                        오래 살아남은 객체<br>
+                        Major GC로 가끔 정리
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="comparison-table">
+            <div class="table-header">
+                <div class="table-header-cell">비교</div>
+                <div class="table-header-cell">G1 GC</div>
+                <div class="table-header-cell">ZGC</div>
+            </div>
+            <div class="table-row">
+                <div class="table-cell">분할 단위</div>
+                <div class="table-cell">Region (1~32MB 고정)</div>
+                <div class="table-cell">ZPage (2MB/32MB/가변)</div>
+            </div>
+            <div class="table-row">
+                <div class="table-cell">세대 구분</div>
+                <div class="table-cell">Eden, Survivor, Old</div>
+                <div class="table-cell">Young, Old</div>
+            </div>
+            <div class="table-row">
+                <div class="table-cell">STW</div>
+                <div class="table-cell">수백 ms 가능</div>
+                <div class="table-cell">1ms 미만</div>
+            </div>
+            <div class="table-row">
+                <div class="table-cell">참조 갱신</div>
+                <div class="table-cell">STW 중 일괄 처리</div>
+                <div class="table-cell">Load Barrier로 점진적</div>
+            </div>
+        </div>
+
+        <div class="evolution">
+            <div class="evolution-title">Java 버전별 ZGC</div>
+            <div class="evolution-desc">
+                Java 21: Generational ZGC 도입 (옵션으로 활성화)<br>
+                Java 23+: Generational ZGC가 기본값
+            </div>
+            <div class="evolution-code">
+                # Java 21<br>
+                -XX:+UseZGC -XX:+ZGenerational<br><br>
+                # Java 23+<br>
+                -XX:+UseZGC
+            </div>
+        </div>
+    </div>
+</body>
+</html>
