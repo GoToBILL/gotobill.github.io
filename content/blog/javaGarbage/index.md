@@ -94,7 +94,7 @@ Heap
 
 **Young Generation**에서 발생하는 GC입니다. 자주 발생하고 빠르게 끝납니다.
 
-![Minor GC 과정](./gc2.png)
+![Minor GC 과정](./gc1.png)
 
 **동작 과정**
 
@@ -122,7 +122,7 @@ Young 영역만 스캔하면 해당 객체가 참조되지 않는 것처럼 보�
 
 **Old→Young** 참조가 발생하면 해당 위치를 미리 기록해두고, Minor GC 시 기록된 영역만 추가로 스캔합니다.
 
-![카드 테이블](./card.png)
+![카드 테이블](./card1.png)
 
 | 개념 | 설명 |
 |------|------|
@@ -184,7 +184,7 @@ Eden 영역에서 빠르게 객체를 할당하는 기법입니다.
 
 ### TLAB (Thread-Local Allocation Buffers)
 
-![tlab](./tlab.png)
+![tlab](./tla.png)
 
 멀티스레드 환경에서 Bump the Pointer를 사용하면 문제가 생깁니다.
 
@@ -311,7 +311,7 @@ STW: 단 1ms 미만 (스레드 동기화 시점에만)
 
 **핵심 기술: Colored Pointer**
 
-![ZGC Colored Pointer](./zgc.png)
+![ZGC Colored Pointer](./zg.png)
 
 64비트 포인터에서 실제 주소로 44비트만 사용합니다.
 
@@ -388,7 +388,7 @@ Object obj = field;  // JVM이 Load Barrier 삽입
 
 ZGC도 G1처럼 힙을 분할합니다. **ZPage**라는 단위를 사용합니다.
 
-![ZPage](./zp.png)
+![ZPage](./zpa.png)
 
 | ZPage 종류 | 크기 | 저장 객체 |
 |-----------|------|----------|
