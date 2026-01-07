@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tomcat HTTP 요청 처리 흐름</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            padding: 40px;
+            color: #e2e8f0;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 40px;
+            color: #f8fafc;
+        }
+        .diagram {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+        }
+        .flow-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .flow-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+        .box {
+            padding: 16px 24px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 600;
+            min-width: 140px;
+        }
+        .client {
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d3d 100%);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+        }
+        .connector {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+            border: 1px solid rgba(234, 179, 8, 0.3);
+        }
+        .engine {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+        .host {
+            background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        .context {
+            background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%);
+            border: 1px solid rgba(14, 165, 233, 0.3);
+        }
+        .wrapper {
+            background: linear-gradient(135deg, #581c87 0%, #7c3aed 100%);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+        .servlet {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        .title {
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+        .subtitle {
+            font-size: 11px;
+            opacity: 0.8;
+            font-weight: 400;
+        }
+        .arrow {
+            color: #64748b;
+            font-size: 24px;
+        }
+        .step-number {
+            background: rgba(99, 102, 241, 0.3);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+        .description-box {
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .desc-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            align-items: flex-start;
+        }
+        .desc-text {
+            font-size: 13px;
+            color: #94a3b8;
+        }
+        .desc-title {
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tomcat HTTP 요청 처리 흐름</h1>
+
+        <div class="diagram">
+            <div class="flow-container">
+                <div class="flow-row">
+                    <div class="box client">
+                        <div class="title">Client</div>
+                        <div class="subtitle">HTTP Request</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="box connector">
+                        <div class="title">Connector</div>
+                        <div class="subtitle">8080 포트</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="box engine">
+                        <div class="title">Engine</div>
+                        <div class="subtitle">Catalina</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="box host">
+                        <div class="title">Host</div>
+                        <div class="subtitle">localhost</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="box context">
+                        <div class="title">Context</div>
+                        <div class="subtitle">/myapp</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="box wrapper">
+                        <div class="title">Wrapper</div>
+                        <div class="subtitle">URL 매핑</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="box servlet">
+                        <div class="title">Servlet</div>
+                        <div class="subtitle">실행</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="description-box">
+                <div class="desc-item">
+                    <div class="step-number">1</div>
+                    <div>
+                        <div class="desc-title">Connector</div>
+                        <div class="desc-text">소켓 연결 수락, HTTP 파싱</div>
+                    </div>
+                </div>
+                <div class="desc-item">
+                    <div class="step-number">2</div>
+                    <div>
+                        <div class="desc-title">Engine</div>
+                        <div class="desc-text">Host 헤더로 가상 호스트 결정</div>
+                    </div>
+                </div>
+                <div class="desc-item">
+                    <div class="step-number">3</div>
+                    <div>
+                        <div class="desc-title">Host</div>
+                        <div class="desc-text">URL 경로로 Context 결정</div>
+                    </div>
+                </div>
+                <div class="desc-item">
+                    <div class="step-number">4</div>
+                    <div>
+                        <div class="desc-title">Context</div>
+                        <div class="desc-text">web.xml 기반 Wrapper 결정</div>
+                    </div>
+                </div>
+                <div class="desc-item">
+                    <div class="step-number">5</div>
+                    <div>
+                        <div class="desc-title">Wrapper</div>
+                        <div class="desc-text">Filter 체인 실행 후 Servlet 호출</div>
+                    </div>
+                </div>
+                <div class="desc-item">
+                    <div class="step-number">6</div>
+                    <div>
+                        <div class="desc-title">Servlet</div>
+                        <div class="desc-text">비즈니스 로직 처리, 응답 생성</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSL/TLS Handshake Protocol</title>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+        :root {
+            --client-bg: #e3f2fd;
+            --client-border: #2196f3;
+            --client-text: #0d47a1;
+
+            --server-bg: #f3e5f5;
+            /* Soft Purple/Pink or Green? Let's go with Green for distinction */
+            --server-bg: #e8f5e9;
+            --server-border: #4caf50;
+            --server-text: #1b5e20;
+
+            --line-color: #cfd8dc;
+            --text-main: #37474f;
+            --text-sub: #546e7a;
+
+            --font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: #f5f7fa;
+            /* Light gray background for page */
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .diagram-container {
+            width: 900px;
+            position: relative;
+            background: white;
+            padding: 40px 60px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Header Icons */
+        .headers {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 100px;
+            margin-bottom: 40px;
+            font-weight: 700;
+            font-size: 1.4em;
+            color: var(--text-main);
+        }
+
+        .header-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 120px;
+            z-index: 2;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+        }
+
+        .header-icon {
+            background: #eceff1;
+            padding: 15px;
+            border-radius: 50%;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-icon svg {
+            width: 40px;
+            height: 40px;
+            color: #455a64;
+        }
+
+        /* Timelines */
+        .timelines {
+            position: absolute;
+            top: 160px;
+            left: 0;
+            right: 0;
+            bottom: 40px;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 160px;
+            /* Align with center of headers */
+            pointer-events: none;
+        }
+
+        .line {
+            width: 4px;
+            background-color: var(--line-color);
+            height: 100%;
+            border-radius: 2px;
+        }
+
+        /* Steps Layout */
+        .steps {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .step-row {
+            display: grid;
+            grid-template-columns: 220px 1fr 220px;
+            gap: 20px;
+            align-items: center;
+            min-height: 60px;
+        }
+
+        .step-left {
+            display: flex;
+            justify-content: flex-end;
+            position: relative;
+        }
+
+        .step-right {
+            display: flex;
+            justify-content: flex-start;
+            position: relative;
+        }
+
+        .step-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: left;
+        }
+
+        /* Message Boxes */
+        .msg-box {
+            padding: 12px 20px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            white-space: nowrap;
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+        }
+
+        /* Client Style */
+        .step-left .msg-box {
+            background: var(--client-bg);
+            border: 2px solid var(--client-border);
+            color: var(--client-text);
+        }
+
+        .step-left .circle-num {
+            background: var(--client-border);
+            color: white;
+            border: none;
+        }
+
+        /* Server Style */
+        .step-right .msg-box {
+            background: var(--server-bg);
+            border: 2px solid var(--server-border);
+            color: var(--server-text);
+        }
+
+        .step-right .circle-num {
+            background: var(--server-border);
+            color: white;
+            border: none;
+        }
+
+        .circle-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        /* Arrows */
+        .arrow-line {
+            height: 2px;
+            background: #90a4ae;
+            width: 100%;
+            position: relative;
+            margin: 5px 0;
+        }
+
+        .arrow-right::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -5px;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            border-left: 10px solid #90a4ae;
+        }
+
+        .arrow-left::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: -5px;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            border-right: 10px solid #90a4ae;
+        }
+
+        .arrow-double::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: -5px;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            border-right: 10px solid #90a4ae;
+        }
+
+        .arrow-double::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -5px;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            border-left: 10px solid #90a4ae;
+        }
+
+        /* Detail Text */
+        .detail-text {
+            font-size: 0.9em;
+            color: var(--text-sub);
+            line-height: 1.4;
+            margin-bottom: 4px;
+            width: 100%;
+            padding-left: 20px;
+        }
+
+        .detail-text strong {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        /* Key Generation Box - Special */
+        .key-gen-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 100px;
+            margin: 20px 0;
+        }
+
+        .key-gen-box {
+            background: #fff3e0;
+            border: 2px solid #ff9800;
+            color: #ef6c00;
+            padding: 8px 16px;
+            border-radius: 20px;
+            z-index: 5;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            font-weight: 700;
+            font-size: 15px;
+            box-shadow: 0 2px 8px rgba(255, 152, 0, 0.2);
+        }
+
+        .key-gen-box .circle-num {
+            background: #ff9800;
+            color: white;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+        }
+
+        /* Separators */
+        .separator {
+            border-top: 2px dashed #b0bec5;
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .separator span {
+            position: relative;
+            top: -14px;
+            background: white;
+            padding: 0 15px;
+            font-weight: 600;
+            color: #546e7a;
+            font-size: 1.1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* App Data Special */
+        .app-data-box {
+            background: #263238 !important;
+            border-color: #263238 !important;
+            color: #eceff1 !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="diagram-container">
+
+        <!-- Headers -->
+        <div class="headers">
+            <div class="header-item">
+                <div class="header-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                        <line x1="8" y1="21" x2="16" y2="21"></line>
+                        <line x1="12" y1="17" x2="12" y2="21"></line>
+                    </svg>
+                </div>
+                <span>Client</span>
+            </div>
+            <div class="header-item">
+                <div class="header-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                        <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                        <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                        <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                    </svg>
+                </div>
+                <span>Server</span>
+            </div>
+        </div>
+
+        <!-- Vertical Timelines -->
+        <div class="timelines">
+            <div class="line"></div>
+            <div class="line"></div>
+        </div>
+
+        <!-- Sequence -->
+        <div class="steps">
+
+            <!-- Step 1 -->
+            <div class="step-row">
+                <div class="step-left">
+                    <div class="msg-box">
+                        <div class="circle-num">1</div>
+                        <div>Client Hello</div>
+                    </div>
+                </div>
+                <div class="step-center">
+                    <div class="detail-text">
+                        - <strong>지원 암호화 목록</strong> (Cipher Suites)<br>
+                        - <strong>난수</strong> (Random Byte)<br>
+                        - 세션 ID<br>
+                        - SNI
+                    </div>
+                    <div class="arrow-line arrow-right"></div>
+                </div>
+                <div class="step-right"></div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="step-row">
+                <div class="step-left"></div>
+                <div class="step-center">
+                    <div class="arrow-line arrow-left"></div>
+                </div>
+                <div class="step-right">
+                    <div class="msg-box">
+                        <div>Server Hello</div>
+                        <div class="circle-num">2</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="step-row">
+                <div class="step-left"></div>
+                <div class="step-center">
+                    <div class="detail-text">
+                        - <strong>선택된 암호화 방식</strong><br>
+                        - <strong>난수</strong> (Random Byte)<br>
+                        - 세션 ID
+                    </div>
+                    <div class="arrow-line arrow-left"></div>
+                </div>
+                <div class="step-right">
+                    <div class="msg-box">
+                        <div>Server Certificate</div>
+                        <div class="circle-num">3</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="step-row">
+                <div class="step-left"></div>
+                <div class="step-center">
+                    <div class="arrow-line arrow-left"></div>
+                </div>
+                <div class="step-right">
+                    <div class="msg-box">
+                        <div>Server Hello Done</div>
+                        <div class="circle-num">4</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5 -->
+            <div class="step-row">
+                <div class="step-left">
+                    <div class="msg-box">
+                        <div class="circle-num">5</div>
+                        <div>Client Key Exchange</div>
+                    </div>
+                </div>
+                <div class="step-center">
+                    <div class="detail-text">
+                        - 암호화된 <strong>Pre-master Secret</strong>
+                    </div>
+                    <div class="arrow-line arrow-right"></div>
+                </div>
+                <div class="step-right"></div>
+            </div>
+
+            <!-- Step 6: Key Gen -->
+            <div class="key-gen-row">
+                <div class="key-gen-box">
+                    <div class="circle-num">6</div>
+                    Session Key 생성
+                </div>
+                <div class="key-gen-box">
+                    Session Key 생성
+                    <div class="circle-num">6</div>
+                </div>
+            </div>
+
+            <!-- Step 7 -->
+            <div class="step-row">
+                <div class="step-left">
+                    <div class="msg-box">
+                        <div class="circle-num">7</div>
+                        <div>Change Cipher Spec</div>
+                    </div>
+                </div>
+                <div class="step-center">
+                    <div class="arrow-line arrow-right"></div>
+                </div>
+                <div class="step-right"></div>
+            </div>
+
+            <!-- Step 8 -->
+            <div class="step-row">
+                <div class="step-left">
+                    <div class="msg-box">
+                        <div class="circle-num">8</div>
+                        <div>Finished</div>
+                    </div>
+                </div>
+                <div class="step-center">
+                    <div class="detail-text">
+                        (핸드쉐이크 무결성 확인)
+                    </div>
+                    <div class="arrow-line arrow-right"></div>
+                </div>
+                <div class="step-right"></div>
+            </div>
+
+            <!-- Step 7 (Server) -->
+            <div class="step-row">
+                <div class="step-left"></div>
+                <div class="step-center">
+                    <div class="arrow-line arrow-left"></div>
+                </div>
+                <div class="step-right">
+                    <div class="msg-box">
+                        <div>Change Cipher Spec</div>
+                        <div class="circle-num">7</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 9 (Server Finished) -->
+            <div class="step-row">
+                <div class="step-left"></div>
+                <div class="step-center">
+                    <div class="detail-text" style="text-align: right; padding-right: 20px;">
+                        (핸드쉐이크 무결성 확인)
+                    </div>
+                    <div class="arrow-line arrow-left"></div>
+                </div>
+                <div class="step-right">
+                    <div class="msg-box">
+                        <div>Finished</div>
+                        <div class="circle-num">9</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Protocols Section -->
+            <div class="separator">
+                <span>Handshake Protocol (핸드쉐이크)</span>
+            </div>
+
+            <div class="separator" style="border-style: solid; margin-top: -10px;">
+                <span>Record Protocol (데이터 전송)</span>
+            </div>
+
+            <!-- Application Data -->
+            <div class="step-row">
+                <div class="step-left">
+                    <div class="msg-box app-data-box">
+                        <div>Application Data</div>
+                    </div>
+                </div>
+                <div class="step-center">
+                    <div class="detail-text" style="text-align: center;">
+                        <strong>암호화된 통신</strong>
+                    </div>
+                    <div class="arrow-line arrow-double"></div>
+                </div>
+                <div class="step-right">
+                    <div class="msg-box app-data-box">
+                        <div>Application Data</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+
+</html>

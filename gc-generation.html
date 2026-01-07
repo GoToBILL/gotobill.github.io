@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generational GC</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #111827;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 48px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .title {
+            text-align: center;
+            color: #e0e7ff;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 36px;
+        }
+
+        .gc-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+        }
+
+        .state {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .state-label {
+            text-align: center;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 4px;
+        }
+
+        .generation {
+            border-radius: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .gen-label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 8px;
+        }
+
+        .young-gen {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .eden {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            border-radius: 8px;
+            padding: 10px 12px;
+            min-width: 180px;
+        }
+
+        .eden-label {
+            color: #86efac;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .objects {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .object {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .object.alive {
+            background: rgba(134, 239, 172, 0.3);
+            border: 1px solid rgba(134, 239, 172, 0.6);
+            color: #86efac;
+        }
+
+        .object.dead {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #fca5a5;
+        }
+
+        .object.empty {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+        }
+
+        .survivors {
+            display: flex;
+            gap: 6px;
+        }
+
+        .survivor {
+            flex: 1;
+            background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%);
+            border-radius: 8px;
+            padding: 8px 10px;
+        }
+
+        .survivor-label {
+            color: #93c5fd;
+            font-size: 11px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .survivor-objects {
+            display: flex;
+            gap: 3px;
+            min-height: 20px;
+        }
+
+        .old-gen {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            border-radius: 8px;
+            padding: 10px 12px;
+        }
+
+        .old-label {
+            color: #a5b4fc;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .arrow-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .arrow-label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+            white-space: nowrap;
+        }
+
+        .arrow {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .arrow svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .legend-box {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+
+        .legend-box.alive {
+            background: rgba(134, 239, 172, 0.3);
+            border: 1px solid rgba(134, 239, 172, 0.6);
+        }
+
+        .legend-box.dead {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">Minor GC Process</div>
+
+        <div class="gc-flow">
+            <!-- Before GC -->
+            <div class="state">
+                <div class="state-label">Before GC</div>
+                <div class="generation">
+                    <div class="gen-label">Young Generation</div>
+                    <div class="young-gen">
+                        <div class="eden">
+                            <div class="eden-label">Eden</div>
+                            <div class="objects">
+                                <div class="object alive"></div>
+                                <div class="object dead">X</div>
+                                <div class="object alive"></div>
+                                <div class="object dead">X</div>
+                                <div class="object dead">X</div>
+                                <div class="object alive"></div>
+                            </div>
+                        </div>
+                        <div class="survivors">
+                            <div class="survivor">
+                                <div class="survivor-label">S0 (To)</div>
+                                <div class="survivor-objects">
+                                    <div class="object empty" style="width: 16px; height: 16px;"></div>
+                                </div>
+                            </div>
+                            <div class="survivor">
+                                <div class="survivor-label">S1</div>
+                                <div class="survivor-objects">
+                                    <div class="object empty" style="width: 16px; height: 16px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="generation">
+                    <div class="gen-label">Old Generation</div>
+                    <div class="old-gen">
+                        <div class="old-label">Old</div>
+                        <div class="objects">
+                            <div class="object alive"></div>
+                            <div class="object alive"></div>
+                            <div class="object empty"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="arrow-section">
+                <div class="arrow-label">Minor GC</div>
+                <div class="arrow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14M15 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- After GC -->
+            <div class="state">
+                <div class="state-label">After GC</div>
+                <div class="generation">
+                    <div class="gen-label">Young Generation</div>
+                    <div class="young-gen">
+                        <div class="eden">
+                            <div class="eden-label">Eden</div>
+                            <div class="objects">
+                                <div class="object empty"></div>
+                                <div class="object empty"></div>
+                                <div class="object empty"></div>
+                                <div class="object empty"></div>
+                                <div class="object empty"></div>
+                                <div class="object empty"></div>
+                            </div>
+                        </div>
+                        <div class="survivors">
+                            <div class="survivor">
+                                <div class="survivor-label">S0</div>
+                                <div class="survivor-objects">
+                                    <div class="object alive" style="width: 16px; height: 16px;"></div>
+                                    <div class="object alive" style="width: 16px; height: 16px;"></div>
+                                    <div class="object alive" style="width: 16px; height: 16px;"></div>
+                                </div>
+                            </div>
+                            <div class="survivor">
+                                <div class="survivor-label">S1</div>
+                                <div class="survivor-objects">
+                                    <div class="object empty" style="width: 16px; height: 16px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="generation">
+                    <div class="gen-label">Old Generation</div>
+                    <div class="old-gen">
+                        <div class="old-label">Old</div>
+                        <div class="objects">
+                            <div class="object alive"></div>
+                            <div class="object alive"></div>
+                            <div class="object empty"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-box alive"></div>
+                <span>Live object</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box dead"></div>
+                <span>Dead object (garbage)</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JVM Runtime Data Area</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 48px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .title {
+            text-align: center;
+            color: #e0e7ff;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 36px;
+        }
+
+        .sections {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .section {
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .section-shared {
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .section-perthread {
+            background: rgba(34, 197, 94, 0.08);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .section-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-shared .section-label {
+            color: #a5b4fc;
+        }
+
+        .section-perthread .section-label {
+            color: #86efac;
+        }
+
+        .badge {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .section-shared .badge {
+            background: rgba(99, 102, 241, 0.2);
+            color: #a5b4fc;
+        }
+
+        .section-perthread .badge {
+            background: rgba(34, 197, 94, 0.2);
+            color: #86efac;
+        }
+
+        .areas {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .area {
+            flex: 1;
+            min-width: 140px;
+            padding: 16px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .area-name {
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .area-desc {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .heap {
+            background: linear-gradient(135deg, rgba(49, 46, 129, 0.3) 0%, rgba(67, 56, 202, 0.3) 100%);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .method-area {
+            background: linear-gradient(135deg, rgba(30, 58, 95, 0.3) 0%, rgba(29, 78, 216, 0.3) 100%);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .stack {
+            background: linear-gradient(135deg, rgba(20, 83, 45, 0.3) 0%, rgba(21, 128, 61, 0.3) 100%);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .pc {
+            background: linear-gradient(135deg, rgba(113, 63, 18, 0.3) 0%, rgba(161, 98, 7, 0.3) 100%);
+            border-color: rgba(234, 179, 8, 0.3);
+        }
+
+        .native {
+            background: linear-gradient(135deg, rgba(127, 29, 29, 0.3) 0%, rgba(185, 28, 28, 0.3) 100%);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">Runtime Data Area</div>
+
+        <div class="sections">
+            <div class="section section-shared">
+                <div class="section-label">
+                    공유 영역 (모든 스레드)
+                    <span class="badge">동기화 필요</span>
+                </div>
+                <div class="areas">
+                    <div class="area heap">
+                        <div class="area-name">Heap</div>
+                        <div class="area-desc">객체, 배열 저장<br>GC 대상</div>
+                    </div>
+                    <div class="area method-area">
+                        <div class="area-name">Method Area</div>
+                        <div class="area-desc">클래스 메타데이터<br>static 변수, 상수 풀</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section section-perthread">
+                <div class="section-label">
+                    스레드별 독립 영역
+                    <span class="badge">스레드마다 생성</span>
+                </div>
+                <div class="areas">
+                    <div class="area stack">
+                        <div class="area-name">JVM Stack</div>
+                        <div class="area-desc">메서드 호출 프레임<br>지역 변수, 연산 스택</div>
+                    </div>
+                    <div class="area pc">
+                        <div class="area-name">PC Register</div>
+                        <div class="area-desc">현재 실행 중인<br>명령어 주소</div>
+                    </div>
+                    <div class="area native">
+                        <div class="area-name">Native Stack</div>
+                        <div class="area-desc">네이티브 메서드<br>(C/C++) 실행</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tomcat JMX 모니터링 아키텍처</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            padding: 40px;
+            color: #e2e8f0;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 40px;
+            color: #f8fafc;
+        }
+        .diagram {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+        }
+        .architecture {
+            display: flex;
+            gap: 40px;
+            align-items: stretch;
+        }
+        .monitoring-tools {
+            flex: 0 0 200px;
+        }
+        .jmx-server {
+            flex: 1;
+        }
+        .mbeans {
+            flex: 1;
+        }
+        .section-title {
+            font-size: 13px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+        .tool-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .tool-box {
+            padding: 15px 20px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d3d 100%);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .jmx-box {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 16px;
+            padding: 25px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .jmx-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .jmx-subtitle {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+        }
+        .mbean-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .mbean-box {
+            padding: 15px 20px;
+            border-radius: 12px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .mbean-connector {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+            border: 1px solid rgba(234, 179, 8, 0.3);
+        }
+        .mbean-threadpool {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        .mbean-memory {
+            background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%);
+            border: 1px solid rgba(14, 165, 233, 0.3);
+        }
+        .mbean-webapp {
+            background: linear-gradient(135deg, #581c87 0%, #7c3aed 100%);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+        .mbean-session {
+            background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        .arrow-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 20px;
+            padding: 0 10px;
+        }
+        .arrow {
+            color: #64748b;
+            font-size: 24px;
+            text-align: center;
+        }
+        .metrics-table {
+            margin-top: 40px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .metrics-table th,
+        .metrics-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .metrics-table th {
+            font-size: 13px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .metrics-table td {
+            font-size: 13px;
+        }
+        .metric-name {
+            color: #60a5fa;
+            font-family: 'SF Mono', monospace;
+        }
+        .metric-type {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .type-connector { background: rgba(234, 179, 8, 0.2); color: #fbbf24; }
+        .type-thread { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+        .type-memory { background: rgba(14, 165, 233, 0.2); color: #38bdf8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>JMX 모니터링 아키텍처</h1>
+
+        <div class="diagram">
+            <div class="architecture">
+                <div class="monitoring-tools">
+                    <div class="section-title">Monitoring Tools</div>
+                    <div class="tool-list">
+                        <div class="tool-box">JConsole</div>
+                        <div class="tool-box">VisualVM</div>
+                        <div class="tool-box">Prometheus</div>
+                        <div class="tool-box">Grafana</div>
+                    </div>
+                </div>
+
+                <div class="arrow-section">
+                    <div class="arrow">→</div>
+                    <div class="arrow">→</div>
+                    <div class="arrow">→</div>
+                </div>
+
+                <div class="jmx-server">
+                    <div class="section-title">JMX Server</div>
+                    <div class="jmx-box">
+                        <div class="jmx-title">MBean Server</div>
+                        <div class="jmx-subtitle">JMX Remote<br>Port: 1099</div>
+                    </div>
+                </div>
+
+                <div class="arrow-section">
+                    <div class="arrow">→</div>
+                    <div class="arrow">→</div>
+                    <div class="arrow">→</div>
+                </div>
+
+                <div class="mbeans">
+                    <div class="section-title">MBeans</div>
+                    <div class="mbean-list">
+                        <div class="mbean-box mbean-connector">Catalina:type=Connector</div>
+                        <div class="mbean-box mbean-threadpool">Catalina:type=ThreadPool</div>
+                        <div class="mbean-box mbean-memory">java.lang:type=Memory</div>
+                        <div class="mbean-box mbean-webapp">Catalina:type=Manager</div>
+                        <div class="mbean-box mbean-session">Catalina:type=RequestProcessor</div>
+                    </div>
+                </div>
+            </div>
+
+            <table class="metrics-table">
+                <thead>
+                    <tr>
+                        <th>MBean</th>
+                        <th>주요 메트릭</th>
+                        <th>설명</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="metric-type type-connector">Connector</span></td>
+                        <td class="metric-name">currentThreadCount, currentThreadsBusy</td>
+                        <td>현재 스레드 수, 활성 스레드 수</td>
+                    </tr>
+                    <tr>
+                        <td><span class="metric-type type-thread">ThreadPool</span></td>
+                        <td class="metric-name">maxThreads, connectionCount</td>
+                        <td>최대 스레드, 현재 연결 수</td>
+                    </tr>
+                    <tr>
+                        <td><span class="metric-type type-memory">Memory</span></td>
+                        <td class="metric-name">HeapMemoryUsage, NonHeapMemoryUsage</td>
+                        <td>힙/논힙 메모리 사용량</td>
+                    </tr>
+                    <tr>
+                        <td><span class="metric-type type-connector">Manager</span></td>
+                        <td class="metric-name">activeSessions, sessionCounter</td>
+                        <td>활성 세션 수, 총 세션 수</td>
+                    </tr>
+                    <tr>
+                        <td><span class="metric-type type-thread">RequestProcessor</span></td>
+                        <td class="metric-name">requestCount, errorCount, processingTime</td>
+                        <td>요청 수, 에러 수, 처리 시간</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

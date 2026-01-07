@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TLAB (Thread-Local Allocation Buffers)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #111827;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 48px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .title {
+            text-align: center;
+            color: #e0e7ff;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 36px;
+        }
+
+        .diagram {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .threads-section {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .thread-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .thread-box {
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d3d 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px 16px;
+            min-width: 200px;
+        }
+
+        .thread-label {
+            color: #a5b4fc;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .code-line {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 11px;
+            color: #e0e7ff;
+        }
+
+        .keyword {
+            color: #c084fc;
+        }
+
+        .type {
+            color: #67e8f9;
+        }
+
+        .variable {
+            color: #fbbf24;
+        }
+
+        .operator {
+            color: #f472b6;
+        }
+
+        .string {
+            color: #86efac;
+        }
+
+        .arrow {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 24px;
+        }
+
+        .eden-section {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .eden-label {
+            color: #86efac;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .tlabs {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .tlab {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            border: 1px solid rgba(134, 239, 172, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .tlab-label {
+            color: #86efac;
+            font-size: 11px;
+            font-weight: 600;
+            min-width: 50px;
+        }
+
+        .tlab-content {
+            display: flex;
+            gap: 4px;
+            flex: 1;
+        }
+
+        .object {
+            height: 28px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 500;
+            color: #e0e7ff;
+        }
+
+        .object.string {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            border: 1px solid rgba(165, 180, 252, 0.4);
+            padding: 0 10px;
+        }
+
+        .object.arraylist {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+            border: 1px solid rgba(251, 191, 36, 0.4);
+            padding: 0 10px;
+        }
+
+        .object.empty {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            width: 28px;
+        }
+
+        .pointer {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-left: auto;
+        }
+
+        .pointer-label {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 9px;
+        }
+
+        .pointer-arrow {
+            color: #f472b6;
+            font-size: 14px;
+        }
+
+        .info {
+            margin-top: 24px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .info-title {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .info-items {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .info-icon {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .info-icon.green {
+            background: #86efac;
+        }
+
+        .info-icon.blue {
+            background: #a5b4fc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">TLAB (Thread-Local Allocation Buffers)</div>
+
+        <div class="diagram">
+            <div class="threads-section">
+                <div class="thread-row">
+                    <div class="thread-box">
+                        <div class="thread-label">Thread 1</div>
+                        <div class="code-line">
+                            <span class="keyword">var</span> <span class="variable">s</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="type">String</span>();
+                        </div>
+                    </div>
+                    <div class="arrow">→</div>
+                </div>
+
+                <div class="thread-row">
+                    <div class="thread-box">
+                        <div class="thread-label">Thread 2</div>
+                        <div class="code-line">
+                            <span class="keyword">var</span> <span class="variable">l</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="type">ArrayList</span>&lt;<span class="type">String</span>&gt;();
+                        </div>
+                    </div>
+                    <div class="arrow">→</div>
+                </div>
+            </div>
+
+            <div class="eden-section">
+                <div class="eden-label">Eden Space</div>
+                <div class="tlabs">
+                    <div class="tlab">
+                        <div class="tlab-label">TLAB 1</div>
+                        <div class="tlab-content">
+                            <div class="object string">String</div>
+                            <div class="object empty"></div>
+                            <div class="object empty"></div>
+                        </div>
+                        <div class="pointer">
+                            <span class="pointer-label">bump</span>
+                            <span class="pointer-arrow">→</span>
+                        </div>
+                    </div>
+                    <div class="tlab">
+                        <div class="tlab-label">TLAB 2</div>
+                        <div class="tlab-content">
+                            <div class="object arraylist">ArrayList</div>
+                            <div class="object empty"></div>
+                            <div class="object empty"></div>
+                        </div>
+                        <div class="pointer">
+                            <span class="pointer-label">bump</span>
+                            <span class="pointer-arrow">→</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info">
+            <div class="info-title">TLAB 동작 원리</div>
+            <div class="info-items">
+                <div class="info-item">
+                    <div class="info-icon green"></div>
+                    <span>각 스레드가 Eden 내에 전용 할당 공간(TLAB)을 가짐</span>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon blue"></div>
+                    <span>Bump the Pointer로 빠르게 할당 (동기화 불필요)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

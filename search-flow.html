@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Flow</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 48px;
+            max-width: 700px;
+            width: 100%;
+        }
+
+        .flow {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .node {
+            padding: 16px 24px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            position: relative;
+        }
+
+        .node-request {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            color: #e0e7ff;
+            align-self: center;
+            width: fit-content;
+            min-width: 180px;
+        }
+
+        .node-condition {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+            color: #fef3c7;
+            align-self: center;
+            width: fit-content;
+            min-width: 180px;
+        }
+
+        .arrow-down {
+            display: flex;
+            justify-content: center;
+            padding: 8px 0;
+        }
+
+        .arrow-down svg {
+            width: 20px;
+            height: 20px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .branches {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            margin-top: 8px;
+        }
+
+        .branch {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+            flex: 1;
+            max-width: 260px;
+        }
+
+        .branch-label {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            padding: 4px 12px;
+            border-radius: 6px;
+        }
+
+        .branch-yes .branch-label {
+            color: #4ade80;
+            background: rgba(74, 222, 128, 0.1);
+        }
+
+        .branch-no .branch-label {
+            color: #f87171;
+            background: rgba(248, 113, 113, 0.1);
+        }
+
+        .node-table {
+            background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%);
+            color: #bfdbfe;
+            width: 100%;
+        }
+
+        .table-info {
+            font-size: 12px;
+            color: rgba(191, 219, 254, 0.7);
+            margin-top: 4px;
+        }
+
+        .node-search {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            color: #bbf7d0;
+            width: 100%;
+        }
+
+        .search-type {
+            font-size: 12px;
+            color: rgba(187, 247, 208, 0.7);
+            margin-top: 4px;
+        }
+
+        .note {
+            margin-top: 32px;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .note-icon {
+            color: rgba(255, 255, 255, 0.3);
+            margin-right: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="flow">
+            <div class="node node-request">
+                사용자 검색 요청
+            </div>
+
+            <div class="arrow-down">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M5 12l7 7 7-7" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+
+            <div class="node node-condition">
+                날짜가 전날인가?
+            </div>
+
+            <div class="arrow-down">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M7 10l5 5 5-5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+
+            <div class="branches">
+                <div class="branch branch-yes">
+                    <span class="branch-label">Yes</span>
+
+                    <div class="arrow-down">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 5v14M8 15l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+
+                    <div class="node node-table">
+                        campaigns_daily_search
+                        <div class="table-info">5,600건</div>
+                    </div>
+
+                    <div class="arrow-down">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 5v14M8 15l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+
+                    <div class="node node-search">
+                        FULLTEXT 검색
+                        <div class="search-type">빠름</div>
+                    </div>
+                </div>
+
+                <div class="branch branch-no">
+                    <span class="branch-label">No</span>
+
+                    <div class="arrow-down">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 5v14M8 15l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+
+                    <div class="node node-table">
+                        campaigns
+                        <div class="table-info">80만건</div>
+                    </div>
+
+                    <div class="arrow-down">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 5v14M8 15l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+
+                    <div class="node node-search">
+                        Simple LIKE 검색
+                        <div class="search-type">폴백</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="note">
+            <span class="note-icon">*</span>
+            매일 새벽 5시 스케줄러가 전날 데이터를 campaigns_daily_search에 동기화
+        </div>
+    </div>
+</body>
+</html>

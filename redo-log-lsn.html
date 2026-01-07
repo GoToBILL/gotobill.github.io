@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redo Log LSN & Checkpoint</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h2 class="text-2xl font-bold text-center mb-8 text-gray-800">리두 로그 순환 구조와 LSN</h2>
+
+        <!-- 순환 리두 로그 -->
+        <div class="relative mb-16" style="height: 400px;">
+            <!-- 원형 리두 로그 파일 -->
+            <svg width="100%" height="400" viewBox="0 0 800 400">
+                <!-- 배경 원 -->
+                <circle cx="400" cy="200" r="150" fill="none" stroke="#cbd5e1" stroke-width="60"/>
+
+                <!-- 재사용 가능 영역 (270도부터 90도까지) - 먼저 그리기 -->
+                <path d="M 250 200 A 150 150 0 0 1 400 50"
+                      fill="none"
+                      stroke="#10b981"
+                      stroke-width="60"
+                      stroke-linecap="round"/>
+
+                <!-- 활성 리두 로그 영역 (90도부터 270도까지) -->
+                <path d="M 400 50 A 150 150 0 1 1 250 200"
+                      fill="none"
+                      stroke="#ef4444"
+                      stroke-width="60"
+                      stroke-linecap="round"/>
+
+                <!-- 현재 쓰기 위치 표시 (90도 = 12시) -->
+                <circle cx="400" cy="50" r="14" fill="#8b5cf6" stroke="white" stroke-width="3"/>
+                <text x="400" y="45" text-anchor="middle" dy="-30" class="text-base font-bold fill-purple-700">
+                    현재 쓰기
+                </text>
+                <text x="400" y="45" text-anchor="middle" dy="-12" class="text-sm font-bold fill-purple-700">
+                    LSN: 5000
+                </text>
+
+                <!-- 체크포인트 위치 표시 (270도 = 9시) -->
+                <circle cx="250" cy="200" r="14" fill="#3b82f6" stroke="white" stroke-width="3"/>
+                <text x="250" y="200" text-anchor="middle" dy="55" class="text-base font-bold fill-blue-700">
+                    체크포인트
+                </text>
+                <text x="250" y="200" text-anchor="middle" dy="73" class="text-sm font-bold fill-blue-700">
+                    LSN: 1000
+                </text>
+
+                <!-- 중앙 설명 -->
+                <text x="400" y="190" text-anchor="middle" class="text-lg font-bold fill-red-500">
+                    활성 리두 로그
+                </text>
+                <text x="400" y="215" text-anchor="middle" class="text-sm fill-red-600">
+                    (재사용 불가)
+                </text>
+            </svg>
+        </div>
+
+        <!-- LSN 타임라인 -->
+        <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
+            <h3 class="text-lg font-bold mb-4 text-gray-800">LSN 타임라인</h3>
+
+            <div class="relative h-32">
+                <!-- 타임라인 -->
+                <div class="absolute top-12 left-0 right-0 h-2 bg-gradient-to-r from-blue-400 via-purple-400 to-red-400 rounded"></div>
+
+                <!-- LSN 포인트들 -->
+                <div class="absolute top-0" style="left: 10%;">
+                    <div class="w-4 h-4 bg-blue-500 rounded-full mx-auto mb-2"></div>
+                    <div class="text-center text-sm font-bold text-blue-700">LSN: 1000</div>
+                    <div class="text-center text-xs font-bold text-gray-700 mt-3" style="white-space: nowrap;">체크포인트<br/>(여기까지 디스크 기록 완료)</div>
+                </div>
+
+                <div class="absolute top-0" style="left: 30%;">
+                    <div class="w-4 h-4 bg-purple-400 rounded-full mx-auto mb-2"></div>
+                    <div class="text-center text-sm font-bold text-purple-700">LSN: 2000</div>
+                </div>
+
+                <div class="absolute top-0" style="left: 50%;">
+                    <div class="w-4 h-4 bg-purple-500 rounded-full mx-auto mb-2"></div>
+                    <div class="text-center text-sm font-bold text-purple-700">LSN: 3000</div>
+                </div>
+
+                <div class="absolute top-0" style="left: 70%;">
+                    <div class="w-4 h-4 bg-red-400 rounded-full mx-auto mb-2"></div>
+                    <div class="text-center text-sm font-bold text-red-700">LSN: 4000</div>
+                </div>
+
+                <div class="absolute top-0" style="left: 90%;">
+                    <div class="w-4 h-4 bg-red-500 rounded-full mx-auto mb-2"></div>
+                    <div class="text-center text-sm font-bold text-red-700">LSN: 5000</div>
+                    <div class="text-center text-sm font-bold text-gray-700 mt-3">현재</div>
+                </div>
+
+                <!-- Checkpoint Age 표시 -->
+                <div class="absolute top-20 left-0 right-0 flex justify-center">
+                    <div class="flex items-center gap-2">
+                        <div class="text-sm font-bold text-orange-600">Checkpoint Age = 4000</div>
+                        <div class="text-xs text-gray-500">(5000 - 1000)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 체크포인트 이후 변화 -->
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+            <h3 class="text-lg font-bold mb-6 text-gray-800">체크포인트 발생 후</h3>
+
+            <div class="grid grid-cols-2 gap-8">
+                <!-- Before -->
+                <div>
+                    <div class="text-center font-semibold text-gray-700 mb-4">Before</div>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-24 h-8 bg-blue-500 rounded flex items-center justify-center text-white text-xs font-bold">
+                                1000
+                            </div>
+                            <div class="text-xs text-gray-600">체크포인트</div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-64 h-8 bg-red-400 rounded flex items-center justify-center text-white text-xs font-bold">
+                                활성 리두 로그 (4000 크기)
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-24 h-8 bg-purple-500 rounded flex items-center justify-center text-white text-xs font-bold">
+                                5000
+                            </div>
+                            <div class="text-xs text-gray-600">현재 위치</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- After -->
+                <div>
+                    <div class="text-center font-semibold text-gray-700 mb-4">After (체크포인트: LSN 3000)</div>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-24 h-8 bg-blue-500 rounded flex items-center justify-center text-white text-xs font-bold">
+                                3000
+                            </div>
+                            <div class="text-xs text-gray-600">새 체크포인트</div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-40 h-8 bg-red-400 rounded flex items-center justify-center text-white text-xs font-bold">
+                                활성 로그 (2000 크기)
+                            </div>
+                            <div class="text-xs text-green-600 font-semibold">✓ 감소</div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-24 h-8 bg-purple-500 rounded flex items-center justify-center text-white text-xs font-bold">
+                                5000
+                            </div>
+                            <div class="text-xs text-gray-600">현재 위치</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 설명 -->
+            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                <div class="text-sm text-gray-700">
+                    <span class="font-bold text-blue-600">체크포인트 발생 시:</span>
+                    더티 페이지를 디스크에 기록 → 활성 리두 로그 영역 감소 → 재사용 가능 공간 증가
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

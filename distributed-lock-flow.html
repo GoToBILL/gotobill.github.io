@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>분산 락을 통한 동시성 제어</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            width: 900px;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(74, 222, 128, 0.3);
+            border-radius: 24px;
+            padding: 40px 50px;
+        }
+
+        .title {
+            text-align: center;
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            background: rgba(74, 222, 128, 0.15);
+            border: 2px solid #4ade80;
+            color: #4ade80;
+        }
+
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .thread-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .thread-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .thread-label {
+            font-size: 14px;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 6px;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .thread-a {
+            background: rgba(96, 165, 250, 0.2);
+            color: #60a5fa;
+            border: 1px solid rgba(96, 165, 250, 0.4);
+        }
+
+        .thread-b {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.4);
+        }
+
+        .flow-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: 112px;
+        }
+
+        .step-box {
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .lock-acquire {
+            background: rgba(74, 222, 128, 0.15);
+            border: 1px solid rgba(74, 222, 128, 0.4);
+            color: #4ade80;
+        }
+
+        .db-cache-action {
+            background: rgba(96, 165, 250, 0.15);
+            border: 1px solid rgba(96, 165, 250, 0.4);
+            color: #60a5fa;
+        }
+
+        .lock-release {
+            background: rgba(168, 85, 247, 0.15);
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            color: #a855f7;
+        }
+
+        .waiting {
+            background: rgba(251, 191, 36, 0.15);
+            border: 1px solid rgba(251, 191, 36, 0.4);
+            color: #fbbf24;
+            min-width: 320px;
+            justify-content: center;
+        }
+
+        .arrow {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 18px;
+        }
+
+        .divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 20px 0;
+        }
+
+        .result-box {
+            margin-top: 24px;
+            padding: 16px 20px;
+            background: rgba(74, 222, 128, 0.1);
+            border: 2px solid rgba(74, 222, 128, 0.4);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .result-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: #4ade80;
+        }
+
+        .check-icon {
+            font-size: 18px;
+            color: #4ade80;
+        }
+
+        .time-indicator {
+            position: absolute;
+            left: 20px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: 600;
+        }
+
+        .step-container {
+            position: relative;
+            padding-left: 0;
+        }
+
+        .waiting-dots {
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="title">분산 락을 통한 동시성 제어</div>
+
+            <div class="timeline">
+                <!-- Thread A -->
+                <div class="thread-section">
+                    <div class="thread-header">
+                        <div class="thread-label thread-a">Thread A</div>
+                    </div>
+                    <div class="flow-row">
+                        <div class="step-box lock-acquire">락 획득</div>
+                        <span class="arrow">→</span>
+                        <div class="step-box db-cache-action">DB/캐시 작업</div>
+                        <span class="arrow">→</span>
+                        <div class="step-box lock-release">락 해제</div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- Thread B -->
+                <div class="thread-section">
+                    <div class="thread-header">
+                        <div class="thread-label thread-b">Thread B</div>
+                    </div>
+                    <div class="flow-row">
+                        <div class="step-box waiting">락 대기<span class="waiting-dots">...</span></div>
+                        <span class="arrow">→</span>
+                        <div class="step-box lock-acquire">락 획득</div>
+                        <span class="arrow">→</span>
+                        <div class="step-box db-cache-action">DB/캐시 작업</div>
+                        <span class="arrow">→</span>
+                        <div class="step-box lock-release">락 해제</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-box">
+                <span class="check-icon">&#10003;</span>
+                <span class="result-text">동시 접근을 직렬화하여 Race Condition 방지</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

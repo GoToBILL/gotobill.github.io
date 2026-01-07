@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZGC Colored Pointer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #111827;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 48px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .title {
+            text-align: center;
+            color: #e0e7ff;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 36px;
+        }
+
+        .pointer-section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+
+        .pointer-diagram {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .pointer-label {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+            margin-bottom: 8px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+        }
+
+        .pointer-bar {
+            display: flex;
+            border-radius: 8px;
+            overflow: hidden;
+            height: 48px;
+        }
+
+        .bit-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 8px;
+        }
+
+        .bit-section.unused {
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d3d 100%);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            flex: 16;
+        }
+
+        .bit-section.color {
+            background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            flex: 4;
+        }
+
+        .bit-section.address {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            flex: 44;
+        }
+
+        .bit-label {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .bit-size {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 10px;
+            margin-top: 2px;
+        }
+
+        .color-bits {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .color-bit {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+        }
+
+        .color-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .color-dot.marked {
+            background: #86efac;
+        }
+
+        .color-dot.remapped {
+            background: #93c5fd;
+        }
+
+        .color-dot.finalizable {
+            background: #fbbf24;
+        }
+
+        .color-dot.remembered {
+            background: #f472b6;
+        }
+
+        .color-name {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 11px;
+        }
+
+        .load-barrier-section {
+            margin-top: 32px;
+        }
+
+        .barrier-flow {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .barrier-step {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 16px;
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            border-radius: 50%;
+            color: #e0e7ff;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .step-title {
+            color: #e0e7ff;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .step-desc {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .step-code {
+            margin-top: 8px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 11px;
+            color: #86efac;
+        }
+
+        .arrow {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .forwarding-section {
+            margin-top: 32px;
+        }
+
+        .forwarding-table {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+        }
+
+        .table-header-cell {
+            padding: 12px 16px;
+            color: #e0e7ff;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .table-header-cell:first-child {
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .table-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .table-cell {
+            padding: 10px 16px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        .table-cell:first-child {
+            border-right: 1px solid rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .table-cell:last-child {
+            color: #86efac;
+        }
+
+        .table-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 14px;
+        }
+
+        .forwarding-desc {
+            margin-top: 12px;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .comparison {
+            margin-top: 32px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .comparison-box {
+            padding: 16px;
+            border-radius: 12px;
+        }
+
+        .comparison-box.old {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .comparison-box.new {
+            background: rgba(134, 239, 172, 0.1);
+            border: 1px solid rgba(134, 239, 172, 0.3);
+        }
+
+        .comparison-title {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .comparison-box.old .comparison-title {
+            color: #fca5a5;
+        }
+
+        .comparison-box.new .comparison-title {
+            color: #86efac;
+        }
+
+        .comparison-desc {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 600px) {
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+
+            .barrier-flow {
+                flex-direction: column;
+            }
+
+            .arrow {
+                transform: rotate(90deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">ZGC Colored Pointer</div>
+
+        <div class="pointer-section">
+            <div class="section-title">64비트 포인터 구조</div>
+            <div class="pointer-diagram">
+                <div class="pointer-label">0                    16                20                              64</div>
+                <div class="pointer-bar">
+                    <div class="bit-section unused">
+                        <span class="bit-label">미사용</span>
+                        <span class="bit-size">16 bits</span>
+                    </div>
+                    <div class="bit-section color">
+                        <span class="bit-label">색상</span>
+                        <span class="bit-size">4 bits</span>
+                    </div>
+                    <div class="bit-section address">
+                        <span class="bit-label">객체 주소</span>
+                        <span class="bit-size">44 bits = 16TB 주소 공간</span>
+                    </div>
+                </div>
+
+                <div class="color-bits">
+                    <div class="color-bit">
+                        <div class="color-dot marked"></div>
+                        <span class="color-name">Marked0 (마킹 비트)</span>
+                    </div>
+                    <div class="color-bit">
+                        <div class="color-dot marked"></div>
+                        <span class="color-name">Marked1 (마킹 비트)</span>
+                    </div>
+                    <div class="color-bit">
+                        <div class="color-dot remapped"></div>
+                        <span class="color-name">Remapped (재배치 완료)</span>
+                    </div>
+                    <div class="color-bit">
+                        <div class="color-dot finalizable"></div>
+                        <span class="color-name">Finalizable</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="load-barrier-section">
+            <div class="section-title">Load Barrier 동작</div>
+            <div class="barrier-flow">
+                <div class="barrier-step">
+                    <div class="step-number">1</div>
+                    <div class="step-title">객체 참조 읽기</div>
+                    <div class="step-desc">코드에서 객체를 읽으려고 할 때</div>
+                    <div class="step-code">Object obj = field;</div>
+                </div>
+
+                <div class="arrow">→</div>
+
+                <div class="barrier-step">
+                    <div class="step-number">2</div>
+                    <div class="step-title">색상 비트 확인</div>
+                    <div class="step-desc">포인터의 색상 비트를 확인해서 객체가 이동했는지 판단</div>
+                    <div class="step-code">if (ptr.color != expected)</div>
+                </div>
+
+                <div class="arrow">→</div>
+
+                <div class="barrier-step">
+                    <div class="step-number">3</div>
+                    <div class="step-title">참조 갱신</div>
+                    <div class="step-desc">이동했으면 새 주소로 자동 갱신 후 정상 진행</div>
+                    <div class="step-code">ptr = forwarding_addr;</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="forwarding-section">
+            <div class="section-title">Forwarding Table</div>
+            <div class="forwarding-table">
+                <div class="table-header">
+                    <div class="table-header-cell">Old Address</div>
+                    <div class="table-header-cell">New Address</div>
+                </div>
+                <div class="table-row">
+                    <div class="table-cell">0x1000</div>
+                    <div class="table-cell">0x5000</div>
+                </div>
+                <div class="table-row">
+                    <div class="table-cell">0x2000</div>
+                    <div class="table-cell">0x6000</div>
+                </div>
+                <div class="table-row">
+                    <div class="table-cell">0x3000</div>
+                    <div class="table-cell">0x7000</div>
+                </div>
+            </div>
+            <div class="forwarding-desc">
+                객체가 새 위치로 복사될 때 이전 주소와 새 주소의 매핑을 저장합니다.<br>
+                Load Barrier가 이 테이블을 조회해서 포인터를 갱신합니다.
+            </div>
+        </div>
+
+        <div class="comparison">
+            <div class="comparison-box old">
+                <div class="comparison-title">기존 GC (G1, Parallel)</div>
+                <div class="comparison-desc">
+                    객체 이동 후 모든 참조를 한 번에 업데이트해야 함<br>
+                    → 이 동안 STW 발생 (수백 ms)
+                </div>
+            </div>
+            <div class="comparison-box new">
+                <div class="comparison-title">ZGC (Colored Pointer)</div>
+                <div class="comparison-desc">
+                    객체 접근 시점에 참조를 업데이트<br>
+                    → STW 없이 점진적으로 처리 (1ms 미만)
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

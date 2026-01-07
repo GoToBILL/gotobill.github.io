@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REST vs gRPC</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #111827;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 40px 20px;
+            gap: 32px;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 32px;
+            max-width: 900px;
+            width: 100%;
+        }
+        h1 {
+            text-align: center;
+            color: #e0e7ff;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            text-align: center;
+            color: rgba(255,255,255,0.5);
+            font-size: 11px;
+            margin-bottom: 24px;
+        }
+        .section-title {
+            color: rgba(255,255,255,0.6);
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Timeline */
+        .timeline {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            padding: 20px 0;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 5%;
+            right: 5%;
+            height: 2px;
+            background: linear-gradient(to right,
+                rgba(134,239,172,0.3) 0%,
+                rgba(251,191,36,0.3) 50%,
+                rgba(165,180,252,0.5) 100%);
+            transform: translateY(-50%);
+        }
+        .timeline-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+            z-index: 1;
+        }
+        .timeline-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid;
+        }
+        .timeline-dot.rest { background: #111827; border-color: #86efac; }
+        .timeline-dot.micro { background: #111827; border-color: #fbbf24; }
+        .timeline-dot.grpc { background: #a5b4fc; border-color: #a5b4fc; }
+        .timeline-year {
+            font-size: 10px;
+            color: rgba(255,255,255,0.5);
+        }
+        .timeline-label {
+            font-size: 11px;
+            color: #e0e7ff;
+            font-weight: 600;
+            text-align: center;
+        }
+        .timeline-desc {
+            font-size: 9px;
+            color: rgba(255,255,255,0.4);
+            text-align: center;
+            max-width: 100px;
+        }
+
+        /* Flow Chart */
+        .flow-chart {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .flow-box {
+            padding: 16px 20px;
+            border-radius: 12px;
+            text-align: center;
+            min-width: 140px;
+        }
+        .flow-box.mono {
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d3d 100%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .flow-box.micro {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+        .flow-box.grpc {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            border: 1px solid rgba(165, 180, 252, 0.3);
+        }
+        .flow-title {
+            font-size: 12px;
+            color: #e0e7ff;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .flow-desc {
+            font-size: 9px;
+            color: rgba(255,255,255,0.6);
+        }
+        .flow-arrow {
+            color: rgba(255,255,255,0.3);
+            font-size: 20px;
+        }
+        .flow-problem {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 9px;
+            color: rgba(255,255,255,0.6);
+            margin-top: 8px;
+        }
+        .flow-solution {
+            background: rgba(134, 239, 172, 0.1);
+            border: 1px solid rgba(134, 239, 172, 0.2);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 9px;
+            color: rgba(255,255,255,0.6);
+            margin-top: 8px;
+        }
+
+        /* Comparison Table */
+        .comparison {
+            display: flex;
+            gap: 16px;
+        }
+        .compare-col {
+            flex: 1;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .compare-header {
+            padding: 14px 16px;
+            text-align: center;
+        }
+        .compare-header.rest {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+        }
+        .compare-header.grpc {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+        }
+        .compare-header-title {
+            font-size: 14px;
+            color: #e0e7ff;
+            font-weight: 600;
+        }
+        .compare-header-sub {
+            font-size: 9px;
+            color: rgba(255,255,255,0.6);
+            margin-top: 4px;
+        }
+        .compare-body {
+            background: rgba(0,0,0,0.2);
+            padding: 12px;
+        }
+        .compare-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .compare-row:last-child { border-bottom: none; }
+        .compare-label {
+            font-size: 10px;
+            color: rgba(255,255,255,0.5);
+            width: 70px;
+            flex-shrink: 0;
+        }
+        .compare-value {
+            font-size: 10px;
+            color: #e0e7ff;
+            flex: 1;
+        }
+        .tag {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 9px;
+            margin-right: 4px;
+        }
+        .tag.fast { background: rgba(134,239,172,0.2); color: #86efac; }
+        .tag.slow { background: rgba(251,191,36,0.2); color: #fbbf24; }
+        .tag.good { background: rgba(134,239,172,0.2); color: #86efac; }
+        .tag.bad { background: rgba(239,68,68,0.2); color: #f87171; }
+
+        /* Use Case */
+        .use-cases {
+            display: flex;
+            gap: 16px;
+        }
+        .use-case {
+            flex: 1;
+            padding: 16px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .use-case-title {
+            font-size: 11px;
+            color: #e0e7ff;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .use-case-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 6px;
+        }
+        .dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .dot.green { background: #86efac; }
+        .dot.purple { background: #a5b4fc; }
+
+        /* Code Example */
+        .code-section {
+            display: flex;
+            gap: 16px;
+        }
+        .code-box {
+            flex: 1;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .code-header {
+            padding: 8px 12px;
+            font-size: 10px;
+            color: rgba(255,255,255,0.5);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .code-body {
+            padding: 12px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 10px;
+            color: #e0e7ff;
+            line-height: 1.6;
+        }
+        .code-comment { color: rgba(255,255,255,0.3); }
+        .code-keyword { color: #c4b5fd; }
+        .code-string { color: #86efac; }
+
+        .key-insight {
+            margin-top: 16px;
+            padding: 14px;
+            background: rgba(165, 180, 252, 0.1);
+            border: 1px solid rgba(165, 180, 252, 0.2);
+            border-radius: 8px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.7);
+            text-align: center;
+        }
+        .highlight { color: #fbbf24; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<!-- Timeline Section -->
+<div class="container">
+    <h1>REST에서 gRPC로의 진화</h1>
+    <p class="subtitle">마이크로서비스 시대, 왜 gRPC가 부상했는가</p>
+
+    <div class="section-title">Timeline</div>
+    <div class="timeline">
+        <div class="timeline-item">
+            <div class="timeline-dot rest"></div>
+            <span class="timeline-year">2000~2010</span>
+            <span class="timeline-label">REST 전성기</span>
+            <span class="timeline-desc">모놀리스 + HTTP/JSON</span>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-dot micro"></div>
+            <span class="timeline-year">2014~2018</span>
+            <span class="timeline-label">마이크로서비스</span>
+            <span class="timeline-desc">서비스 분리, 통신 폭증</span>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-dot grpc"></div>
+            <span class="timeline-year">2015~현재</span>
+            <span class="timeline-label">gRPC 부상</span>
+            <span class="timeline-desc">고성능 서버간 통신</span>
+        </div>
+    </div>
+</div>
+
+<!-- Flow Chart Section -->
+<div class="container">
+    <div class="section-title">아키텍처 진화와 문제점</div>
+    <div class="flow-chart">
+        <div class="flow-box mono">
+            <div class="flow-title">Monolith</div>
+            <div class="flow-desc">하나의 큰 서버</div>
+            <div class="flow-problem">스케일링 어려움<br>배포 단위가 큼</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box micro">
+            <div class="flow-title">Microservices</div>
+            <div class="flow-desc">수십~수백 개 서비스</div>
+            <div class="flow-problem">서비스 간 통신 폭증<br>REST 오버헤드 문제</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box grpc">
+            <div class="flow-title">gRPC 도입</div>
+            <div class="flow-desc">내부 통신 최적화</div>
+            <div class="flow-solution">바이너리 + HTTP/2<br>10배 빠른 직렬화</div>
+        </div>
+    </div>
+</div>
+
+<!-- Comparison Section -->
+<div class="container">
+    <div class="section-title">REST vs gRPC 비교</div>
+    <div class="comparison">
+        <div class="compare-col">
+            <div class="compare-header rest">
+                <div class="compare-header-title">REST API</div>
+                <div class="compare-header-sub">HTTP/1.1 + JSON</div>
+            </div>
+            <div class="compare-body">
+                <div class="compare-row">
+                    <span class="compare-label">데이터 형식</span>
+                    <span class="compare-value">JSON (텍스트)</span>
+                </div>
+                <div class="compare-row">
+                    <span class="compare-label">직렬화</span>
+                    <span class="compare-value"><span class="tag slow">느림</span> 파싱 비용 큼</span>
+                </div>
+                <div class="compare-row">
+                    <span class="compare-label">프로토콜</span>
+                    <span class="compare-value">HTTP/1.1 (연결당 1요청)</span>
+                </div>
+                <div class="compare-row">
+                    <span class="compare-label">타입 안정성</span>
+                    <span class="compare-value"><span class="tag bad">약함</span> 런타임 에러</span>
+                </div>
+                <div class="compare-row">
+                    <span class="compare-label">브라우저</span>
+                    <span class="compare-value"><span class="tag good">지원</span> 네이티브</span>
+                </div>
+            </div>
+        </div>
+        <div class="compare-col">
+            <div class="compare-header grpc">
+                <div class="compare-header-title">gRPC</div>
+                <div class="compare-header-sub">HTTP/2 + Protocol Buffers</div>
+            </div>
+            <div class="compare-body">
+                <div class="compare-row">
+                    <span class="compare-label">데이터 형식</span>
+                    <span class="compare-value">Protobuf (바이너리)</span>
+                </div>
+                <div class="compare-row">
+                    <span class="compare-label">직렬화</span>
+                    <span class="compare-value"><span class="tag fast">10x 빠름</span> 바이너리</span>
+                </div>
+                <div class="compare-row">
+                    <span class="compare-label">프로토콜</span>
+                    <span class="compare-value">HTTP/2 (멀티플렉싱)</span>
+                </div>
+                <div class="compare-row">
+                    <span class="compare-label">타입 안정성</span>
+                    <span class="compare-value"><span class="tag good">강함</span> 컴파일 체크</span>
+                </div>
+                <div class="compare-row">
+                    <span class="compare-label">브라우저</span>
+                    <span class="compare-value"><span class="tag bad">제한적</span> gRPC-Web 필요</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Use Cases -->
+<div class="container">
+    <div class="section-title">언제 무엇을 쓸까?</div>
+    <div class="use-cases">
+        <div class="use-case">
+            <div class="use-case-title">REST가 적합한 경우</div>
+            <div class="use-case-item"><div class="dot green"></div>브라우저 - 서버 통신</div>
+            <div class="use-case-item"><div class="dot green"></div>외부 공개 API</div>
+            <div class="use-case-item"><div class="dot green"></div>간단한 CRUD 작업</div>
+            <div class="use-case-item"><div class="dot green"></div>디버깅 편의성 중요</div>
+        </div>
+        <div class="use-case">
+            <div class="use-case-title">gRPC가 적합한 경우</div>
+            <div class="use-case-item"><div class="dot purple"></div>서버 - 서버 내부 통신</div>
+            <div class="use-case-item"><div class="dot purple"></div>마이크로서비스 간 통신</div>
+            <div class="use-case-item"><div class="dot purple"></div>실시간 스트리밍</div>
+            <div class="use-case-item"><div class="dot purple"></div>고성능, 낮은 지연 필요</div>
+        </div>
+    </div>
+
+    <div class="key-insight">
+        <strong>핵심</strong>: 외부는 <span class="highlight">REST</span>, 내부는 <span class="highlight">gRPC</span><br>
+        브라우저 → API Gateway (REST) → 마이크로서비스들 (gRPC)
+    </div>
+</div>
+
+<!-- Code Example -->
+<div class="container">
+    <div class="section-title">코드 비교</div>
+    <div class="code-section">
+        <div class="code-box">
+            <div class="code-header">REST (HTTP + JSON)</div>
+            <div class="code-body">
+                <span class="code-comment">// 요청</span><br>
+                POST /users HTTP/1.1<br>
+                Content-Type: application/json<br><br>
+                {<br>
+                &nbsp;&nbsp;<span class="code-string">"name"</span>: <span class="code-string">"John"</span>,<br>
+                &nbsp;&nbsp;<span class="code-string">"age"</span>: 30<br>
+                }<br><br>
+                <span class="code-comment">// 텍스트 파싱 필요</span>
+            </div>
+        </div>
+        <div class="code-box">
+            <div class="code-header">gRPC (HTTP/2 + Protobuf)</div>
+            <div class="code-body">
+                <span class="code-comment">// user.proto 정의</span><br>
+                <span class="code-keyword">message</span> User {<br>
+                &nbsp;&nbsp;<span class="code-keyword">string</span> name = 1;<br>
+                &nbsp;&nbsp;<span class="code-keyword">int32</span> age = 2;<br>
+                }<br><br>
+                <span class="code-comment">// 바이너리로 전송 (크기 작음)</span><br>
+                <span class="code-comment">// 타입 체크 컴파일 타임</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

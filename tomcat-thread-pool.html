@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tomcat Thread Pool 구조</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            padding: 25px;
+            color: #e2e8f0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 25px;
+            color: #f8fafc;
+        }
+        .diagram {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 30px;
+        }
+        .pool-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .pool-section {
+            border: 1px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 14px;
+            padding: 20px;
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+        .section-value {
+            font-size: 16px;
+            color: #94a3b8;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 14px;
+            border-radius: 8px;
+        }
+        .thread-grid {
+            display: grid;
+            grid-template-columns: repeat(20, 1fr);
+            gap: 4px;
+        }
+        .thread-box {
+            aspect-ratio: 1;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        .active {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        .idle {
+            background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        .spare {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+        }
+        .legend {
+            display: flex;
+            gap: 35px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            color: #94a3b8;
+        }
+        .legend-box {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+        }
+        .config-table {
+            margin-top: 25px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .config-table th,
+        .config-table td {
+            padding: 14px 18px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .config-table th {
+            font-size: 15px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .config-table td {
+            font-size: 16px;
+        }
+        .config-name {
+            color: #60a5fa;
+            font-family: 'SF Mono', monospace;
+        }
+        .config-default {
+            color: #34d399;
+        }
+        .config-desc {
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tomcat Thread Pool 구조</h1>
+
+        <div class="diagram">
+            <div class="pool-container">
+                <!-- Thread Pool Visualization -->
+                <div class="pool-section">
+                    <div class="section-header">
+                        <div class="section-title">Thread Pool (maxThreads: 200)</div>
+                        <div class="section-value">현재 활성: 45 / 대기: 155</div>
+                    </div>
+                    <div class="thread-grid">
+                        <!-- Active threads (45) -->
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <div class="thread-box active"></div>
+                        <!-- Idle threads (minSpareThreads: 25) -->
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <div class="thread-box idle"></div>
+                        <!-- Spare capacity -->
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                        <div class="thread-box spare"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-box active"></div>
+                    <span>Active (요청 처리 중)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box idle"></div>
+                    <span>Idle (대기 중)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box spare"></div>
+                    <span>Spare (확장 가능)</span>
+                </div>
+            </div>
+
+            <table class="config-table">
+                <thead>
+                    <tr>
+                        <th>설정</th>
+                        <th>기본값</th>
+                        <th>설명</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="config-name">maxThreads</td>
+                        <td class="config-default">200</td>
+                        <td class="config-desc">최대 워커 스레드 수</td>
+                    </tr>
+                    <tr>
+                        <td class="config-name">minSpareThreads</td>
+                        <td class="config-default">10</td>
+                        <td class="config-desc">최소 유지 대기 스레드 수</td>
+                    </tr>
+                    <tr>
+                        <td class="config-name">maxIdleTime</td>
+                        <td class="config-default">60000ms</td>
+                        <td class="config-desc">유휴 스레드 제거 대기 시간</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

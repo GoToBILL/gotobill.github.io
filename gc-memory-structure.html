@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Structure</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #111827;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 48px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .title {
+            text-align: center;
+            color: #e0e7ff;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 36px;
+        }
+
+        .memory-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .memory-row {
+            display: flex;
+            align-items: stretch;
+            min-height: 60px;
+        }
+
+        .memory-section {
+            flex: 1;
+            padding: 16px 20px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .memory-label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-left: 16px;
+            display: flex;
+            align-items: center;
+            width: 100px;
+            flex-shrink: 0;
+        }
+
+        .section-name {
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .section-desc {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+        }
+
+        .code-section {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+        }
+
+        .data-section {
+            background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%);
+        }
+
+        .heap-section {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            min-height: 100px;
+        }
+
+        .stack-section {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+        }
+
+        .bracket {
+            position: relative;
+            width: 30px;
+            flex-shrink: 0;
+        }
+
+        .bracket-line {
+            position: absolute;
+            right: 0;
+            width: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-left: none;
+        }
+
+        .bracket-top {
+            top: 0;
+            height: 50%;
+            border-bottom: none;
+            border-radius: 0 4px 0 0;
+        }
+
+        .bracket-bottom {
+            bottom: 0;
+            height: 50%;
+            border-top: none;
+            border-radius: 0 0 4px 0;
+        }
+
+        .runtime-label {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.4);
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        .compile-group {
+            position: relative;
+        }
+
+        .runtime-group {
+            position: relative;
+        }
+
+        .gc-badge {
+            position: absolute;
+            right: -80px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.4);
+            color: #86efac;
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        .section-wrapper {
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .side-label {
+            position: absolute;
+            right: -90px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+            white-space: nowrap;
+        }
+
+        .gc-target {
+            color: #86efac;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">Memory Structure</div>
+
+        <div class="memory-stack">
+            <div class="section-wrapper">
+                <div class="memory-section code-section">
+                    <div class="section-name">Code</div>
+                    <div class="section-desc">Program code</div>
+                </div>
+                <div class="side-label">Compile time</div>
+            </div>
+
+            <div class="section-wrapper">
+                <div class="memory-section data-section">
+                    <div class="section-name">Data</div>
+                    <div class="section-desc">Global, static variables</div>
+                </div>
+                <div class="side-label">Program start</div>
+            </div>
+
+            <div class="section-wrapper">
+                <div class="memory-section heap-section">
+                    <div class="section-name">Heap</div>
+                    <div class="section-desc">Objects, arrays</div>
+                </div>
+                <div class="side-label gc-target">GC Target</div>
+            </div>
+
+            <div class="section-wrapper">
+                <div class="memory-section stack-section">
+                    <div class="section-name">Stack</div>
+                    <div class="section-desc">Local variables, parameters</div>
+                </div>
+                <div class="side-label">Method call</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

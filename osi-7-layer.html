@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSI 7 Layer vs TCP/IP 4 Layer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #111827;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 48px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .title {
+            text-align: center;
+            color: #e0e7ff;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 36px;
+        }
+
+        .comparison {
+            display: flex;
+            gap: 48px;
+            justify-content: center;
+        }
+
+        .model {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .model-title {
+            text-align: center;
+            color: #a5b4fc;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .layer {
+            border-radius: 10px;
+            padding: 14px 24px;
+            min-width: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .layer-num {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .layer-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #e0e7ff;
+        }
+
+        .layer-protocol {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* OSI Colors */
+        .app-layer {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            border: 1px solid rgba(165, 180, 252, 0.3);
+        }
+
+        .pres-layer {
+            background: linear-gradient(135deg, #3730a3 0%, #4f46e5 100%);
+            border: 1px solid rgba(165, 180, 252, 0.3);
+        }
+
+        .sess-layer {
+            background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%);
+            border: 1px solid rgba(165, 180, 252, 0.3);
+        }
+
+        .trans-layer {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            border: 1px solid rgba(134, 239, 172, 0.3);
+        }
+
+        .net-layer {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .data-layer {
+            background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%);
+            border: 1px solid rgba(147, 197, 253, 0.3);
+        }
+
+        .phys-layer {
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d3d 100%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        /* TCP/IP combined layers */
+        .tcpip-app {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            border: 1px solid rgba(165, 180, 252, 0.3);
+            min-height: 110px;
+        }
+
+        .tcpip-trans {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            border: 1px solid rgba(134, 239, 172, 0.3);
+        }
+
+        .tcpip-net {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .tcpip-link {
+            background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%);
+            border: 1px solid rgba(147, 197, 253, 0.3);
+            min-height: 70px;
+        }
+
+        .arrow-section {
+            display: flex;
+            align-items: stretch;
+            width: 100px;
+            position: relative;
+        }
+
+        .arrow-svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        .info {
+            margin-top: 32px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .info-title {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .info-items {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .info-icon {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .info-icon.purple { background: #a5b4fc; }
+        .info-icon.green { background: #86efac; }
+        .info-icon.orange { background: #fbbf24; }
+        .info-icon.blue { background: #93c5fd; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">OSI 7 Layer vs TCP/IP 4 Layer</div>
+
+        <div class="comparison">
+            <div class="model">
+                <div class="model-title">OSI 7 Layer</div>
+                <div class="layer app-layer">
+                    <span class="layer-num">L7</span>
+                    <span class="layer-name">Application</span>
+                    <span class="layer-protocol">HTTP, FTP, SMTP</span>
+                </div>
+                <div class="layer pres-layer">
+                    <span class="layer-num">L6</span>
+                    <span class="layer-name">Presentation</span>
+                    <span class="layer-protocol">SSL/TLS, JPEG</span>
+                </div>
+                <div class="layer sess-layer">
+                    <span class="layer-num">L5</span>
+                    <span class="layer-name">Session</span>
+                    <span class="layer-protocol">NetBIOS, RPC</span>
+                </div>
+                <div class="layer trans-layer">
+                    <span class="layer-num">L4</span>
+                    <span class="layer-name">Transport</span>
+                    <span class="layer-protocol">TCP, UDP</span>
+                </div>
+                <div class="layer net-layer">
+                    <span class="layer-num">L3</span>
+                    <span class="layer-name">Network</span>
+                    <span class="layer-protocol">IP, ICMP, ARP</span>
+                </div>
+                <div class="layer data-layer">
+                    <span class="layer-num">L2</span>
+                    <span class="layer-name">Data Link</span>
+                    <span class="layer-protocol">Ethernet, PPP</span>
+                </div>
+                <div class="layer phys-layer">
+                    <span class="layer-num">L1</span>
+                    <span class="layer-name">Physical</span>
+                    <span class="layer-protocol">Cable, Hub</span>
+                </div>
+            </div>
+
+            <div class="arrow-section">
+                <svg id="arrow-svg" class="arrow-svg"></svg>
+            </div>
+
+            <div class="model">
+                <div class="model-title">TCP/IP 4 Layer</div>
+                <div class="layer tcpip-app">
+                    <span class="layer-num">L4</span>
+                    <span class="layer-name">Application</span>
+                    <span class="layer-protocol">HTTP, FTP, DNS, SSH</span>
+                </div>
+                <div class="layer tcpip-trans">
+                    <span class="layer-num">L3</span>
+                    <span class="layer-name">Transport</span>
+                    <span class="layer-protocol">TCP, UDP</span>
+                </div>
+                <div class="layer tcpip-net">
+                    <span class="layer-num">L2</span>
+                    <span class="layer-name">Internet</span>
+                    <span class="layer-protocol">IP, ICMP</span>
+                </div>
+                <div class="layer tcpip-link">
+                    <span class="layer-num">L1</span>
+                    <span class="layer-name">Network Access</span>
+                    <span class="layer-protocol">Ethernet, Wi-Fi</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="info">
+            <div class="info-title">계층별 핵심 역할</div>
+            <div class="info-items">
+                <div class="info-item">
+                    <div class="info-icon purple"></div>
+                    <span>Application: 사용자와 직접 상호작용하는 프로토콜 (HTTP, SMTP)</span>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon green"></div>
+                    <span>Transport: 프로세스 간 통신, 신뢰성 보장 (TCP), 포트 번호</span>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon orange"></div>
+                    <span>Network/Internet: 논리적 주소(IP), 라우팅으로 목적지까지 경로 결정</span>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon blue"></div>
+                    <span>Data Link/Network Access: 물리적 주소(MAC), 같은 네트워크 내 전송</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function drawArrows() {
+            const svg = document.getElementById('arrow-svg');
+            const svgRect = svg.getBoundingClientRect();
+
+            const osiLayers = document.querySelectorAll('.model:first-of-type .layer');
+            const tcpipLayers = document.querySelectorAll('.model:last-of-type .layer');
+
+            const getY = (el) => {
+                const rect = el.getBoundingClientRect();
+                return rect.top + rect.height / 2 - svgRect.top;
+            };
+
+            const osi = Array.from(osiLayers).map(getY);
+            const tcpip = Array.from(tcpipLayers).map(getY);
+
+            svg.innerHTML = '';
+            svg.setAttribute('viewBox', `0 0 100 ${svgRect.height}`);
+
+            // 화살촉을 선의 각도에 맞게 그리는 함수
+            function drawArrowHead(x, y, fromX, fromY, color) {
+                const angle = Math.atan2(y - fromY, x - fromX);
+                const size = 8;
+                const x1 = x - size * Math.cos(angle - Math.PI / 6);
+                const y1 = y - size * Math.sin(angle - Math.PI / 6);
+                const x2 = x - size * Math.cos(angle + Math.PI / 6);
+                const y2 = y - size * Math.sin(angle + Math.PI / 6);
+                return `<polygon points="${x},${y} ${x1},${y1} ${x2},${y2}" fill="${color}"/>`;
+            }
+
+            // L7,L6,L5 -> Application (purple)
+            const purple = 'rgba(165,180,252,0.5)';
+            const appTarget = tcpip[0];
+            svg.innerHTML += `<path d="M 5 ${osi[0]} C 35 ${osi[0]}, 35 ${appTarget}, 55 ${appTarget}" stroke="${purple}" stroke-width="1.5" fill="none"/>`;
+            svg.innerHTML += `<path d="M 5 ${osi[1]} C 35 ${osi[1]}, 35 ${appTarget}, 55 ${appTarget}" stroke="${purple}" stroke-width="1.5" fill="none"/>`;
+            svg.innerHTML += `<path d="M 5 ${osi[2]} C 35 ${osi[2]}, 35 ${appTarget}, 55 ${appTarget}" stroke="${purple}" stroke-width="1.5" fill="none"/>`;
+            svg.innerHTML += `<line x1="55" y1="${appTarget}" x2="95" y2="${appTarget}" stroke="${purple}" stroke-width="1.5"/>`;
+            svg.innerHTML += drawArrowHead(95, appTarget, 55, appTarget, purple);
+
+            // L4 -> Transport (green) - 대각선
+            const green = 'rgba(134,239,172,0.5)';
+            svg.innerHTML += `<line x1="5" y1="${osi[3]}" x2="95" y2="${tcpip[1]}" stroke="${green}" stroke-width="1.5"/>`;
+            svg.innerHTML += drawArrowHead(95, tcpip[1], 5, osi[3], green);
+
+            // L3 -> Internet (orange) - 대각선
+            const orange = 'rgba(251,191,36,0.5)';
+            svg.innerHTML += `<line x1="5" y1="${osi[4]}" x2="95" y2="${tcpip[2]}" stroke="${orange}" stroke-width="1.5"/>`;
+            svg.innerHTML += drawArrowHead(95, tcpip[2], 5, osi[4], orange);
+
+            // L2,L1 -> Network Access (blue)
+            const blue = 'rgba(147,197,253,0.5)';
+            const linkTarget = tcpip[3];
+            svg.innerHTML += `<path d="M 5 ${osi[5]} C 35 ${osi[5]}, 35 ${linkTarget}, 55 ${linkTarget}" stroke="${blue}" stroke-width="1.5" fill="none"/>`;
+            svg.innerHTML += `<path d="M 5 ${osi[6]} C 35 ${osi[6]}, 35 ${linkTarget}, 55 ${linkTarget}" stroke="${blue}" stroke-width="1.5" fill="none"/>`;
+            svg.innerHTML += `<line x1="55" y1="${linkTarget}" x2="95" y2="${linkTarget}" stroke="${blue}" stroke-width="1.5"/>`;
+            svg.innerHTML += drawArrowHead(95, linkTarget, 55, linkTarget, blue);
+        }
+
+        window.addEventListener('load', drawArrows);
+        window.addEventListener('resize', drawArrows);
+    </script>
+</body>
+</html>

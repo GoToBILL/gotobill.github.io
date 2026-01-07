@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JVM Platform Independence</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 48px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .title {
+            text-align: center;
+            color: #e0e7ff;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 36px;
+        }
+
+        .diagram {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .node {
+            padding: 14px 28px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            position: relative;
+            z-index: 2;
+        }
+
+        .java-code {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            color: #e0e7ff;
+        }
+
+        .bytecode {
+            background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%);
+            color: #bae6fd;
+        }
+
+        .arrow-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 6px 0;
+        }
+
+        .arrow-label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 2px;
+        }
+
+        .arrow-section svg {
+            width: 16px;
+            height: 16px;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .platforms-wrapper {
+            width: 100%;
+            margin-top: 16px;
+            position: relative;
+        }
+
+        /* SVG로 분기 화살표 그리기 */
+        .branch-svg {
+            width: 100%;
+            height: 40px;
+            display: block;
+        }
+
+        .platforms {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0 20px;
+        }
+
+        .platform {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+            width: 100px;
+        }
+
+        .jvm {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            color: #bbf7d0;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            width: 100%;
+            text-align: center;
+        }
+
+        .platform-arrow {
+            padding: 6px 0;
+        }
+
+        .platform-arrow svg {
+            width: 14px;
+            height: 14px;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .os {
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d3d 100%);
+            color: rgba(255, 255, 255, 0.7);
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
+            text-align: center;
+        }
+
+        .slogan {
+            margin-top: 32px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 13px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">Write Once, Run Anywhere</div>
+
+        <div class="diagram">
+            <div class="node java-code">
+                Java Code (.java)
+            </div>
+
+            <div class="arrow-section">
+                <span class="arrow-label">javac</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M8 15l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+
+            <div class="node bytecode">
+                Bytecode (.class)
+            </div>
+
+            <div class="platforms-wrapper">
+                <!-- 분기 화살표 SVG -->
+                <svg class="branch-svg" viewBox="0 0 500 40" preserveAspectRatio="xMidYMid meet">
+                    <!-- 중앙에서 왼쪽으로 -->
+                    <path d="M250 0 L250 15 L70 15 L70 32"
+                          fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+                    <path d="M66 28 L70 36 L74 28"
+                          fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+
+                    <!-- 중앙 직선 -->
+                    <path d="M250 0 L250 32"
+                          fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+                    <path d="M246 28 L250 36 L254 28"
+                          fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+
+                    <!-- 중앙에서 오른쪽으로 -->
+                    <path d="M250 0 L250 15 L430 15 L430 32"
+                          fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+                    <path d="M426 28 L430 36 L434 28"
+                          fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+                </svg>
+
+                <div class="platforms">
+                    <div class="platform">
+                        <div class="jvm">JVM</div>
+                        <div class="platform-arrow">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14M8 15l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <div class="os">Windows</div>
+                    </div>
+                    <div class="platform">
+                        <div class="jvm">JVM</div>
+                        <div class="platform-arrow">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14M8 15l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <div class="os">macOS</div>
+                    </div>
+                    <div class="platform">
+                        <div class="jvm">JVM</div>
+                        <div class="platform-arrow">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14M8 15l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <div class="os">Linux</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slogan">
+            동일한 바이트코드, 각 OS에 맞는 JVM이 실행
+        </div>
+    </div>
+</body>
+</html>

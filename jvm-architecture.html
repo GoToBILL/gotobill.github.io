@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JVM Architecture</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 48px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .title {
+            text-align: center;
+            color: #e0e7ff;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 40px;
+        }
+
+        .jvm-box {
+            border: 2px solid rgba(99, 102, 241, 0.4);
+            border-radius: 16px;
+            padding: 24px;
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .jvm-label {
+            color: #a5b4fc;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .components {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .component {
+            padding: 16px 20px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .class-loader {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+        }
+
+        .runtime-data {
+            background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%);
+        }
+
+        .execution-engine {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+        }
+
+        .gc {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+        }
+
+        .component-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .component-content {
+            flex: 1;
+        }
+
+        .component-name {
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .component-desc {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 13px;
+        }
+
+        .arrow {
+            display: flex;
+            justify-content: center;
+            padding: 4px 0;
+        }
+
+        .arrow svg {
+            width: 16px;
+            height: 16px;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .sub-components {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .sub-component {
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">JVM Architecture</div>
+
+        <div class="jvm-box">
+            <div class="jvm-label">Java Virtual Machine</div>
+
+            <div class="components">
+                <div class="component class-loader">
+                    <div class="component-icon">1</div>
+                    <div class="component-content">
+                        <div class="component-name">Class Loader</div>
+                        <div class="component-desc">.class 파일을 메모리에 로드</div>
+                        <div class="sub-components">
+                            <span class="sub-component">Loading</span>
+                            <span class="sub-component">Linking</span>
+                            <span class="sub-component">Initialization</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="arrow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14M8 15l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+
+                <div class="component runtime-data">
+                    <div class="component-icon">2</div>
+                    <div class="component-content">
+                        <div class="component-name">Runtime Data Area</div>
+                        <div class="component-desc">프로그램 실행에 필요한 메모리 관리</div>
+                        <div class="sub-components">
+                            <span class="sub-component">Heap</span>
+                            <span class="sub-component">Stack</span>
+                            <span class="sub-component">Method Area</span>
+                            <span class="sub-component">PC Register</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="arrow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14M8 15l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+
+                <div class="component execution-engine">
+                    <div class="component-icon">3</div>
+                    <div class="component-content">
+                        <div class="component-name">Execution Engine</div>
+                        <div class="component-desc">바이트코드를 기계어로 변환해 실행</div>
+                        <div class="sub-components">
+                            <span class="sub-component">Interpreter</span>
+                            <span class="sub-component">JIT Compiler</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="arrow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14M8 15l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+
+                <div class="component gc">
+                    <div class="component-icon">4</div>
+                    <div class="component-content">
+                        <div class="component-name">Garbage Collector</div>
+                        <div class="component-desc">사용하지 않는 객체 메모리 해제</div>
+                        <div class="sub-components">
+                            <span class="sub-component">Minor GC</span>
+                            <span class="sub-component">Major GC</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

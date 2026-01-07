@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook Region 구조</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            zoom: 1.3;
+        }
+    </style>
+</head>
+<body class="bg-white p-8">
+    <div class="max-w-6xl mx-auto">
+        <div class="text-2xl font-bold text-center mb-6 p-3 border-b-2 border-gray-300">
+            Region 구조
+        </div>
+
+        <!-- Region Box -->
+        <div class="border-2 border-blue-400 rounded p-6 mb-4 bg-blue-50">
+            <div class="text-xl font-bold mb-6 text-center text-blue-700">Region</div>
+
+            <!-- Frontend Clusters -->
+            <div class="mb-6">
+                <div class="text-lg font-semibold mb-4">Frontend Clusters</div>
+
+                <div class="grid grid-cols-3 gap-4">
+                    <!-- Frontend Cluster 1 -->
+                    <div class="border-2 border-green-400 p-3 rounded bg-green-50">
+                        <div class="text-base font-semibold mb-3 text-center pb-2 border-b border-green-300">Cluster 1</div>
+
+                        <!-- Web Servers -->
+                        <div class="mb-3 p-2 border border-gray-300 rounded bg-yellow-50">
+                            <div class="text-sm font-semibold mb-2">Web Servers</div>
+                            <div class="grid grid-cols-3 gap-1">
+                                <div class="border border-gray-400 p-2 text-xs text-center bg-white">WS</div>
+                                <div class="border border-gray-400 p-2 text-xs text-center bg-white">WS</div>
+                                <div class="border border-gray-400 p-2 text-xs text-center bg-white">WS</div>
+                            </div>
+                        </div>
+
+                        <!-- Memcached Servers -->
+                        <div class="p-2 border border-gray-300 rounded bg-purple-50">
+                            <div class="text-sm font-semibold mb-2">Memcached</div>
+                            <div class="grid grid-cols-3 gap-1">
+                                <div class="border border-gray-400 p-2 text-xs text-center bg-white">MC</div>
+                                <div class="border border-gray-400 p-2 text-xs text-center bg-white">MC</div>
+                                <div class="border border-gray-400 p-2 text-xs text-center bg-white">MC</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Frontend Cluster 2 -->
+                    <div class="border-2 border-green-400 p-3 rounded bg-green-50">
+                        <div class="text-base font-semibold mb-3 text-center pb-2 border-b border-green-300">Cluster 2</div>
+
+                        <!-- Web Servers -->
+                        <div class="mb-3 p-2 border border-gray-300 rounded bg-yellow-50">
+                            <div class="text-sm font-semibold mb-2">Web Servers</div>
+                            <div class="grid grid-cols-3 gap-1">
+                                <div class="border border-gray-400 p-2 text-xs text-center bg-white">WS</div>
+                                <div class="border border-gray-400 p-2 text-xs text-center bg-white">WS</div>
+                                <div class="border border-gray-400 p-2 text-xs text-center bg-white">WS</div>
+                            </div>
+                        </div>
+
+                        <!-- Memcached Servers -->
+                        <div class="p-2 border border-gray-300 rounded bg-purple-50">
+                            <div class="text-sm font-semibold mb-2">Memcached</div>
+                            <div class="grid grid-cols-3 gap-1">
+                                <div class="border border-gray-400 p-2 text-xs text-center bg-white">MC</div>
+                                <div class="border border-gray-400 p-2 text-xs text-center bg-white">MC</div>
+                                <div class="border border-gray-400 p-2 text-xs text-center bg-white">MC</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- More clusters -->
+                    <div class="border-2 border-green-400 p-3 rounded bg-green-50 flex items-center justify-center">
+                        <div class="text-3xl font-bold text-gray-400">...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Storage Cluster -->
+            <div>
+                <div class="text-lg font-semibold mb-4">Storage Cluster</div>
+
+                <div class="border-2 border-red-400 p-3 rounded bg-red-50">
+                    <div class="text-base font-semibold mb-3 text-center pb-2 border-b border-red-300">Storage</div>
+
+                    <!-- MySQL Databases -->
+                    <div class="p-3 border border-gray-300 rounded bg-orange-50">
+                        <div class="text-sm font-semibold mb-3 text-center">MySQL Databases</div>
+                        <div class="grid grid-cols-5 gap-2">
+                            <div class="border border-gray-400 p-2 text-xs text-center bg-white">DB</div>
+                            <div class="border border-gray-400 p-2 text-xs text-center bg-white">DB</div>
+                            <div class="border border-gray-400 p-2 text-xs text-center bg-white">DB</div>
+                            <div class="border border-gray-400 p-2 text-xs text-center bg-white">DB</div>
+                            <div class="border border-gray-400 p-2 text-xs text-center bg-white">DB</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

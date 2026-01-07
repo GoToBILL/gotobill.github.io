@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semi-Sync vs Async 비교</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 1000px;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 40px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+        }
+        .card.async {
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+        .card.async::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 20%, rgba(239, 68, 68, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        .card.semi-sync {
+            border-color: rgba(34, 197, 94, 0.2);
+        }
+        .card.semi-sync::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 20%, rgba(34, 197, 94, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+        .badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .badge.danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        .badge.success {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        .title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: -0.5px;
+        }
+        .flow {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+        .node {
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            position: relative;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .node:hover {
+            transform: translateY(-2px);
+        }
+        .node.master {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            color: #c7d2fe;
+            box-shadow: 0 4px 20px rgba(67, 56, 202, 0.3);
+        }
+        .node.action {
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d3d 100%);
+            color: #a1a1aa;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .node.binlog {
+            background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%);
+            color: #7dd3fc;
+            box-shadow: 0 4px 20px rgba(3, 105, 161, 0.3);
+        }
+        .node.wait {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+            color: #fde047;
+            box-shadow: 0 4px 20px rgba(161, 98, 7, 0.3);
+        }
+        .node.response {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            color: #86efac;
+            box-shadow: 0 4px 20px rgba(21, 128, 61, 0.3);
+        }
+        .node.slave {
+            background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%);
+            color: #93c5fd;
+            box-shadow: 0 4px 20px rgba(29, 78, 216, 0.3);
+        }
+        .arrow {
+            display: flex;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 20px;
+        }
+        .arrow svg {
+            width: 32px;
+            height: 32px;
+        }
+        .arrow.dashed svg line {
+            stroke-dasharray: 4, 4;
+        }
+        .slave-section {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .slave-section.sync {
+            border-top: 1px solid rgba(34, 197, 94, 0.2);
+        }
+        .ack-flow {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .ack-badge {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: #bfdbfe;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+        .info-box {
+            margin-top: 32px;
+            padding: 20px 24px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.6;
+            position: relative;
+            z-index: 1;
+        }
+        .info-box.warning {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+        }
+        .info-box.info {
+            background: rgba(59, 130, 246, 0.08);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            color: #93c5fd;
+        }
+        .info-box strong {
+            color: #fff;
+            font-weight: 600;
+        }
+        .info-box .highlight {
+            color: #fbbf24;
+        }
+        .label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        .vs-divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 8px 0;
+        }
+        .vs-text {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 비동기 복제 -->
+        <div class="card async">
+            <div class="header">
+                <span class="badge danger">Async</span>
+                <h2 class="title">비동기 복제</h2>
+            </div>
+
+            <div class="label">Data Flow</div>
+            <div class="flow">
+                <div class="node master">Master</div>
+                <div class="arrow">
+                    <svg viewBox="0 0 32 32" fill="none">
+                        <line x1="4" y1="16" x2="24" y2="16" stroke="currentColor" stroke-width="2"/>
+                        <polyline points="18,10 24,16 18,22" stroke="currentColor" stroke-width="2" fill="none"/>
+                    </svg>
+                </div>
+                <div class="node action">쓰기</div>
+                <div class="arrow">
+                    <svg viewBox="0 0 32 32" fill="none">
+                        <line x1="4" y1="16" x2="24" y2="16" stroke="currentColor" stroke-width="2"/>
+                        <polyline points="18,10 24,16 18,22" stroke="currentColor" stroke-width="2" fill="none"/>
+                    </svg>
+                </div>
+                <div class="node binlog">Binlog 기록</div>
+                <div class="arrow">
+                    <svg viewBox="0 0 32 32" fill="none">
+                        <line x1="4" y1="16" x2="24" y2="16" stroke="currentColor" stroke-width="2"/>
+                        <polyline points="18,10 24,16 18,22" stroke="currentColor" stroke-width="2" fill="none"/>
+                    </svg>
+                </div>
+                <div class="node response">응답 반환</div>
+            </div>
+
+            <div class="slave-section">
+                <div class="label" style="margin: 0;">Replication</div>
+                <div class="node slave" style="opacity: 0.6;">Slave</div>
+                <span style="color: rgba(255,255,255,0.3); font-size: 13px;">복제를 기다리지 않음</span>
+            </div>
+
+            <div class="info-box warning">
+                <strong>주의:</strong> Slave 복제 전 Master 장애 발생 시 <span class="highlight">데이터 유실 가능</span>
+            </div>
+        </div>
+
+        <div class="vs-divider">
+            <span class="vs-text">VS</span>
+        </div>
+
+        <!-- 반동기 복제 -->
+        <div class="card semi-sync">
+            <div class="header">
+                <span class="badge success">Semi-Sync</span>
+                <h2 class="title">반동기 복제</h2>
+            </div>
+
+            <div class="label">Data Flow</div>
+            <div class="flow">
+                <div class="node master">Master</div>
+                <div class="arrow">
+                    <svg viewBox="0 0 32 32" fill="none">
+                        <line x1="4" y1="16" x2="24" y2="16" stroke="currentColor" stroke-width="2"/>
+                        <polyline points="18,10 24,16 18,22" stroke="currentColor" stroke-width="2" fill="none"/>
+                    </svg>
+                </div>
+                <div class="node action">쓰기</div>
+                <div class="arrow">
+                    <svg viewBox="0 0 32 32" fill="none">
+                        <line x1="4" y1="16" x2="24" y2="16" stroke="currentColor" stroke-width="2"/>
+                        <polyline points="18,10 24,16 18,22" stroke="currentColor" stroke-width="2" fill="none"/>
+                    </svg>
+                </div>
+                <div class="node binlog">Binlog 기록</div>
+                <div class="arrow">
+                    <svg viewBox="0 0 32 32" fill="none">
+                        <line x1="4" y1="16" x2="24" y2="16" stroke="currentColor" stroke-width="2"/>
+                        <polyline points="18,10 24,16 18,22" stroke="currentColor" stroke-width="2" fill="none"/>
+                    </svg>
+                </div>
+                <div class="node wait">ACK 대기</div>
+                <div class="arrow">
+                    <svg viewBox="0 0 32 32" fill="none">
+                        <line x1="4" y1="16" x2="24" y2="16" stroke="currentColor" stroke-width="2"/>
+                        <polyline points="18,10 24,16 18,22" stroke="currentColor" stroke-width="2" fill="none"/>
+                    </svg>
+                </div>
+                <div class="node response">응답 반환</div>
+            </div>
+
+            <div class="slave-section sync">
+                <div class="label" style="margin: 0;">Replication</div>
+                <div class="ack-flow">
+                    <div class="node slave">Slave</div>
+                    <div class="arrow">
+                        <svg viewBox="0 0 32 32" fill="none">
+                            <line x1="4" y1="16" x2="24" y2="16" stroke="#4ade80" stroke-width="2"/>
+                            <polyline points="18,10 24,16 18,22" stroke="#4ade80" stroke-width="2" fill="none"/>
+                        </svg>
+                    </div>
+                    <div class="ack-badge">ACK 전송</div>
+                </div>
+            </div>
+
+            <div class="info-box info">
+                <strong>보장:</strong> 최소 1개 Slave가 <span class="highlight">"받았다"</span>고 확인 후 응답<br>
+                <span style="opacity: 0.7; font-size: 12px;">* Relay Log 저장만 확인, 실제 적용(replay)은 확인하지 않음</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

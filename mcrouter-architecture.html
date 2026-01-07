@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mcrouter 아키텍처</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f0f4f8; }
+        .component-box {
+            padding: 16px;
+            border-radius: 8px;
+            background-color: white;
+            border: 2px solid #e2e8f0;
+            text-align: center;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            min-width: 180px;
+        }
+        .web-server-box {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        .mcrouter-box {
+            border-color: #10b981;
+            background-color: #f0fdf4;
+        }
+        .memcached-box {
+            border-color: #f59e0b;
+            background-color: #fffbeb;
+        }
+        .arrow-down {
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 20px solid #94a3b8;
+            margin: 8px auto;
+        }
+        .connection-line {
+            background-color: #94a3b8;
+            height: 2px;
+            width: 100%;
+        }
+        .thread-box {
+            background-color: white;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #cbd5e1;
+            font-size: 0.75rem;
+            margin: 4px 0;
+        }
+    </style>
+</head>
+<body class="p-8 flex justify-center">
+    <div class="bg-white p-8 rounded-xl shadow-2xl" style="min-width: 900px;">
+        <h1 class="text-3xl font-bold text-center text-slate-800 mb-2">mcrouter 아키텍처</h1>
+        <p class="text-center text-slate-500 mb-10">웹서버 스레드와 Memcached 서버 간의 연결 관리</p>
+
+        <div class="grid grid-cols-2 gap-12">
+            <!-- Without mcrouter -->
+            <div>
+                <h2 class="text-xl font-bold text-slate-700 mb-6 text-center border-b-4 border-red-500 pb-2">
+                    mcrouter 없이 (비효율적)
+                </h2>
+
+                <div class="flex flex-col items-center space-y-4">
+                    <!-- Web Server -->
+                    <div class="component-box web-server-box w-full">
+                        <div class="font-bold text-blue-700 mb-2">웹서버</div>
+                        <div class="space-y-1">
+                            <div class="thread-box">Thread 1</div>
+                            <div class="thread-box">Thread 2</div>
+                            <div class="thread-box">Thread 3</div>
+                            <div class="thread-box">Thread N...</div>
+                        </div>
+                    </div>
+
+                    <div class="text-center text-sm text-red-600 font-semibold">
+                        각 스레드마다<br/>TCP 연결 생성
+                    </div>
+
+                    <!-- Multiple connections -->
+                    <div class="relative w-full" style="height: 80px;">
+                        <svg width="100%" height="80" class="absolute">
+                            <line x1="50%" y1="0" x2="20%" y2="80" stroke="#ef4444" stroke-width="2"/>
+                            <line x1="50%" y1="0" x2="40%" y2="80" stroke="#ef4444" stroke-width="2"/>
+                            <line x1="50%" y1="0" x2="60%" y2="80" stroke="#ef4444" stroke-width="2"/>
+                            <line x1="50%" y1="0" x2="80%" y2="80" stroke="#ef4444" stroke-width="2"/>
+                        </svg>
+                    </div>
+
+                    <div class="text-center text-xs text-red-500 font-medium">
+                        수천 개의 TCP 연결<br/>
+                        (메모리 많이 사용)
+                    </div>
+
+                    <!-- Memcached Servers -->
+                    <div class="grid grid-cols-2 gap-2 w-full">
+                        <div class="component-box memcached-box">
+                            <div class="font-bold text-amber-700 text-sm">Memcached 1</div>
+                        </div>
+                        <div class="component-box memcached-box">
+                            <div class="font-bold text-amber-700 text-sm">Memcached 2</div>
+                        </div>
+                        <div class="component-box memcached-box">
+                            <div class="font-bold text-amber-700 text-sm">Memcached 3</div>
+                        </div>
+                        <div class="component-box memcached-box">
+                            <div class="font-bold text-amber-700 text-sm">Memcached N...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- With mcrouter -->
+            <div>
+                <h2 class="text-xl font-bold text-slate-700 mb-6 text-center border-b-4 border-green-500 pb-2">
+                    mcrouter 사용 (효율적)
+                </h2>
+
+                <div class="flex flex-col items-center space-y-4">
+                    <!-- Web Server -->
+                    <div class="component-box web-server-box w-full">
+                        <div class="font-bold text-blue-700 mb-2">웹서버</div>
+                        <div class="space-y-1">
+                            <div class="thread-box">Thread 1</div>
+                            <div class="thread-box">Thread 2</div>
+                            <div class="thread-box">Thread 3</div>
+                            <div class="thread-box">Thread N...</div>
+                        </div>
+                    </div>
+
+                    <div class="arrow-down"></div>
+
+                    <!-- mcrouter -->
+                    <div class="component-box mcrouter-box w-full">
+                        <div class="font-bold text-green-700 text-lg">mcrouter</div>
+                        <div class="text-xs text-green-600 mt-1">라우팅 프록시</div>
+                        <div class="text-xs text-slate-600 mt-2">
+                            연결 통합 (Connection Coalescing)
+                        </div>
+                    </div>
+
+                    <div class="text-center text-xs text-green-500 font-medium">
+                        수백 개의 TCP 연결<br/>
+                        (메모리 절약)
+                    </div>
+
+                    <!-- Multiple connections -->
+                    <div class="relative w-full" style="height: 80px;">
+                        <svg width="100%" height="80" class="absolute">
+                            <line x1="50%" y1="0" x2="20%" y2="80" stroke="#10b981" stroke-width="2"/>
+                            <line x1="50%" y1="0" x2="40%" y2="80" stroke="#10b981" stroke-width="2"/>
+                            <line x1="50%" y1="0" x2="60%" y2="80" stroke="#10b981" stroke-width="2"/>
+                            <line x1="50%" y1="0" x2="80%" y2="80" stroke="#10b981" stroke-width="2"/>
+                        </svg>
+                    </div>
+
+                    <!-- Memcached Servers -->
+                    <div class="grid grid-cols-2 gap-2 w-full">
+                        <div class="component-box memcached-box">
+                            <div class="font-bold text-amber-700 text-sm">Memcached 1</div>
+                        </div>
+                        <div class="component-box memcached-box">
+                            <div class="font-bold text-amber-700 text-sm">Memcached 2</div>
+                        </div>
+                        <div class="component-box memcached-box">
+                            <div class="font-bold text-amber-700 text-sm">Memcached 3</div>
+                        </div>
+                        <div class="component-box memcached-box">
+                            <div class="font-bold text-amber-700 text-sm">Memcached N...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h3 class="font-bold text-blue-900 mb-2">mcrouter의 장점</h3>
+            <ul class="text-sm text-blue-800 space-y-1">
+                <li>• 웹서버의 수천 개 스레드가 각각 TCP 연결을 맺지 않음</li>
+                <li>• mcrouter가 연결을 통합하여 수백 개로 줄임</li>
+                <li>• TCP 연결마다 필요한 소켓 버퍼와 상태 정보 메모리 절약</li>
+                <li>• 요청을 적절한 Memcached 서버로 라우팅</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tomcat Connection Queue 관리</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            padding: 25px;
+            color: #e2e8f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            color: #f8fafc;
+        }
+        .diagram {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+        }
+        .flow-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+        .request-label {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e2e8f0;
+            white-space: nowrap;
+        }
+        .arrow {
+            font-size: 28px;
+            color: #64748b;
+        }
+        .queue-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .queue-title {
+            font-size: 14px;
+            color: #94a3b8;
+            text-align: center;
+        }
+        .queue-box {
+            display: flex;
+            gap: 4px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .queue-slot {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .queue-slot.filled {
+            background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+        }
+        .queue-size {
+            font-size: 14px;
+            color: #60a5fa;
+            font-family: 'SF Mono', monospace;
+        }
+        .thread-pool {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .thread-pool-box {
+            background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+        .thread-pool-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f8fafc;
+        }
+        .thread-slots {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .thread-slot {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .thread-slot.active {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            border: 1px solid rgba(34, 197, 94, 0.4);
+        }
+        .thread-size {
+            font-size: 14px;
+            color: #60a5fa;
+            font-family: 'SF Mono', monospace;
+        }
+        .description {
+            margin-top: 35px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .desc-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        .desc-title {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #60a5fa;
+            font-family: 'SF Mono', monospace;
+        }
+        .desc-text {
+            font-size: 14px;
+            color: #94a3b8;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tomcat Connection Queue 관리</h1>
+
+        <div class="diagram">
+            <div class="flow-container">
+                <!-- Connection Request -->
+                <div class="request-label">Connection<br>Request</div>
+
+                <span class="arrow">→</span>
+
+                <!-- OS Queue (acceptCount) -->
+                <div class="queue-section">
+                    <div class="queue-title">OS에 의해 관리되는 Queue</div>
+                    <div class="queue-box">
+                        <div class="queue-slot"></div>
+                        <div class="queue-slot"></div>
+                        <div class="queue-slot"></div>
+                        <div class="queue-slot"></div>
+                        <div class="queue-slot filled"></div>
+                    </div>
+                    <div class="queue-size">size = acceptCount</div>
+                </div>
+
+                <span class="arrow">→</span>
+
+                <!-- Tomcat Connector Queue (maxConnections) -->
+                <div class="queue-section">
+                    <div class="queue-title">Tomcat Connector에 의해 관리되는 Queue</div>
+                    <div class="queue-box">
+                        <div class="queue-slot filled"></div>
+                        <div class="queue-slot filled"></div>
+                        <div class="queue-slot filled"></div>
+                        <div class="queue-slot filled"></div>
+                        <div class="queue-slot filled"></div>
+                        <div class="queue-slot filled"></div>
+                    </div>
+                    <div class="queue-size">size = maxConnections</div>
+                </div>
+
+                <span class="arrow">→</span>
+
+                <!-- Thread Pool -->
+                <div class="thread-pool">
+                    <div class="thread-pool-box">
+                        <div class="thread-pool-title">Thread Pool</div>
+                        <div class="thread-slots">
+                            <div class="thread-slot active"></div>
+                            <div class="thread-slot active"></div>
+                            <div class="thread-slot"></div>
+                        </div>
+                    </div>
+                    <div class="thread-size">size = maxThreads</div>
+                </div>
+            </div>
+
+            <div class="description">
+                <div class="desc-card">
+                    <div class="desc-title">acceptCount</div>
+                    <div class="desc-text">OS TCP backlog 큐 크기<br>기본값: 100<br>maxConnections 초과 시 대기</div>
+                </div>
+                <div class="desc-card">
+                    <div class="desc-title">maxConnections</div>
+                    <div class="desc-text">Tomcat이 수락할 최대 연결 수<br>NIO 기본값: 10000<br>Poller가 관리</div>
+                </div>
+                <div class="desc-card">
+                    <div class="desc-title">maxThreads</div>
+                    <div class="desc-text">동시 요청 처리 스레드 수<br>기본값: 200<br>실제 요청 처리 담당</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

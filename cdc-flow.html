@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDC 기반 캐시 동기화</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            width: 1000px;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            border-radius: 24px;
+            padding: 40px 50px;
+        }
+
+        .title {
+            text-align: center;
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 40px;
+            background: rgba(96, 165, 250, 0.15);
+            border: 2px solid #60a5fa;
+            color: #60a5fa;
+        }
+
+        .flow-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .node {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .node-box {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .node-box img {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+        }
+
+        .text-node {
+            padding: 16px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            min-width: 90px;
+        }
+
+        .binlog-node {
+            background: rgba(14, 165, 233, 0.15);
+            border: 2px solid #0ea5e9;
+            color: #0ea5e9;
+        }
+
+        .consumer-node {
+            background: rgba(249, 115, 22, 0.15);
+            border: 2px solid #f97316;
+            color: #f97316;
+        }
+
+        .node-label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .arrow {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 24px;
+            font-weight: 300;
+        }
+
+        .result-box {
+            margin-top: 30px;
+            padding: 16px 20px;
+            background: rgba(96, 165, 250, 0.1);
+            border: 2px solid rgba(96, 165, 250, 0.4);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .result-text {
+            font-size: 14px;
+            font-weight: 500;
+            color: #60a5fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="title">CDC 기반 캐시 동기화</div>
+
+            <div class="flow-container">
+                <div class="node">
+                    <div class="node-box">
+                        <img src="mysql.svg" alt="MySQL">
+                    </div>
+                    <span class="node-label">MySQL</span>
+                </div>
+
+                <span class="arrow">→</span>
+
+                <div class="node">
+                    <div class="text-node binlog-node">Binlog</div>
+                    <span class="node-label">변경 로그</span>
+                </div>
+
+                <span class="arrow">→</span>
+
+                <div class="node">
+                    <div class="node-box">
+                        <img src="debezium-removebg-preview.png" alt="Debezium">
+                    </div>
+                    <span class="node-label">Debezium</span>
+                </div>
+
+                <span class="arrow">→</span>
+
+                <div class="node">
+                    <div class="node-box">
+                        <img src="카프카.png" alt="Kafka">
+                    </div>
+                    <span class="node-label">Kafka</span>
+                </div>
+
+                <span class="arrow">→</span>
+
+                <div class="node">
+                    <div class="text-node consumer-node">Consumer</div>
+                    <span class="node-label">캐시 동기화</span>
+                </div>
+
+                <span class="arrow">→</span>
+
+                <div class="node">
+                    <div class="node-box">
+                        <img src="Redis 배경 제거.png" alt="Redis">
+                    </div>
+                    <span class="node-label">Redis</span>
+                </div>
+            </div>
+
+            <div class="result-box">
+                <span class="result-text">애플리케이션 코드 변경 없이 DB 변경사항을 캐시에 반영</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

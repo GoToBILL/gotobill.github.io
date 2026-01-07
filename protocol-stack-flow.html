@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protocol Stack Flow</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #111827;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 48px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .title {
+            text-align: center;
+            color: #e0e7ff;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 36px;
+        }
+
+        .flow {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .box {
+            border-radius: 10px;
+            padding: 14px 20px;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .app-box {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            border: 1px solid rgba(165, 180, 252, 0.3);
+        }
+
+        .buffer-box {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .stack-box {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            border: 1px solid rgba(134, 239, 172, 0.3);
+        }
+
+        .nic-box {
+            background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%);
+            border: 1px solid rgba(147, 197, 253, 0.3);
+        }
+
+        .box-label {
+            color: #e0e7ff;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .box-desc {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 11px;
+        }
+
+        .arrow-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 4px 0;
+        }
+
+        .arrow {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 18px;
+        }
+
+        .arrow-label {
+            color: #86efac;
+            font-size: 10px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">Protocol Stack Flow</div>
+
+        <div class="flow">
+            <div class="step">
+                <div class="box app-box">
+                    <div class="box-label">Application (Chrome)</div>
+                </div>
+            </div>
+
+            <div class="arrow-container">
+                <span class="arrow-label">send()</span>
+                <span class="arrow">↓</span>
+            </div>
+
+            <div class="step">
+                <div class="box buffer-box">
+                    <div class="box-label">TCP Send Buffer</div>
+                    <div class="box-desc">데이터 임시 저장</div>
+                </div>
+            </div>
+
+            <div class="arrow-container">
+                <span class="arrow">↓</span>
+            </div>
+
+            <div class="step">
+                <div class="box stack-box">
+                    <div class="box-label">Protocol Stack (TCP/IP)</div>
+                    <div class="box-desc">헤더 붙여 패킷 생성</div>
+                </div>
+            </div>
+
+            <div class="arrow-container">
+                <span class="arrow">↓</span>
+            </div>
+
+            <div class="step">
+                <div class="box nic-box">
+                    <div class="box-label">NIC (LAN Adapter)</div>
+                    <div class="box-desc">전기 신호로 송출</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

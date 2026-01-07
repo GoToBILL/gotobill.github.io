@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stale Sets 문제</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f0f4f8;
+        }
+        .component-box {
+            padding: 20px 16px;
+            border-radius: 10px;
+            background-color: white;
+            border: 4px solid #e2e8f0;
+            text-align: center;
+            font-weight: 800;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+        }
+        .cache-box { border-color: #f59e0b; background-color: #fffbeb; }
+        .db-box { border-color: #3b82f6; background-color: #eff6ff; }
+        .client-label {
+            display: inline-block;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 1.75rem;
+            font-weight: 900;
+        }
+        .client-a { background-color: #ddd6fe; color: #5b21b6; }
+        .client-b { background-color: #d1fae5; color: #065f46; }
+    </style>
+</head>
+<body class="p-6">
+    <div class="bg-white p-6 rounded-2xl shadow-2xl" style="max-width: 1500px; margin: 0 auto;">
+        <h1 class="text-5xl font-black text-center text-slate-800 mb-2">Stale Sets 문제</h1>
+        <p class="text-center text-slate-600 text-xl font-bold mb-6">동시 업데이트로 인한 경쟁 조건</p>
+
+        <div class="grid grid-cols-3 gap-5">
+            <!-- Column Headers -->
+            <div class="text-center mb-2"><div class="client-label client-a">웹서버 A</div></div>
+            <div class="text-center mb-2"><div class="client-label client-b">웹서버 B</div></div>
+            <div class="text-center font-black text-slate-700 text-2xl mb-2 pt-3">시스템 상태</div>
+
+            <!-- Step 1 Action -->
+            <div class="component-box cache-box h-28 flex flex-col justify-center">
+                <div class="text-xl text-amber-800 font-black">Step 1</div>
+                <div class="text-2xl text-amber-900 font-black">get(key)</div>
+                <div class="text-base text-amber-700 mt-1 font-bold">→ 캐시 미스</div>
+            </div>
+            <div></div>
+            <div></div>
+
+            <!-- Step 1 Result -->
+            <div></div>
+            <div></div>
+            <div class="component-box bg-gray-50 border-gray-400 h-24 flex flex-col justify-center">
+                <div class="text-lg font-black text-gray-700 mb-1">▼ Step 1 완료</div>
+                <div class="text-base text-gray-700 font-bold">Cache: [미스] | DB: value1</div>
+            </div>
+
+            <!-- Step 2 Action -->
+            <div class="component-box db-box h-28 flex flex-col justify-center">
+                <div class="text-xl text-blue-800 font-black">Step 2</div>
+                <div class="text-2xl text-blue-900 font-black">DB 조회</div>
+                <div class="text-base text-blue-700 mt-1 font-bold">value1 가져옴</div>
+            </div>
+            <div></div>
+            <div></div>
+
+            <!-- Step 2 Result -->
+            <div></div>
+            <div></div>
+            <div class="component-box bg-blue-50 border-blue-400 h-24 flex flex-col justify-center">
+                <div class="text-lg font-black text-blue-700 mb-1">▼ Step 2 완료</div>
+                <div class="text-sm text-blue-700 font-bold">A: value1 | Cache: [빈] | DB: value1</div>
+            </div>
+
+            <!-- Step 3 Action -->
+            <div class="flex items-center justify-center text-gray-600 text-lg font-extrabold">(value1 보유 중)</div>
+            <div class="component-box db-box h-28 flex flex-col justify-center">
+                <div class="text-xl text-blue-800 font-black">Step 3</div>
+                <div class="text-2xl text-blue-900 font-black">UPDATE</div>
+                <div class="text-base text-blue-700 mt-1 font-bold">value1 → value2</div>
+            </div>
+            <div></div>
+
+            <!-- Step 3 Result -->
+            <div></div>
+            <div></div>
+            <div class="component-box bg-purple-50 border-purple-400 h-24 flex flex-col justify-center">
+                <div class="text-lg font-black text-purple-700 mb-1">▼ Step 3 완료</div>
+                <div class="text-sm text-purple-700 font-bold">A: value1 | Cache: [빈] | DB: value2 ✓</div>
+            </div>
+
+            <!-- Step 4 Action -->
+            <div class="flex items-center justify-center text-gray-600 text-lg font-extrabold">(value1 보유 중)</div>
+            <div class="component-box cache-box h-28 flex flex-col justify-center">
+                <div class="text-xl text-amber-800 font-black">Step 4</div>
+                <div class="text-2xl text-amber-900 font-black">delete(key)</div>
+                <div class="text-base text-amber-700 mt-1 font-bold">캐시 무효화</div>
+            </div>
+            <div></div>
+
+            <!-- Step 4 Result -->
+            <div></div>
+            <div></div>
+            <div class="component-box bg-green-50 border-green-500 h-24 flex flex-col justify-center">
+                <div class="text-lg font-black text-green-700 mb-1">▼ Step 4 완료</div>
+                <div class="text-sm text-green-700 font-bold">A: value1(오래됨) | Cache: [삭제] | DB: value2 ✓</div>
+            </div>
+
+            <!-- Step 5 Action -->
+            <div class="component-box cache-box border-red-600 bg-red-50 h-28 flex flex-col justify-center border-4">
+                <div class="text-xl text-red-800 font-black">Step 5</div>
+                <div class="text-2xl text-red-900 font-black">set(key, value1)</div>
+                <div class="text-base text-red-700 mt-1 font-black">문제! 오래된 값</div>
+            </div>
+            <div></div>
+            <div></div>
+
+            <!-- Step 5 Result -->
+            <div></div>
+            <div></div>
+            <div class="component-box bg-red-50 border-red-600 h-24 flex flex-col justify-center border-4">
+                <div class="text-lg font-black text-red-700 mb-1">▼ Step 5 완료 (문제!)</div>
+                <div class="text-xl text-red-700 font-black">Cache: value1 ✗ | DB: value2 ✓</div>
+                <div class="text-xl font-black text-red-700">데이터 불일치!</div>
+            </div>
+        </div>
+
+        <!-- Explanation -->
+        <div class="mt-5 bg-red-50 border-4 border-red-400 rounded-xl p-5">
+            <h3 class="font-black text-red-900 mb-2 text-2xl">문제 발생 원인</h3>
+            <div class="text-red-800 text-base font-bold space-y-1">
+                <p>• A가 DB에서 value1 조회 중 (Step 2) → B가 value2로 업데이트 & 캐시 삭제 (Step 3-4)</p>
+                <p>• A는 오래된 value1 보유 → A가 나중에 value1을 캐시에 저장 (Step 5)</p>
+                <p class="font-black text-lg mt-2">→ 캐시와 DB 데이터 불일치!</p>
+            </div>
+        </div>
+
+        <!-- Solution -->
+        <div class="mt-4 bg-green-50 border-4 border-green-600 rounded-xl p-5">
+            <h3 class="font-black text-green-900 mb-2 text-2xl">해결책: Leases (64비트 토큰)</h3>
+            <div class="text-green-800 text-base font-bold space-y-1">
+                <p class="font-black">캐시 미스 시 lease token 발급 → 검증으로 방지:</p>
+                <p>• Step 1: A가 token 받음 | Step 4: delete 시 token 무효화</p>
+                <p>• Step 5: 무효화된 token으로 set 시도 → <span class="font-black text-red-700 text-lg">거부됨</span></p>
+                <p class="font-black text-lg">→ 오래된 데이터 저장 방지 ✓</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

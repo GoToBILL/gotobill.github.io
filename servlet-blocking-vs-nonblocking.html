@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>블로킹 vs 논블로킹 I/O 비교</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            padding: 30px;
+            color: #e2e8f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            color: #f8fafc;
+        }
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 25px;
+        }
+        .panel-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-align: center;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .title-blocking { color: #f87171; }
+        .title-nonblocking { color: #34d399; }
+
+        /* Thread Timeline */
+        .timeline-section {
+            margin-bottom: 20px;
+        }
+        .timeline-label {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 10px;
+        }
+        .thread-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .thread-name {
+            width: 80px;
+            font-size: 12px;
+            color: #64748b;
+        }
+        .timeline-bar {
+            flex: 1;
+            height: 28px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+        }
+        .time-slot {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 600;
+            border-right: 1px solid rgba(0, 0, 0, 0.2);
+        }
+        .slot-work {
+            background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%);
+        }
+        .slot-wait {
+            background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%);
+        }
+        .slot-idle {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .slot-callback {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+        }
+        .slot-free {
+            background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%);
+        }
+
+        /* Code Flow */
+        .code-flow {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .code-step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        .code-step:last-child {
+            margin-bottom: 0;
+        }
+        .step-num {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+        .step-blocking { background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%); }
+        .step-working { background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%); }
+        .step-callback { background: linear-gradient(135deg, #14532d 0%, #15803d 100%); }
+        .step-content {
+            flex: 1;
+        }
+        .step-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .step-desc {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .stat-item {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+        .stat-value {
+            font-family: 'SF Mono', monospace;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .stat-bad { color: #f87171; }
+        .stat-good { color: #34d399; }
+
+        /* Bottom Summary */
+        .summary {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 25px;
+        }
+        .summary-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+        .summary-item {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+        }
+        .summary-item-title {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 8px;
+        }
+        .summary-comparison {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        .summary-val {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .val-label {
+            font-size: 10px;
+            color: #64748b;
+            display: block;
+            margin-top: 2px;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+        .legend-work { background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%); }
+        .legend-wait { background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%); }
+        .legend-callback { background: linear-gradient(135deg, #14532d 0%, #15803d 100%); }
+        .legend-free { background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>블로킹 vs 논블로킹 I/O 비교</h1>
+
+        <div class="comparison">
+            <!-- Blocking Panel -->
+            <div class="panel">
+                <div class="panel-title title-blocking">Spring MVC (블로킹)</div>
+
+                <div class="timeline-section">
+                    <div class="timeline-label">요청 3개 처리 시 스레드 사용</div>
+                    <div class="thread-row">
+                        <div class="thread-name">Thread-1</div>
+                        <div class="timeline-bar">
+                            <div class="time-slot slot-work" style="width: 15%">처리</div>
+                            <div class="time-slot slot-wait" style="width: 60%">DB 대기</div>
+                            <div class="time-slot slot-work" style="width: 15%">응답</div>
+                            <div class="time-slot slot-idle" style="width: 10%"></div>
+                        </div>
+                    </div>
+                    <div class="thread-row">
+                        <div class="thread-name">Thread-2</div>
+                        <div class="timeline-bar">
+                            <div class="time-slot slot-work" style="width: 15%">처리</div>
+                            <div class="time-slot slot-wait" style="width: 60%">DB 대기</div>
+                            <div class="time-slot slot-work" style="width: 15%">응답</div>
+                            <div class="time-slot slot-idle" style="width: 10%"></div>
+                        </div>
+                    </div>
+                    <div class="thread-row">
+                        <div class="thread-name">Thread-3</div>
+                        <div class="timeline-bar">
+                            <div class="time-slot slot-work" style="width: 15%">처리</div>
+                            <div class="time-slot slot-wait" style="width: 60%">DB 대기</div>
+                            <div class="time-slot slot-work" style="width: 15%">응답</div>
+                            <div class="time-slot slot-idle" style="width: 10%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="code-flow">
+                    <div class="code-step">
+                        <div class="step-num step-working">1</div>
+                        <div class="step-content">
+                            <div class="step-title">요청 수신</div>
+                            <div class="step-desc">Worker Thread 할당</div>
+                        </div>
+                    </div>
+                    <div class="code-step">
+                        <div class="step-num step-blocking">2</div>
+                        <div class="step-content">
+                            <div class="step-title">read() 호출</div>
+                            <div class="step-desc">데이터 없으면 스레드 블로킹</div>
+                        </div>
+                    </div>
+                    <div class="code-step">
+                        <div class="step-num step-blocking">3</div>
+                        <div class="step-content">
+                            <div class="step-title">DB 쿼리</div>
+                            <div class="step-desc">결과 올 때까지 스레드 블로킹</div>
+                        </div>
+                    </div>
+                    <div class="code-step">
+                        <div class="step-num step-working">4</div>
+                        <div class="step-content">
+                            <div class="step-title">응답 반환</div>
+                            <div class="step-desc">스레드 반환</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-label">스레드 점유율</div>
+                        <div class="stat-value stat-bad">100%</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">실제 작업 비율</div>
+                        <div class="stat-value stat-bad">~30%</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">200 스레드 최대 TPS</div>
+                        <div class="stat-value stat-bad">~2000</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">메모리 사용</div>
+                        <div class="stat-value stat-bad">높음</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Non-blocking Panel -->
+            <div class="panel">
+                <div class="panel-title title-nonblocking">Spring WebFlux (논블로킹)</div>
+
+                <div class="timeline-section">
+                    <div class="timeline-label">요청 3개 처리 시 스레드 사용</div>
+                    <div class="thread-row">
+                        <div class="thread-name">EventLoop</div>
+                        <div class="timeline-bar">
+                            <div class="time-slot slot-callback" style="width: 8%">R1</div>
+                            <div class="time-slot slot-callback" style="width: 8%">R2</div>
+                            <div class="time-slot slot-callback" style="width: 8%">R3</div>
+                            <div class="time-slot slot-free" style="width: 20%">다른 작업</div>
+                            <div class="time-slot slot-callback" style="width: 8%">R1</div>
+                            <div class="time-slot slot-callback" style="width: 8%">R2</div>
+                            <div class="time-slot slot-callback" style="width: 8%">R3</div>
+                            <div class="time-slot slot-free" style="width: 32%">다른 작업</div>
+                        </div>
+                    </div>
+                    <div class="thread-row">
+                        <div class="thread-name" style="color: #64748b; font-style: italic;">대기 없음</div>
+                        <div class="timeline-bar">
+                            <div class="time-slot slot-idle" style="width: 100%; justify-content: center; color: #64748b;">스레드가 블로킹되지 않음</div>
+                        </div>
+                    </div>
+                    <div class="thread-row">
+                        <div class="thread-name" style="color: #64748b; font-style: italic;"></div>
+                        <div class="timeline-bar">
+                            <div class="time-slot slot-idle" style="width: 100%; justify-content: center; color: #64748b;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="code-flow">
+                    <div class="code-step">
+                        <div class="step-num step-callback">1</div>
+                        <div class="step-content">
+                            <div class="step-title">요청 수신</div>
+                            <div class="step-desc">ReadListener 등록 후 즉시 반환</div>
+                        </div>
+                    </div>
+                    <div class="code-step">
+                        <div class="step-num step-callback">2</div>
+                        <div class="step-content">
+                            <div class="step-title">onDataAvailable()</div>
+                            <div class="step-desc">데이터 준비되면 콜백 호출</div>
+                        </div>
+                    </div>
+                    <div class="code-step">
+                        <div class="step-num step-callback">3</div>
+                        <div class="step-content">
+                            <div class="step-title">DB 쿼리 (R2DBC)</div>
+                            <div class="step-desc">논블로킹, 결과는 콜백으로</div>
+                        </div>
+                    </div>
+                    <div class="code-step">
+                        <div class="step-num step-callback">4</div>
+                        <div class="step-content">
+                            <div class="step-title">onWritePossible()</div>
+                            <div class="step-desc">쓰기 가능할 때 응답</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-label">스레드 점유율</div>
+                        <div class="stat-value stat-good">~5%</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">실제 작업 비율</div>
+                        <div class="stat-value stat-good">~95%</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">소수 스레드로 TPS</div>
+                        <div class="stat-value stat-good">~10000+</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">메모리 사용</div>
+                        <div class="stat-value stat-good">낮음</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="summary">
+            <div class="summary-title">핵심 차이점</div>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <div class="summary-item-title">I/O 대기 시</div>
+                    <div class="summary-comparison">
+                        <div class="summary-val stat-bad">
+                            스레드 점유
+                            <span class="val-label">MVC</span>
+                        </div>
+                        <div class="summary-val stat-good">
+                            스레드 반환
+                            <span class="val-label">WebFlux</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-item-title">동시 연결 1만개</div>
+                    <div class="summary-comparison">
+                        <div class="summary-val stat-bad">
+                            스레드 1만개
+                            <span class="val-label">MVC</span>
+                        </div>
+                        <div class="summary-val stat-good">
+                            스레드 수십개
+                            <span class="val-label">WebFlux</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-item-title">코드 복잡도</div>
+                    <div class="summary-comparison">
+                        <div class="summary-val stat-good">
+                            간단
+                            <span class="val-label">MVC</span>
+                        </div>
+                        <div class="summary-val stat-bad">
+                            복잡
+                            <span class="val-label">WebFlux</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-item-title">적합한 상황</div>
+                    <div class="summary-comparison">
+                        <div class="summary-val" style="color: #94a3b8;">
+                            일반 CRUD
+                            <span class="val-label">MVC</span>
+                        </div>
+                        <div class="summary-val" style="color: #94a3b8;">
+                            대량 연결
+                            <span class="val-label">WebFlux</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color legend-work"></div>
+                    <span>실제 작업</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-wait"></div>
+                    <span>블로킹 대기</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-callback"></div>
+                    <span>콜백 처리</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-free"></div>
+                    <span>다른 작업 가능</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tomcat server.xml 구조와 컴포넌트 매핑</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            padding: 40px;
+            color: #e2e8f0;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 40px;
+            color: #f8fafc;
+        }
+        .diagram {
+            display: flex;
+            gap: 40px;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+        }
+        .xml-side {
+            flex: 1;
+        }
+        .component-side {
+            flex: 1;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .xml-block {
+            background: #1e1e2e;
+            border-radius: 12px;
+            padding: 20px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+            overflow-x: auto;
+        }
+        .tag { color: #f472b6; }
+        .attr { color: #60a5fa; }
+        .value { color: #34d399; }
+        .comment { color: #64748b; }
+        .indent-1 { margin-left: 20px; }
+        .indent-2 { margin-left: 40px; }
+        .indent-3 { margin-left: 60px; }
+        .indent-4 { margin-left: 80px; }
+
+        .component-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .component-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .component-box {
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            min-width: 120px;
+            text-align: center;
+        }
+        .server-box {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+        .service-box {
+            background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        .connector-box {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+            border: 1px solid rgba(234, 179, 8, 0.3);
+        }
+        .engine-box {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        .host-box {
+            background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%);
+            border: 1px solid rgba(14, 165, 233, 0.3);
+        }
+        .context-box {
+            background: linear-gradient(135deg, #581c87 0%, #7c3aed 100%);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+        .component-desc {
+            font-size: 13px;
+            color: #94a3b8;
+        }
+        .arrow-line {
+            position: relative;
+        }
+        .arrow-line::before {
+            content: '';
+            position: absolute;
+            left: 60px;
+            top: -15px;
+            width: 2px;
+            height: 15px;
+            background: #475569;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>server.xml 구조와 컴포넌트 매핑</h1>
+
+        <div class="diagram">
+            <div class="xml-side">
+                <div class="section-title">server.xml</div>
+                <div class="xml-block">
+                    <div><span class="tag">&lt;Server</span> <span class="attr">port</span>=<span class="value">"8005"</span><span class="tag">&gt;</span></div>
+                    <div class="indent-1"><span class="tag">&lt;Service</span> <span class="attr">name</span>=<span class="value">"Catalina"</span><span class="tag">&gt;</span></div>
+                    <div class="indent-2"><span class="tag">&lt;Connector</span></div>
+                    <div class="indent-3"><span class="attr">port</span>=<span class="value">"8080"</span></div>
+                    <div class="indent-3"><span class="attr">protocol</span>=<span class="value">"HTTP/1.1"</span><span class="tag">/&gt;</span></div>
+                    <div class="indent-2"><span class="tag">&lt;Engine</span> <span class="attr">name</span>=<span class="value">"Catalina"</span></div>
+                    <div class="indent-3"><span class="attr">defaultHost</span>=<span class="value">"localhost"</span><span class="tag">&gt;</span></div>
+                    <div class="indent-3"><span class="tag">&lt;Host</span> <span class="attr">name</span>=<span class="value">"localhost"</span></div>
+                    <div class="indent-4"><span class="attr">appBase</span>=<span class="value">"webapps"</span><span class="tag">&gt;</span></div>
+                    <div class="indent-4"><span class="tag">&lt;Context</span></div>
+                    <div class="indent-4">&nbsp;&nbsp;<span class="attr">path</span>=<span class="value">"/myapp"</span></div>
+                    <div class="indent-4">&nbsp;&nbsp;<span class="attr">docBase</span>=<span class="value">"myapp"</span><span class="tag">/&gt;</span></div>
+                    <div class="indent-3"><span class="tag">&lt;/Host&gt;</span></div>
+                    <div class="indent-2"><span class="tag">&lt;/Engine&gt;</span></div>
+                    <div class="indent-1"><span class="tag">&lt;/Service&gt;</span></div>
+                    <div><span class="tag">&lt;/Server&gt;</span></div>
+                </div>
+            </div>
+
+            <div class="component-side">
+                <div class="section-title">Component</div>
+                <div class="component-list">
+                    <div class="component-item">
+                        <div class="component-box server-box">Server</div>
+                        <div class="component-desc">Tomcat 인스턴스 전체</div>
+                    </div>
+                    <div class="component-item arrow-line">
+                        <div class="component-box service-box">Service</div>
+                        <div class="component-desc">Connector + Container 묶음</div>
+                    </div>
+                    <div class="component-item arrow-line">
+                        <div class="component-box connector-box">Connector</div>
+                        <div class="component-desc">포트 리스닝, 프로토콜 처리</div>
+                    </div>
+                    <div class="component-item arrow-line">
+                        <div class="component-box engine-box">Engine</div>
+                        <div class="component-desc">요청 라우팅 엔진</div>
+                    </div>
+                    <div class="component-item arrow-line">
+                        <div class="component-box host-box">Host</div>
+                        <div class="component-desc">가상 호스트 (도메인)</div>
+                    </div>
+                    <div class="component-item arrow-line">
+                        <div class="component-box context-box">Context</div>
+                        <div class="component-desc">웹 애플리케이션 단위</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

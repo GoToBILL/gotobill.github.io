@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Race Condition 시나리오</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            width: 900px;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 24px;
+            padding: 40px 50px;
+        }
+
+        .title {
+            text-align: center;
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            background: rgba(239, 68, 68, 0.15);
+            border: 2px solid #f87171;
+            color: #f87171;
+        }
+
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .time-row {
+            display: grid;
+            grid-template-columns: 60px 120px 1fr 80px;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .time-label {
+            font-size: 14px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .thread-label {
+            font-size: 14px;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 6px;
+        }
+
+        .thread-a {
+            background: rgba(96, 165, 250, 0.2);
+            color: #60a5fa;
+            border: 1px solid rgba(96, 165, 250, 0.4);
+        }
+
+        .thread-b {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.4);
+        }
+
+        .action {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .action-box {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .db-action {
+            background: rgba(74, 222, 128, 0.1);
+            border: 1px solid rgba(74, 222, 128, 0.3);
+            color: #4ade80;
+        }
+
+        .cache-action {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #f87171;
+        }
+
+        .cache-delete {
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            color: #fbbf24;
+        }
+
+        .arrow {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 20px;
+        }
+
+        .target {
+            font-size: 13px;
+            font-weight: 600;
+            padding: 6px 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .target-db {
+            background: rgba(74, 222, 128, 0.15);
+            color: #4ade80;
+        }
+
+        .target-cache {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+        }
+
+        .problem-row .action-box {
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid #f87171;
+            color: #f87171;
+            font-weight: 700;
+        }
+
+        .result-box {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid rgba(239, 68, 68, 0.4);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+        }
+
+        .result-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .result-label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .result-value {
+            font-size: 16px;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 6px;
+        }
+
+        .result-new {
+            background: rgba(74, 222, 128, 0.2);
+            color: #4ade80;
+        }
+
+        .result-old {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+
+        .result-arrow {
+            color: #f87171;
+            font-size: 24px;
+        }
+
+        .problem-indicator {
+            color: #f87171;
+            font-weight: 700;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="title">Race Condition - 동시 읽기/쓰기</div>
+
+            <div class="timeline">
+                <div class="time-row">
+                    <div class="time-label">T1</div>
+                    <div class="thread-label thread-a">Thread A</div>
+                    <div class="action">
+                        <div class="action-box db-action">DB에서 user 조회 (name: "old")</div>
+                        <span class="arrow">→</span>
+                    </div>
+                    <div class="target target-db">MySQL</div>
+                </div>
+
+                <div class="time-row">
+                    <div class="time-label">T2</div>
+                    <div class="thread-label thread-b">Thread B</div>
+                    <div class="action">
+                        <div class="action-box db-action">DB 업데이트 (name: "new")</div>
+                        <span class="arrow">→</span>
+                    </div>
+                    <div class="target target-db">MySQL</div>
+                </div>
+
+                <div class="time-row">
+                    <div class="time-label">T3</div>
+                    <div class="thread-label thread-b">Thread B</div>
+                    <div class="action">
+                        <div class="action-box cache-delete">캐시 삭제</div>
+                        <span class="arrow">→</span>
+                    </div>
+                    <div class="target target-cache">Redis</div>
+                </div>
+
+                <div class="time-row problem-row">
+                    <div class="time-label">T4</div>
+                    <div class="thread-label thread-a">Thread A</div>
+                    <div class="action">
+                        <div class="action-box">캐시에 저장 (name: "old")</div>
+                        <span class="arrow">→</span>
+                    </div>
+                    <div class="target target-cache">Redis</div>
+                </div>
+            </div>
+
+            <div class="result-box">
+                <div class="result-item">
+                    <span class="result-label">DB:</span>
+                    <span class="result-value result-new">"new"</span>
+                </div>
+                <span class="result-arrow">≠</span>
+                <div class="result-item">
+                    <span class="result-label">Cache:</span>
+                    <span class="result-value result-old">"old"</span>
+                </div>
+                <span class="problem-indicator">불일치 발생</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSL/TLS Handshake</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #111827;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 40px 20px;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 40px;
+            width: 650px;
+        }
+        h1 {
+            text-align: center;
+            color: #e0e7ff;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+        .diagram {
+            position: relative;
+            padding: 0 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 0 10px;
+        }
+        .header span {
+            color: #e0e7ff;
+            font-size: 13px;
+            font-weight: 600;
+            width: 110px;
+            text-align: center;
+        }
+        .timeline {
+            position: absolute;
+            top: 40px;
+            bottom: 60px;
+            width: 2px;
+            background: rgba(255,255,255,0.1);
+        }
+        .timeline.left { left: 75px; }
+        .timeline.right { right: 75px; }
+        .row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+            min-height: 36px;
+        }
+        .left-box {
+            width: 110px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 5px;
+            padding-right: 8px;
+            position: relative;
+            z-index: 1;
+        }
+        .right-box {
+            width: 110px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 5px;
+            padding-left: 8px;
+            position: relative;
+            z-index: 1;
+        }
+        .num {
+            width: 16px;
+            height: 16px;
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 50%;
+            font-size: 8px;
+            color: rgba(255,255,255,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: #111827;
+        }
+        .tag {
+            background: #111827;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 4px;
+            padding: 4px 7px;
+            font-size: 9px;
+            color: #e0e7ff;
+            white-space: nowrap;
+        }
+        .arrow-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 5px;
+        }
+        .arrow-desc {
+            font-size: 8px;
+            color: rgba(255,255,255,0.35);
+            margin-bottom: 2px;
+        }
+        .arrow-svg {
+            width: 100%;
+            height: 10px;
+        }
+        .center-row {
+            display: flex;
+            justify-content: center;
+            margin: 8px 0;
+        }
+        .center-box {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 4px;
+            padding: 6px 14px;
+        }
+        .center-box .sub {
+            font-size: 8px;
+            color: rgba(255,255,255,0.35);
+        }
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 14px 0;
+        }
+        .divider span {
+            font-size: 8px;
+            color: rgba(255,255,255,0.25);
+            white-space: nowrap;
+        }
+        .divider-line {
+            flex: 1;
+            height: 1px;
+            background: repeating-linear-gradient(
+                to right,
+                rgba(255,255,255,0.12) 0px,
+                rgba(255,255,255,0.12) 4px,
+                transparent 4px,
+                transparent 8px
+            );
+        }
+        .app-tag {
+            background: linear-gradient(135deg, #1e3a5f, #1d4ed8);
+            border: 1px solid rgba(147,197,253,0.25);
+            border-radius: 4px;
+            padding: 5px 8px;
+            font-size: 9px;
+            color: #e0e7ff;
+            white-space: nowrap;
+        }
+        .info {
+            margin-top: 20px;
+            padding: 12px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .info-title {
+            font-size: 9px;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .info-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 8px;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 3px;
+        }
+        .dot { width: 5px; height: 5px; border-radius: 50%; }
+        .dot.y { background: #fbbf24; }
+        .dot.g { background: #86efac; }
+        .dot.b { background: #93c5fd; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>SSL/TLS Handshake</h1>
+    <div class="diagram">
+        <div class="timeline left"></div>
+        <div class="timeline right"></div>
+
+        <div class="header">
+            <span>Client</span>
+            <span>Server</span>
+        </div>
+
+        <!-- 1 -->
+        <div class="row">
+            <div class="left-box">
+                <span class="num">1</span>
+                <span class="tag">Client Hello</span>
+            </div>
+            <div class="arrow-area">
+                <span class="arrow-desc">TLS 버전, 암호화 방식, 랜덤 값</span>
+                <svg class="arrow-svg" viewBox="0 0 200 10" preserveAspectRatio="none">
+                    <line x1="0" y1="5" x2="190" y2="5" stroke="#86efac" stroke-width="2"/>
+                    <polygon points="190,1 200,5 190,9" fill="#86efac"/>
+                </svg>
+            </div>
+            <div class="right-box"></div>
+        </div>
+
+        <!-- 2 -->
+        <div class="row">
+            <div class="left-box"></div>
+            <div class="arrow-area">
+                <span class="arrow-desc">선택된 암호화 방식, 랜덤 값</span>
+                <svg class="arrow-svg" viewBox="0 0 200 10" preserveAspectRatio="none">
+                    <line x1="10" y1="5" x2="200" y2="5" stroke="#fbbf24" stroke-width="2"/>
+                    <polygon points="10,1 0,5 10,9" fill="#fbbf24"/>
+                </svg>
+            </div>
+            <div class="right-box">
+                <span class="num">2</span>
+                <span class="tag">Server Hello</span>
+            </div>
+        </div>
+
+        <!-- 3 -->
+        <div class="row">
+            <div class="left-box"></div>
+            <div class="arrow-area">
+                <span class="arrow-desc">서버 인증서 (공개키 포함)</span>
+                <svg class="arrow-svg" viewBox="0 0 200 10" preserveAspectRatio="none">
+                    <line x1="10" y1="5" x2="200" y2="5" stroke="#fbbf24" stroke-width="2"/>
+                    <polygon points="10,1 0,5 10,9" fill="#fbbf24"/>
+                </svg>
+            </div>
+            <div class="right-box">
+                <span class="num">3</span>
+                <span class="tag">Certificate</span>
+            </div>
+        </div>
+
+        <!-- 4 -->
+        <div class="row">
+            <div class="left-box"></div>
+            <div class="arrow-area">
+                <span class="arrow-desc">서버 메시지 전송 완료</span>
+                <svg class="arrow-svg" viewBox="0 0 200 10" preserveAspectRatio="none">
+                    <line x1="10" y1="5" x2="200" y2="5" stroke="#fbbf24" stroke-width="2"/>
+                    <polygon points="10,1 0,5 10,9" fill="#fbbf24"/>
+                </svg>
+            </div>
+            <div class="right-box">
+                <span class="num">4</span>
+                <span class="tag">Hello Done</span>
+            </div>
+        </div>
+
+        <!-- 5 -->
+        <div class="row">
+            <div class="left-box">
+                <span class="num">5</span>
+                <span class="tag">Key Exchange</span>
+            </div>
+            <div class="arrow-area">
+                <span class="arrow-desc">암호화된 Pre-Master Secret</span>
+                <svg class="arrow-svg" viewBox="0 0 200 10" preserveAspectRatio="none">
+                    <line x1="0" y1="5" x2="190" y2="5" stroke="#86efac" stroke-width="2"/>
+                    <polygon points="190,1 200,5 190,9" fill="#86efac"/>
+                </svg>
+            </div>
+            <div class="right-box"></div>
+        </div>
+
+        <!-- 6 -->
+        <div class="center-row">
+            <div class="center-box">
+                <span class="num">6</span>
+                <span class="tag">Key Generation</span>
+                <span class="sub">(양쪽 동시)</span>
+            </div>
+        </div>
+
+        <!-- 7 -->
+        <div class="row">
+            <div class="left-box">
+                <span class="num">7</span>
+                <span class="tag">Cipher Spec</span>
+            </div>
+            <div class="arrow-area">
+                <svg class="arrow-svg" viewBox="0 0 200 10" preserveAspectRatio="none">
+                    <line x1="0" y1="5" x2="190" y2="5" stroke="#86efac" stroke-width="2"/>
+                    <polygon points="190,1 200,5 190,9" fill="#86efac"/>
+                </svg>
+            </div>
+            <div class="right-box"></div>
+        </div>
+
+        <!-- 8 -->
+        <div class="row">
+            <div class="left-box">
+                <span class="num">8</span>
+                <span class="tag">Finished</span>
+            </div>
+            <div class="arrow-area">
+                <svg class="arrow-svg" viewBox="0 0 200 10" preserveAspectRatio="none">
+                    <line x1="0" y1="5" x2="190" y2="5" stroke="#86efac" stroke-width="2"/>
+                    <polygon points="190,1 200,5 190,9" fill="#86efac"/>
+                </svg>
+            </div>
+            <div class="right-box"></div>
+        </div>
+
+        <!-- 9 -->
+        <div class="row">
+            <div class="left-box"></div>
+            <div class="arrow-area">
+                <svg class="arrow-svg" viewBox="0 0 200 10" preserveAspectRatio="none">
+                    <line x1="10" y1="5" x2="200" y2="5" stroke="#fbbf24" stroke-width="2"/>
+                    <polygon points="10,1 0,5 10,9" fill="#fbbf24"/>
+                </svg>
+            </div>
+            <div class="right-box">
+                <span class="num">9</span>
+                <span class="tag">Cipher Spec</span>
+            </div>
+        </div>
+
+        <!-- 10 -->
+        <div class="row">
+            <div class="left-box"></div>
+            <div class="arrow-area">
+                <svg class="arrow-svg" viewBox="0 0 200 10" preserveAspectRatio="none">
+                    <line x1="10" y1="5" x2="200" y2="5" stroke="#fbbf24" stroke-width="2"/>
+                    <polygon points="10,1 0,5 10,9" fill="#fbbf24"/>
+                </svg>
+            </div>
+            <div class="right-box">
+                <span class="num">10</span>
+                <span class="tag">Finished</span>
+            </div>
+        </div>
+
+        <div class="divider">
+            <span>Handshake Complete</span>
+            <div class="divider-line"></div>
+        </div>
+
+        <!-- App Data -->
+        <div class="row">
+            <div class="left-box">
+                <span class="app-tag">Application Data</span>
+            </div>
+            <div class="arrow-area">
+                <svg class="arrow-svg" viewBox="0 0 200 10" preserveAspectRatio="none" style="margin-bottom:3px">
+                    <line x1="0" y1="5" x2="190" y2="5" stroke="#93c5fd" stroke-width="2"/>
+                    <polygon points="190,1 200,5 190,9" fill="#93c5fd"/>
+                </svg>
+                <svg class="arrow-svg" viewBox="0 0 200 10" preserveAspectRatio="none">
+                    <line x1="10" y1="5" x2="200" y2="5" stroke="#93c5fd" stroke-width="2"/>
+                    <polygon points="10,1 0,5 10,9" fill="#93c5fd"/>
+                </svg>
+            </div>
+            <div class="right-box">
+                <span class="app-tag">Application Data</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="info">
+        <div class="info-title">암호화 방식의 조합</div>
+        <div class="info-row"><span class="dot y"></span>제3자 인증: CA가 서버의 신원을 보증</div>
+        <div class="info-row"><span class="dot g"></span>공개키 암호화: Pre-Master Secret을 서버 공개키로 암호화</div>
+        <div class="info-row"><span class="dot b"></span>대칭키 암호화: Session Key로 Application Data 암복호화</div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cache-Aside 읽기 흐름</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            padding: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            width: 1400px;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 24px;
+            padding: 50px 60px;
+        }
+
+        .diagram-wrapper {
+            display: flex;
+            gap: 50px;
+        }
+
+        .flow-section {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .flow-title {
+            text-align: center;
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 30px;
+        }
+
+        .flow-title.hit {
+            background: rgba(34, 197, 94, 0.15);
+            border: 2px solid #4ade80;
+            color: #4ade80;
+        }
+
+        .flow-title.miss {
+            background: rgba(239, 68, 68, 0.15);
+            border: 2px solid #f87171;
+            color: #f87171;
+        }
+
+        .diagram {
+            position: relative;
+            height: 320px;
+        }
+
+        .diagram.miss {
+            height: 420px;
+        }
+
+        .node {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .node-icon {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .node-icon img {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+        }
+
+        .node-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .app-node {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            border-radius: 14px;
+            color: #c7d2fe;
+            font-size: 18px;
+            font-weight: 700;
+            box-shadow: 0 6px 30px rgba(67, 56, 202, 0.4);
+        }
+
+        .arrows-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Cache Hit 위치 */
+        .hit-section .redis {
+            left: 30px;
+            top: 120px;
+        }
+
+        .hit-section .app {
+            right: 30px;
+            top: 120px;
+        }
+
+        /* Cache Miss 위치 - 넓은 삼각형 */
+        .miss-section .mysql {
+            left: 30px;
+            top: 10px;
+        }
+
+        .miss-section .redis {
+            left: 30px;
+            bottom: 10px;
+        }
+
+        .miss-section .app {
+            right: 30px;
+            top: 170px;
+        }
+
+        .label-bg {
+            fill: rgba(15, 15, 26, 0.9);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="diagram-wrapper">
+                <!-- Cache Hit -->
+                <div class="flow-section hit-section">
+                    <div class="flow-title hit">Cache Hit</div>
+                    <div class="diagram">
+                        <div class="node redis">
+                            <div class="node-icon">
+                                <img src="Redis 배경 제거.png" alt="Redis">
+                            </div>
+                            <span class="node-label">Redis</span>
+                        </div>
+
+                        <div class="node app">
+                            <div class="app-node">APP</div>
+                        </div>
+
+                        <svg class="arrows-svg" viewBox="0 0 400 320">
+                            <defs>
+                                <marker id="arrow-green" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto">
+                                    <path d="M0,0 L4,2 L0,4 L0.7,2 Z" fill="#4ade80"/>
+                                </marker>
+                            </defs>
+                            <!-- Redis -> APP -->
+                            <line x1="130" y1="160" x2="280" y2="160" stroke="#4ade80" stroke-width="3" marker-end="url(#arrow-green)"/>
+                            <text x="205" y="145" text-anchor="middle" font-size="21" font-weight="600" fill="#4ade80">데이터 반환</text>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Cache Miss -->
+                <div class="flow-section miss-section">
+                    <div class="flow-title miss">Cache Miss</div>
+                    <div class="diagram miss">
+                        <div class="node mysql">
+                            <div class="node-icon">
+                                <img src="mysql.svg" alt="MySQL">
+                            </div>
+                            <span class="node-label">MySQL</span>
+                        </div>
+
+                        <div class="node redis">
+                            <div class="node-icon">
+                                <img src="Redis 배경 제거.png" alt="Redis">
+                            </div>
+                            <span class="node-label">Redis</span>
+                        </div>
+
+                        <div class="node app">
+                            <div class="app-node">APP</div>
+                        </div>
+
+                        <svg class="arrows-svg" viewBox="0 0 400 420">
+                            <defs>
+                                <marker id="arrow-red" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto">
+                                    <path d="M0,0 L4,2 L0,4 L0.7,2 Z" fill="#f87171"/>
+                                </marker>
+                                <marker id="arrow-yellow" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto">
+                                    <path d="M0,0 L4,2 L0,4 L0.7,2 Z" fill="#fbbf24"/>
+                                </marker>
+                                <marker id="arrow-blue" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto">
+                                    <path d="M0,0 L4,2 L0,4 L0.7,2 Z" fill="#60a5fa"/>
+                                </marker>
+                                <marker id="arrow-green2" markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto">
+                                    <path d="M0,0 L4,2 L0,4 L0.7,2 Z" fill="#4ade80"/>
+                                </marker>
+                            </defs>
+
+                            <!-- 1. APP -> Redis (캐시 조회, 미스) -->
+                            <line x1="280" y1="270" x2="130" y2="350" stroke="#f87171" stroke-width="3" stroke-dasharray="6,3" marker-end="url(#arrow-red)"/>
+                            <text x="145" y="295" text-anchor="middle" font-size="20" font-weight="600" fill="#f87171">1. 캐시 조회</text>
+
+                            <!-- 2. APP -> MySQL (DB 조회) -->
+                            <line x1="280" y1="130" x2="130" y2="50" stroke="#fbbf24" stroke-width="3" marker-end="url(#arrow-yellow)"/>
+                            <text x="255" y="65" text-anchor="middle" font-size="20" font-weight="600" fill="#fbbf24">2. DB 조회</text>
+
+                            <!-- 3. MySQL -> APP (데이터 반환) -->
+                            <line x1="130" y1="70" x2="280" y2="150" stroke="#60a5fa" stroke-width="3" marker-end="url(#arrow-blue)"/>
+                            <text x="145" y="135" text-anchor="middle" font-size="20" font-weight="600" fill="#60a5fa">3. 데이터 반환</text>
+
+                            <!-- 4. APP -> Redis (캐시 저장) -->
+                            <line x1="280" y1="290" x2="130" y2="370" stroke="#4ade80" stroke-width="3" marker-end="url(#arrow-green2)"/>
+                            <text x="255" y="355" text-anchor="middle" font-size="20" font-weight="600" fill="#4ade80">4. 캐시 저장</text>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
