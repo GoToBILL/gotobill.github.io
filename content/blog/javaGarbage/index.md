@@ -1,5 +1,5 @@
 ---
-title: "Garbage Collection 핵심 정리"
+title: "Garbage Collection"
 date: "2025-09-10"
 description: "JVM의 가비지 컬렉션 동작 원리와 세대별 GC, 최적화 기법을 알아봅니다."
 category: "개발"
