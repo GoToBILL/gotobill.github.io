@@ -3,7 +3,7 @@ title: "InnoDB 잠금 메커니즘"
 date: "2025-10-06"
 description: "InnoDB의 레코드 락, 갭 락, 넥스트 키 락의 동작 원리와 인덱스와 잠금의 관계를 심층 분석합니다. 잠금 확인 및 해제 방법을 실제 예제와 함께 설명합니다."
 category: "개발"
-tags: ["MySQL", "InnoDB", "Database", "Lock", "Performance", "Index", "Concurrency"]
+tags: ["MySQL", "InnoDB", "Database", "Lock", "Index", "Concurrency"]
 ---
 
 ## InnoDB 잠금 종류
@@ -57,7 +57,7 @@ UPDATE users SET name = '홍길동' WHERE age = 30;
 
 **갭 락**(Gap Lock)은 레코드 자체가 아니라 **레코드와 바로 인접한 레코드 사이의 간격만을 잠급니다.**
 
-갭 락의 역할은 레코드와 레코드 사이의 간격에 새로운 레코드가 생성(INSERT)되는 것을 제어하는 것입니다. 
+갭 락의 역할은 레코드와 레코드 사이의 간격에 새로운 레코드가 생성(INSERT)되는 것을 제어하는 것입니다.
 
 갭 락 그 자체보다는 다음에 설명할 **넥스트 키 락의 일부로 자주 사용**됩니다.
 
@@ -111,7 +111,7 @@ COMMIT;
 > ```
 > **ROW 포맷**: 변경된 행의 실제 데이터를 기록
 >
-> 
+>
 > ```sql
 > -- Master에서 실행
 > DELETE FROM orders WHERE price >= 10000;
@@ -206,7 +206,7 @@ INSERT INTO users ...  -- 항상 경량 래치 (가장 빠름, 하지만 연속�
 
 > **ID 연속성이 보장되지 않는다는 의미**
 >
-> 
+>
 > ```sql
 > -- Connection 1이 대량 INSERT 시작
 > INSERT INTO users SELECT * FROM temp_users;  -- 1000건
@@ -270,6 +270,8 @@ AUTO_INCREMENT는 **테이블 전체에서 공유하는 하나의 카운터**입
 ```
 
 그래서 **실패해도 카운터는 되돌리지 않고**, id=5는 영구 건너뛴 채로 단순하게 처리합니다.
+
+---
 
 ## 인덱스와 잠금
 
@@ -344,12 +346,12 @@ UPDATE test SET name = '홍길동' WHERE name = '김철수';
 
 > **클러스터 인덱스 자동 생성 규칙**
 >
-> 
+>
 > 1. PRIMARY KEY가 있으면 그것을 클러스터 인덱스로 사용
 > 2. PRIMARY KEY가 없으면 첫 번째 UNIQUE NOT NULL 인덱스를 사용
 > 3. 둘 다 없으면 InnoDB가 숨겨진 6바이트 Row ID를 자동 생성하여 클러스터 인덱스로 사용
 >
-> 
+>
 > **문제**: 자동 생성된 Row ID 클러스터 인덱스는 WHERE 조건에 사용할 수 없어서, 결국 풀 스캔하며 모든 레코드에 잠금을 걸게 됩니다.
 
 > **인덱스 설계의 중요성**
@@ -359,6 +361,8 @@ UPDATE test SET name = '홍길동' WHERE name = '김철수';
 >
 > \
 > 한 세션에서 UPDATE 작업을 하는 중에는 다른 클라이언트는 그 테이블을 업데이트하지 못하고 기다려야 하는 상황이 발생합니다.
+
+---
 
 ## 레코드 수준의 잠금 확인 및 해제
 
@@ -497,14 +501,14 @@ mysql> SELECT * FROM performance_schema.data_locks\G
 
 > **IX 잠금의 역할**
 >
-> 
+>
 > InnoDB는 레코드 락을 걸 때 **항상 2단계**로 진행합니다:
 >
-> 
+>
 > 1. **먼저** 테이블에 IX 락을 걸어서 의도를 표시
 > 2. **그 다음** 실제 레코드에 레코드 락을 걸음
 >
-> 
+>
 > IX 락은 실제 데이터 접근을 막지 않고, `LOCK TABLES` 같은 테이블 전체 락과의 충돌만 방지합니다.
 
 **다른 레코드는 동시에 접근 가능한가?**
@@ -555,297 +559,3 @@ UPDATE test SET age = 30 WHERE name = '박영희';
 ```sql
 mysql> KILL 17;
 ```
-
-## MySQL의 격리 수준
-
-### 격리 수준이란?
-
-**트랜잭션의 격리 수준**(Isolation Level)이란 여러 트랜잭션이 동시에 처리될 때 특정 트랜잭션이 다른 트랜잭션에서 변경하거나 조회하는 데이터를 볼 수 있게 허용할지 말지를 결정하는 것입니다.
-
-### 4가지 격리 수준
-
-1. **READ UNCOMMITTED**
-2. **READ COMMITTED**
-3. **REPEATABLE READ**
-4. **SERIALIZABLE**
-
-**특징**
-
-- 격리 수준이 높아질수록 트랜잭션 간의 데이터 격리(고립) 정도가 높아집니다.
-- **격리 수준이 높아질수록 동시 처리 성능은 떨어지는 것이 일반적입니다.**
-- **SERIALIZABLE** 격리 수준이 아니라면 크게 성능의 개선이나 저하는 발생하지 않습니다.
-
-### 격리 수준별 부정합 문제
-
-데이터베이스의 격리 수준을 이야기하면 항상 함께 언급되는 **세 가지 부정합 문제**가 있습니다.
-
-|                    | DIRTY READ | NON-REPEATABLE READ | PHANTOM READ |
-|--------------------|-----------|---------------------|--------------|
-| READ UNCOMMITTED   | 발생      | 발생                | 발생         |
-| READ COMMITTED     | 없음      | 발생                | 발생         |
-| REPEATABLE READ    | 없음      | 없음                | 발생(InnoDB는 없음) |
-| SERIALIZABLE       | 없음      | 없음                | 없음         |
-
-> **InnoDB의 특별한 점**
->
-> \
-> SQL-92 또는 SQL-99 표준에 따르면 REPEATABLE READ 격리 수준에서는 PHANTOM READ가 발생할 수 있지만, **InnoDB에서는 독특한 특성 때문에 REPEATABLE READ 격리 수준에서도 PHANTOM READ가 발생하지 않습니다.**
-
-**부정합 문제 상세 설명**
-
-- **DIRTY READ**: 커밋되지 않은 데이터를 읽는 문제
-- **NON-REPEATABLE READ**: 하나의 트랜잭션에서 같은 쿼리를 두 번 실행했을 때 결과가 다른 문제
-- **PHANTOM READ**: 같은 쿼리를 두 번 실행했을 때 없던 레코드가 나타나는 문제
-
-각 부정합 문제에 대한 상세한 내용은 각 격리 수준별 설명에서 다루겠습니다.
-
-> **테스트 환경 설정**
->
-> 여기서 설명하는 SQL 예제는 모두 **AUTOCOMMIT이 OFF인 상태**에서만 테스트할 수 있습니다.
->
-> ```sql
-> SET autocommit=OFF;
-> ```
->
-> **왜 자동 커밋이 false여야 할까?**
->
-> \
-> AUTO-COMMIT을 자동으로 해놓으면 각 SQL 문이 바로 커밋됩니다.
->
-> \
-> SELECT, UPDATE, INSERT, DELETE 등 모든 명령이 자체적으로 트랜잭션을 시작하고 끝내기 때문에 트랜잭션은 Rollback이 불가능합니다.
-> 
-### READ UNCOMMITTED
-
-READ UNCOMMITTED 격리 수준에서는 각 트랜잭션에서의 변경 내용이 **COMMIT이나 ROLLBACK 여부와 상관없이 다른 트랜잭션에서 보입니다.**
-
-![read_uncommited](./read_uncomm.png)
-
-**시나리오**
-
-1. 사용자 A가 `emp_no=500000`, `first_name="Lara"`인 새로운 사원을 INSERT
-2. 사용자 A가 커밋하기 전에 사용자 B가 `emp_no=500000`인 사원을 SELECT
-3. **사용자 B는 커밋되지 않은 상태에서도 사원 정보를 조회할 수 있음**
-4. 사용자 A가 알 수 없는 문제로 INSERT를 ROLLBACK
-5. 사용자 B는 여전히 "Lara"가 정상적인 사원이라고 생각하고 계속 처리
-
-**DIRTY READ란?**
-
-어떤 트랜잭션에서 처리한 작업이 완료되지 않았는데도 다른 트랜잭션에서 볼 수 있는 현상을 **더티 리드**(Dirty Read)라고 합니다.
-
-**문제점**
-
-- 데이터가 나타났다가 사라졌다 하는 현상 발생
-- 애플리케이션 개발자와 사용자를 상당히 혼란스럽게 만듦
-- RDBMS 표준에서는 트랜잭션의 격리 수준으로 인정하지 않을 정도로 정합성에 문제가 많음
-
-> **권장사항**
->
-> \
-> MySQL을 사용한다면 최소한 **READ COMMITTED 이상의 격리 수준**을 사용할 것을 권장합니다.
-
-### READ COMMITTED
-
-**READ COMMITTED**는 Oracle DBMS에서 기본으로 사용되는 격리 수준이며, 온라인 서비스에서 가장 많이 선택되는 격리 수준입니다.
-
-**특징**
-
-- 더티 리드(Dirty Read) 같은 현상은 발생하지 않음
-- **COMMIT이 완료된 데이터만** 다른 트랜잭션에서 조회 가능
-
-#### COMMIT된 데이터만 읽기
-
-![read_commited](./read_commit1.png)
-
-**시나리오**
-
-1. 사용자 A가 `emp_no=500000`인 사원의 `first_name`을 "Lara"에서 "Toto"로 변경
-   - 새로운 값 "Toto"는 employees 테이블에 즉시 기록
-   - 이전 값 "Lara"는 **언두 영역**으로 백업
-2. 사용자 A가 커밋을 수행하기 전에 사용자 B가 `emp_no=500000`인 사원을 SELECT
-   - 조회된 결과의 `first_name`은 "Toto"가 아니라 **"Lara"**
-   - SELECT 쿼리 결과는 employees 테이블이 아니라 **언두 영역에 백업된 레코드**에서 가져옴
-3. 사용자 A가 변경된 내용을 커밋
-   - 그때부터 다른 트랜잭션에서도 새롭게 변경된 "Toto" 값을 참조 가능
-
-#### NON-REPEATABLE READ 문제
-
-READ COMMITTED 격리 수준에서도 **NON-REPEATABLE READ**라는 부정합 문제가 있습니다.
-
-![read_commited](./read_commit2.png)
-
-**시나리오**
-
-1. 사용자 B가 `BEGIN` 명령으로 트랜잭션을 시작
-2. 사용자 B가 `first_name="Toto"`인 사용자를 검색 → 결과 없음
-3. 사용자 A가 사원 번호 500000인 사원의 이름을 "Toto"로 변경하고 커밋
-4. 사용자 B가 똑같은 SELECT 쿼리로 다시 조회 → 결과 1건 조회됨
-
-> **READ COMMITTED의 동작 원리**
-> 
-> ```sql
-> -- 초기 상태: name='Lara'
->
-> -- 사용자 A
-> UPDATE users SET name = 'Toto' WHERE id = 1;
-> -- 실제 테이블: name='Toto' (즉시 변경)
-> -- 언두 로그: name='Lara' (백업)
-> -- 아직 커밋 안 함
->
-> -- 사용자 B (READ COMMITTED)
-> SELECT * FROM users WHERE id = 1;
-> -- 결과: name='Lara'
-> -- 왜? 커밋되지 않은 데이터는 언두 로그에서 변경 전 데이터를 읽음
->
-> -- 사용자 A
-> COMMIT;  -- 커밋 완료
->
-> -- 사용자 B (같은 트랜잭션 내에서)
-> SELECT * FROM users WHERE id = 1;
-> -- 결과: name='Toto'
-> -- 왜? 커밋된 데이터는 실제 테이블에서 읽음
-> ```
->
-> \
-> **READ COMMITTED의 핵심**:
-> - **커밋 안 된 데이터**: 언두 로그에서 변경 전 데이터를 읽음
-> - **커밋된 데이터**: 실제 테이블에서 변경 후 데이터를 읽음
-> - 같은 트랜잭션 내에서도 **매번 커밋 상태를 확인**하므로 결과가 달라집니다.
-
-**문제점**
-
-사용자 B가 하나의 트랜잭션 내에서 똑같은 SELECT 쿼리를 실행했을 때는 항상 같은 결과를 가져와야 한다는 **REPEATABLE READ 정합성에 어긋납니다.**
-
-### REPEATABLE READ
-
-**REPEATABLE READ**는 MySQL의 InnoDB 스토리지 엔진에서 기본으로 사용되는 격리 수준입니다.
-
-**특징**
-
-- 바이너리 로그를 가진 MySQL 서버에서는 최소 REPEATABLE READ 격리 수준 이상을 사용해야 함
-- READ COMMITTED 격리 수준에서 발생하는 **NON-REPEATABLE READ** 부정합이 발생하지 않음
-- **MVCC**(Multi Version Concurrency Control)를 이용해 동일 트랜잭션 내에서는 동일한 결과를 보장
-
-#### MVCC를 통한 스냅샷 격리
-
-> **MVCC란?**
->
-> \
-> 레코드가 변경되기 전의 데이터를 언두(Undo) 공간에 백업하여, 동일한 레코드에 여러 버전의 데이터가 존재하도록 하는 방식입니다.
->
-> \
-> REPEATABLE READ는 MVCC를 활용하여 트랜잭션 시작 시점의 스냅샷을 기준으로 항상 동일한 결과를 보장합니다.
-
-**트랜잭션 번호와 스냅샷 메커니즘**
-
-- 모든 트랜잭션은 **고유한 트랜잭션 번호**(순차적으로 증가)를 가짐
-- 언두 영역의 백업 레코드에는 **변경한 트랜잭션의 번호**가 포함됨
-- 트랜잭션은 **자신의 번호보다 작은 트랜잭션 번호에서 변경한 데이터만 조회**
-- 실행 중인 가장 오래된 트랜잭션 번호보다 앞선 언두 데이터는 삭제 불가능
-
-#### 동작 예시
-
-![repeatable_read](./repeatable1.png)
-
-**시나리오**
-
-1. 사용자 B: 트랜잭션 시작 (트랜잭션 번호: 10)
-2. 사용자 A: 트랜잭션 시작 (트랜잭션 번호: 12) → `emp_no=500000`의 이름을 "Lara"에서 "Toto"로 변경 후 커밋
-3. 사용자 B: `emp_no=500000` 조회 → 결과는 항상 **"Lara"** (언두 로그에서 조회)
-
-> **주의사항**
->
-> \
-> 장시간 트랜잭션을 종료하지 않으면 언두 영역이 무한정 커져 **MySQL 서버의 처리 성능이 떨어질 수 있습니다.**
-
-#### PHANTOM READ 문제
-
-![phantom_read](./repeatable2.png)
-
-#### REPEATABLE READ에서도 PHANTOM READ가 발생하는 경우
-
-> **일반 SELECT만 사용하면 PHANTOM READ가 발생하지 않습니다.**
->
-> \
-> 일반 SELECT는 트랜잭션 시작 시점의 스냅샷(언두 로그)을 읽기 때문에 중간에 INSERT가 발생해도 영향을 받지 않습니다.
->
-> \
-> **하지만 SELECT -> INSERT -> SELECT FOR UPDATE 순서면 PHANTOM READ가 발생할 수 있습니다.**
-
-![팬텀리드](./phan1.png)
-
-**PHANTOM READ가 발생하는 원리**
-
-```sql
--- Transaction A
-SELECT * FROM member WHERE id >= 50;
--- 갭 락 없음, 언두 로그 읽음 → id=50 한 건
-
--- Transaction B
-INSERT INTO member (id, name) VALUES (51, '홍길순');
-COMMIT;  -- 갭 락이 없어서 성공
-
--- Transaction A (같은 트랜잭션)
-SELECT * FROM member WHERE id >= 50 FOR UPDATE;
--- 쓰기 잠금 필요 → 실제 테이블 읽음 → id=50, 51 두 건 (PHANTOM READ!)
-```
-
-> **왜 SELECT FOR UPDATE는 실제 테이블을 읽어야 하는가?**
->
-> \
-> **언두 로그에는 잠금을 걸 수 없기 때문입니다.**
->
-> \
-> 언두 로그는 여러 트랜잭션이 공유하는 읽기 전용 히스토리 공간으로, 과거 버전에 잠금을 걸면 다른 트랜잭션의 스냅샷 읽기를 방해합니다.
->
-> \
-> 따라서 `SELECT FOR UPDATE`는 쓰기 잠금을 걸어야 하므로 실제 테이블의 현재 레코드를 읽을 수밖에 없습니다.
-
-> **SELECT FOR UPDATE의 잠금 방식**
->
-> \
-> `SELECT FOR UPDATE`는 **쓰기 잠금(X Lock) + 갭 락**을 모두 획득합니다:
->
-> 
-> - **레코드 락 (X Lock)**: 조회된 레코드에 쓰기 잠금
-> - **갭 락 (Gap Lock)**: 레코드 사이 간격을 잠궈 **INSERT 차단**
->
-> 
-> 반면 일반 SELECT는 아무 잠금도 걸지 않아 언두 로그에서 스냅샷을 읽고, INSERT도 허용합니다.
-
-> **일반 DBMS는 어떻게 동작하는가?**
->
-> \
-> 일반 DBMS에서는 갭 락 자체가 없어 `SELECT FOR UPDATE`를 처음부터 사용해도 범위 내 INSERT를 막지 못해 PHANTOM READ가 발생합니다.
-
-### SERIALIZABLE
-
-**SERIALIZABLE**은 가장 엄격한 트랜잭션 격리 수준입니다.
-
-**특징**
-
-- 가장 높은 데이터 일관성 보장
-- 트랜잭션들이 마치 **순차적으로**(serial) 실행되는 것처럼 처리
-- 여러 트랜잭션이 **동일한 레코드에 동시에 접근하는 일이 차단**됨
-- 데이터의 부정합이나 예기치 않은 읽기 문제는 발생하지 않음
-- **병렬 실행이 제한**되므로, **동시 처리 성능은 크게 떨어질 수 있음**
-
-#### SERIALIZABLE의 동작 방식
-
-**일반 SELECT조차도 공유 잠금(Shared Lock)을 획득**
-
-- Next-Key Lock을 통해 해당 범위의 삽입, 수정, 삭제를 차단
-- 한 트랜잭션에서 읽는 레코드를 다른 트랜잭션에서는 변경 불가능
-- PHANTOM READ 완전 방지
-
-> **InnoDB에서는 SERIALIZABLE이 불필요한 이유**
->
-> \
-> InnoDB 스토리지 엔진에서는 **갭 락**과 **넥스트 키 락** 덕분에 REPEATABLE READ 격리 수준에서도 이미 PHANTOM READ가 발생하지 않기 때문에 굳이 SERIALIZABLE을 사용할 필요성은 없어 보입니다.
-
-**권장사항**
-
-- **안정성이 최우선인 특수한 상황**이 아닌 이상, **일반적인 애플리케이션에서는 이 수준을 사용하지 않는 것이 바람직**합니다.
-- 동시성이 중요한 데이터베이스에서는 거의 사용하지 않음
-- 성능 저하를 감수하고 최고 수준의 데이터 일관성이 필요한 경우에만 사용
-- 트랜잭션 간 충돌과 잠금 경합이 빈번해져 **성능 저하가 크기 때문에**, 일반적인 트랜잭션 처리에서는 신중하게 사용
