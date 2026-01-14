@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>락 보유 시간 비교</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #111827;
+            color: #e0e7ff;
+            min-height: 100vh;
+            padding: 40px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 40px;
+            color: #e0e7ff;
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .case-box {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 28px;
+        }
+
+        .case-box.bad {
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .case-box.good {
+            border-color: rgba(134, 239, 172, 0.3);
+        }
+
+        .case-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .case-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .case-badge.bad {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+
+        .case-badge.good {
+            background: rgba(134, 239, 172, 0.2);
+            color: #86efac;
+        }
+
+        .case-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .timeline {
+            position: relative;
+        }
+
+        .step {
+            position: relative;
+            margin-bottom: 16px;
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .step-code {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 13px;
+            color: #c4b5fd;
+        }
+
+        .step-desc {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 6px;
+        }
+
+        .lock-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 24px;
+            padding: 16px;
+            border-radius: 12px;
+        }
+
+        .lock-indicator.long {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .lock-indicator.short {
+            background: rgba(134, 239, 172, 0.1);
+            border: 1px solid rgba(134, 239, 172, 0.3);
+        }
+
+        .lock-bar {
+            flex: 1;
+            height: 24px;
+            border-radius: 6px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lock-bar.long {
+            background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
+        }
+
+        .lock-bar.short {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .lock-bar.short::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 30%;
+            background: linear-gradient(90deg, #22c55e 0%, #86efac 100%);
+            border-radius: 6px;
+        }
+
+        .lock-label {
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .lock-label.long {
+            color: #f87171;
+        }
+
+        .lock-label.short {
+            color: #86efac;
+        }
+
+        .waiting-indicator {
+            margin-top: 16px;
+            padding: 14px 16px;
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 10px;
+        }
+
+        .waiting-text {
+            font-size: 13px;
+            color: #fbbf24;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .waiting-icon {
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .bracket {
+            position: absolute;
+            right: -40px;
+            top: 0;
+            bottom: 0;
+            width: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .bracket-line {
+            width: 20px;
+            height: 2px;
+            background: #f87171;
+        }
+
+        .bracket-text {
+            writing-mode: vertical-rl;
+            font-size: 11px;
+            color: #f87171;
+            margin-left: 4px;
+        }
+
+        .lock-section {
+            position: relative;
+            border-left: 3px solid #f87171;
+            margin-left: 8px;
+            padding-left: 16px;
+        }
+
+        .lock-section.short {
+            border-color: #86efac;
+        }
+
+        .section-label {
+            position: absolute;
+            left: -60px;
+            top: 50%;
+            transform: translateY(-50%) rotate(-90deg);
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .section-label.bad {
+            color: #f87171;
+        }
+
+        .section-label.good {
+            color: #86efac;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">락 보유 시간 비교</h1>
+
+        <div class="comparison">
+            <div class="case-box bad">
+                <div class="case-header">
+                    <span class="case-badge bad">나쁜 예</span>
+                    <span class="case-title">트랜잭션 안에서 외부 API 호출</span>
+                </div>
+
+                <div class="timeline">
+                    <div class="step">
+                        <div class="step-code">BEGIN;</div>
+                        <div class="step-desc">트랜잭션 시작</div>
+                    </div>
+
+                    <div class="lock-section">
+                        <div class="step lock">
+                            <div class="step-code">SELECT * FROM orders WHERE id=1 FOR UPDATE;</div>
+                            <div class="step-desc">X Lock 획득</div>
+                        </div>
+
+                        <div class="step api">
+                            <div class="step-code">// 외부 API 호출</div>
+                            <div class="step-desc">네트워크 지연 발생 (500ms ~ 수 초)</div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-code">UPDATE orders SET status='completed';</div>
+                            <div class="step-desc">상태 변경</div>
+                        </div>
+
+                        <div class="step unlock">
+                            <div class="step-code">COMMIT;</div>
+                            <div class="step-desc">X Lock 해제</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lock-indicator long">
+                    <span class="lock-label long">락 보유:</span>
+                    <div class="lock-bar long"></div>
+                </div>
+
+                <div class="waiting-indicator">
+                    <div class="waiting-text">
+                        <span class="waiting-icon">...</span>
+                        <span>다른 트랜잭션들이 API 응답 대기 동안 블로킹됨</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="case-box good">
+                <div class="case-header">
+                    <span class="case-badge good">좋은 예</span>
+                    <span class="case-title">트랜잭션 밖에서 외부 API 호출</span>
+                </div>
+
+                <div class="timeline">
+                    <div class="step api">
+                        <div class="step-code">// 1. 외부 API 호출 (트랜잭션 밖)</div>
+                        <div class="step-desc">네트워크 지연 발생 (500ms ~ 수 초)</div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-code">// 2. API 응답 검증</div>
+                        <div class="step-desc">결과 확인</div>
+                    </div>
+
+                    <div class="lock-section short">
+                        <div class="step">
+                            <div class="step-code">BEGIN;</div>
+                            <div class="step-desc">트랜잭션 시작</div>
+                        </div>
+
+                        <div class="step lock">
+                            <div class="step-code">SELECT * FROM orders WHERE id=1 FOR UPDATE;</div>
+                            <div class="step-desc">X Lock 획득</div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-code">UPDATE orders SET status='completed';</div>
+                            <div class="step-desc">상태 변경</div>
+                        </div>
+
+                        <div class="step unlock">
+                            <div class="step-code">COMMIT;</div>
+                            <div class="step-desc">X Lock 해제</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lock-indicator short">
+                    <span class="lock-label short">락 보유:</span>
+                    <div class="lock-bar short"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

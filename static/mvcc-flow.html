@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MVCC 동작 흐름</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            background: #111827;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 1100px;
+            width: 100%;
+        }
+
+        .title {
+            text-align: center;
+            color: #e0e7ff;
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 32px;
+        }
+
+        /* Step Navigation */
+        .step-nav {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+        }
+
+        .step-btn {
+            padding: 10px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.03);
+            color: rgba(255, 255, 255, 0.6);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .step-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .step-btn.active {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            border-color: transparent;
+            color: #e0e7ff;
+        }
+
+        /* Step Content */
+        .step-content {
+            display: none;
+        }
+
+        .step-content.active {
+            display: block;
+        }
+
+        .step-title {
+            color: #e0e7ff;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .step-desc {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        /* Memory Layout */
+        .memory-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .memory-section {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .memory-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .memory-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .memory-icon.table {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+        }
+
+        .memory-icon.undo {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+        }
+
+        .memory-icon.buffer {
+            background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%);
+        }
+
+        .memory-icon.redo {
+            background: linear-gradient(135deg, #7c2d12 0%, #c2410c 100%);
+        }
+
+        .memory-name {
+            color: #e0e7ff;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        /* Record Table */
+        .record-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .record-table th {
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 11px;
+            font-weight: 500;
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .record-table td {
+            color: #e0e7ff;
+            font-size: 13px;
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-family: 'SF Mono', 'Fira Code', monospace;
+        }
+
+        .record-table tr.highlight {
+            background: rgba(134, 239, 172, 0.1);
+        }
+
+        .record-table tr.changed {
+            background: rgba(251, 191, 36, 0.1);
+        }
+
+        .record-table tr.old {
+            background: rgba(255, 255, 255, 0.02);
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .value-change {
+            color: #fbbf24;
+        }
+
+        .value-new {
+            color: #86efac;
+        }
+
+        .pointer {
+            color: #93c5fd;
+            font-size: 12px;
+        }
+
+        /* Transaction Info */
+        .tx-section {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .tx-header {
+            color: #e0e7ff;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .tx-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .tx-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .tx-card.active-a {
+            border-color: rgba(251, 191, 36, 0.4);
+            background: rgba(251, 191, 36, 0.05);
+        }
+
+        .tx-card.active-b {
+            border-color: rgba(147, 197, 253, 0.4);
+            background: rgba(147, 197, 253, 0.05);
+        }
+
+        .tx-name {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .tx-name.tx-a {
+            color: #fbbf24;
+        }
+
+        .tx-name.tx-b {
+            color: #93c5fd;
+        }
+
+        .tx-info {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.6;
+        }
+
+        .tx-info code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 11px;
+        }
+
+        .tx-status {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .tx-status.running {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+
+        .tx-status.committed {
+            background: rgba(134, 239, 172, 0.2);
+            color: #86efac;
+        }
+
+        .tx-status.reading {
+            background: rgba(147, 197, 253, 0.2);
+            color: #93c5fd;
+        }
+
+        /* Read View */
+        .read-view {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 12px;
+        }
+
+        .read-view-title {
+            color: #c4b5fd;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .read-view-fields {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .rv-field {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .rv-field code {
+            color: #c4b5fd;
+            background: rgba(139, 92, 246, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+        }
+
+        /* Result Box */
+        .result-box {
+            background: rgba(134, 239, 172, 0.1);
+            border: 1px solid rgba(134, 239, 172, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .result-title {
+            color: #86efac;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .result-content {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .result-content strong {
+            color: #86efac;
+        }
+
+        /* Flow Arrow */
+        .flow-section {
+            margin: 24px 0;
+        }
+
+        .flow-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .flow-step:last-child {
+            border-bottom: none;
+        }
+
+        .flow-num {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #e0e7ff;
+            font-size: 13px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .flow-text {
+            flex: 1;
+        }
+
+        .flow-action {
+            color: #e0e7ff;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .flow-detail {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .flow-detail code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 12px;
+            color: #c4b5fd;
+        }
+
+        /* Comparison */
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .comparison-box {
+            padding: 16px;
+            border-radius: 12px;
+        }
+
+        .comparison-box.repeatable {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .comparison-box.read-committed {
+            background: rgba(147, 197, 253, 0.1);
+            border: 1px solid rgba(147, 197, 253, 0.3);
+        }
+
+        .comparison-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .comparison-box.repeatable .comparison-title {
+            color: #c4b5fd;
+        }
+
+        .comparison-box.read-committed .comparison-title {
+            color: #93c5fd;
+        }
+
+        .comparison-value {
+            font-size: 24px;
+            font-weight: 700;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            margin-bottom: 8px;
+        }
+
+        .comparison-box.repeatable .comparison-value {
+            color: #c4b5fd;
+        }
+
+        .comparison-box.read-committed .comparison-value {
+            color: #93c5fd;
+        }
+
+        .comparison-reason {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.5;
+        }
+
+        @media (max-width: 768px) {
+            .memory-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .tx-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+
+            .step-nav {
+                gap: 8px;
+            }
+
+            .step-btn {
+                padding: 8px 14px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">MVCC 동작 흐름</div>
+
+        <!-- Step Navigation -->
+        <div class="step-nav">
+            <button class="step-btn active" onclick="showStep(1)">1. 초기 상태</button>
+            <button class="step-btn" onclick="showStep(2)">2. Tx A UPDATE</button>
+            <button class="step-btn" onclick="showStep(3)">3. Tx B SELECT</button>
+            <button class="step-btn" onclick="showStep(4)">4. Tx A COMMIT</button>
+            <button class="step-btn" onclick="showStep(5)">5. Tx B 재조회</button>
+        </div>
+
+        <!-- Step 1: 초기 상태 -->
+        <div class="step-content active" id="step-1">
+            <div class="step-title">1단계: 초기 상태</div>
+            <div class="step-desc">테이블에 id=1인 레코드가 있고, balance는 10,000원입니다. trx_id=100인 트랜잭션이 INSERT했습니다.</div>
+
+            <div class="memory-layout">
+                <div class="memory-section">
+                    <div class="memory-header">
+                        <div class="memory-icon buffer"></div>
+                        <div class="memory-name">Buffer Pool (메모리)</div>
+                    </div>
+                    <table class="record-table">
+                        <tr>
+                            <th>id</th>
+                            <th>name</th>
+                            <th>balance</th>
+                            <th>DB_TRX_ID</th>
+                            <th>DB_ROLL_PTR</th>
+                        </tr>
+                        <tr class="highlight">
+                            <td>1</td>
+                            <td>홍길동</td>
+                            <td>10,000</td>
+                            <td>100</td>
+                            <td class="pointer">NULL</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="memory-section">
+                    <div class="memory-header">
+                        <div class="memory-icon undo"></div>
+                        <div class="memory-name">Undo Log</div>
+                    </div>
+                    <table class="record-table">
+                        <tr>
+                            <th>balance</th>
+                            <th>DB_TRX_ID</th>
+                            <th>DB_ROLL_PTR</th>
+                        </tr>
+                        <tr>
+                            <td colspan="3" style="text-align: center; color: rgba(255,255,255,0.4);">비어있음</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="result-box">
+                <div class="result-title">현재 상태</div>
+                <div class="result-content">
+                    테이블에 1건의 레코드가 있습니다. <strong>balance = 10,000</strong><br>
+                    아직 아무도 이 레코드를 변경하지 않았으므로 Undo Log는 비어있습니다.
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Transaction A UPDATE -->
+        <div class="step-content" id="step-2">
+            <div class="step-title">2단계: Transaction A가 UPDATE</div>
+            <div class="step-desc">Transaction A(trx_id=200)가 balance를 7,000원으로 변경합니다. 아직 COMMIT하지 않았습니다.</div>
+
+            <div class="tx-section">
+                <div class="tx-header">트랜잭션 상태</div>
+                <div class="tx-grid">
+                    <div class="tx-card active-a">
+                        <div class="tx-name tx-a">Transaction A (trx_id=200)</div>
+                        <div class="tx-info">
+                            <code>UPDATE accounts SET balance = 7000 WHERE id = 1</code>
+                        </div>
+                        <div class="tx-status running">실행 중 (UNCOMMITTED)</div>
+                    </div>
+                    <div class="tx-card">
+                        <div class="tx-name tx-b">Transaction B</div>
+                        <div class="tx-info">아직 시작하지 않음</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="memory-layout">
+                <div class="memory-section">
+                    <div class="memory-header">
+                        <div class="memory-icon buffer"></div>
+                        <div class="memory-name">Buffer Pool (메모리)</div>
+                    </div>
+                    <table class="record-table">
+                        <tr>
+                            <th>id</th>
+                            <th>name</th>
+                            <th>balance</th>
+                            <th>DB_TRX_ID</th>
+                            <th>DB_ROLL_PTR</th>
+                        </tr>
+                        <tr class="changed">
+                            <td>1</td>
+                            <td>홍길동</td>
+                            <td class="value-change">7,000</td>
+                            <td class="value-change">200</td>
+                            <td class="pointer">→ Undo #1</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="memory-section">
+                    <div class="memory-header">
+                        <div class="memory-icon undo"></div>
+                        <div class="memory-name">Undo Log</div>
+                    </div>
+                    <table class="record-table">
+                        <tr>
+                            <th>balance</th>
+                            <th>DB_TRX_ID</th>
+                            <th>DB_ROLL_PTR</th>
+                        </tr>
+                        <tr class="highlight">
+                            <td>10,000</td>
+                            <td>100</td>
+                            <td class="pointer">NULL</td>
+                        </tr>
+                    </table>
+                    <div style="font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 8px;">
+                        Undo #1: UPDATE 전 이전 버전 백업
+                    </div>
+                </div>
+            </div>
+
+            <div class="flow-section">
+                <div class="flow-step">
+                    <div class="flow-num">1</div>
+                    <div class="flow-text">
+                        <div class="flow-action">이전 버전을 Undo Log에 백업</div>
+                        <div class="flow-detail">balance=10,000, trx_id=100인 레코드를 Undo Log에 저장</div>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="flow-num">2</div>
+                    <div class="flow-text">
+                        <div class="flow-action">Buffer Pool의 레코드 변경</div>
+                        <div class="flow-detail">balance를 <code>7,000</code>으로, DB_TRX_ID를 <code>200</code>으로 변경</div>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="flow-num">3</div>
+                    <div class="flow-text">
+                        <div class="flow-action">DB_ROLL_PTR 연결</div>
+                        <div class="flow-detail">변경된 레코드의 DB_ROLL_PTR이 Undo Log의 이전 버전을 가리킴</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Transaction B SELECT -->
+        <div class="step-content" id="step-3">
+            <div class="step-title">3단계: Transaction B가 SELECT</div>
+            <div class="step-desc">Transaction B(trx_id=201)가 같은 레코드를 조회합니다. REPEATABLE READ 격리 수준입니다.</div>
+
+            <div class="tx-section">
+                <div class="tx-header">트랜잭션 상태</div>
+                <div class="tx-grid">
+                    <div class="tx-card active-a">
+                        <div class="tx-name tx-a">Transaction A (trx_id=200)</div>
+                        <div class="tx-info">UPDATE 완료, 아직 COMMIT 안 함</div>
+                        <div class="tx-status running">실행 중 (UNCOMMITTED)</div>
+                    </div>
+                    <div class="tx-card active-b">
+                        <div class="tx-name tx-b">Transaction B (trx_id=201)</div>
+                        <div class="tx-info">
+                            <code>SELECT * FROM accounts WHERE id = 1</code>
+                        </div>
+                        <div class="tx-status reading">조회 중</div>
+
+                        <div class="read-view">
+                            <div class="read-view-title">Read View 생성</div>
+                            <div class="read-view-fields">
+                                <div class="rv-field">m_ids: <code>[200]</code></div>
+                                <div class="rv-field">m_up_limit_id: <code>200</code></div>
+                                <div class="rv-field">m_low_limit_id: <code>202</code></div>
+                                <div class="rv-field">m_creator_trx_id: <code>201</code></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="memory-layout">
+                <div class="memory-section">
+                    <div class="memory-header">
+                        <div class="memory-icon buffer"></div>
+                        <div class="memory-name">Buffer Pool (메모리)</div>
+                    </div>
+                    <table class="record-table">
+                        <tr>
+                            <th>id</th>
+                            <th>name</th>
+                            <th>balance</th>
+                            <th>DB_TRX_ID</th>
+                            <th>DB_ROLL_PTR</th>
+                        </tr>
+                        <tr class="old">
+                            <td>1</td>
+                            <td>홍길동</td>
+                            <td>7,000</td>
+                            <td>200</td>
+                            <td class="pointer">→ Undo #1</td>
+                        </tr>
+                    </table>
+                    <div style="font-size: 11px; color: rgba(239, 68, 68, 0.8); margin-top: 8px;">
+                        trx_id=200이 m_ids에 있음 → 안 보임!
+                    </div>
+                </div>
+
+                <div class="memory-section">
+                    <div class="memory-header">
+                        <div class="memory-icon undo"></div>
+                        <div class="memory-name">Undo Log</div>
+                    </div>
+                    <table class="record-table">
+                        <tr>
+                            <th>balance</th>
+                            <th>DB_TRX_ID</th>
+                            <th>DB_ROLL_PTR</th>
+                        </tr>
+                        <tr class="highlight">
+                            <td class="value-new">10,000</td>
+                            <td>100</td>
+                            <td class="pointer">NULL</td>
+                        </tr>
+                    </table>
+                    <div style="font-size: 11px; color: rgba(134, 239, 172, 0.8); margin-top: 8px;">
+                        trx_id=100 < 200 (m_up_limit_id) → 보임!
+                    </div>
+                </div>
+            </div>
+
+            <div class="flow-section">
+                <div class="flow-step">
+                    <div class="flow-num">1</div>
+                    <div class="flow-text">
+                        <div class="flow-action">Buffer Pool에서 레코드 찾음</div>
+                        <div class="flow-detail">balance=7,000, <code>trx_id=200</code></div>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="flow-num">2</div>
+                    <div class="flow-text">
+                        <div class="flow-action">Read View로 가시성 판단</div>
+                        <div class="flow-detail">trx_id=200이 m_ids에 있음 (활성 트랜잭션) → <strong style="color: #f87171;">안 보임</strong></div>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="flow-num">3</div>
+                    <div class="flow-text">
+                        <div class="flow-action">DB_ROLL_PTR 따라 Undo Log로 이동</div>
+                        <div class="flow-detail">이전 버전 확인: balance=10,000, <code>trx_id=100</code></div>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="flow-num">4</div>
+                    <div class="flow-text">
+                        <div class="flow-action">Read View로 가시성 판단</div>
+                        <div class="flow-detail">trx_id=100 < 200 (m_up_limit_id) → <strong style="color: #86efac;">보임!</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-box">
+                <div class="result-title">조회 결과</div>
+                <div class="result-content">
+                    Transaction B는 <strong>balance = 10,000</strong>을 읽습니다.<br>
+                    Transaction A가 변경한 7,000은 아직 커밋되지 않았으므로 보이지 않습니다.
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4: Transaction A COMMIT -->
+        <div class="step-content" id="step-4">
+            <div class="step-title">4단계: Transaction A가 COMMIT</div>
+            <div class="step-desc">Transaction A가 COMMIT합니다. 변경 사항이 영구 반영됩니다.</div>
+
+            <div class="tx-section">
+                <div class="tx-header">트랜잭션 상태</div>
+                <div class="tx-grid">
+                    <div class="tx-card">
+                        <div class="tx-name tx-a">Transaction A (trx_id=200)</div>
+                        <div class="tx-info">
+                            <code>COMMIT</code>
+                        </div>
+                        <div class="tx-status committed">커밋 완료</div>
+                    </div>
+                    <div class="tx-card active-b">
+                        <div class="tx-name tx-b">Transaction B (trx_id=201)</div>
+                        <div class="tx-info">트랜잭션 계속 진행 중</div>
+                        <div class="tx-status reading">실행 중</div>
+
+                        <div class="read-view">
+                            <div class="read-view-title">기존 Read View 유지</div>
+                            <div class="read-view-fields">
+                                <div class="rv-field">m_ids: <code>[200]</code></div>
+                                <div class="rv-field" style="color: rgba(251, 191, 36, 0.8);">A가 커밋해도 Read View는 변경 안 됨!</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="memory-layout">
+                <div class="memory-section">
+                    <div class="memory-header">
+                        <div class="memory-icon buffer"></div>
+                        <div class="memory-name">Buffer Pool (메모리)</div>
+                    </div>
+                    <table class="record-table">
+                        <tr>
+                            <th>id</th>
+                            <th>name</th>
+                            <th>balance</th>
+                            <th>DB_TRX_ID</th>
+                            <th>DB_ROLL_PTR</th>
+                        </tr>
+                        <tr class="highlight">
+                            <td>1</td>
+                            <td>홍길동</td>
+                            <td class="value-new">7,000</td>
+                            <td>200</td>
+                            <td class="pointer">→ Undo #1</td>
+                        </tr>
+                    </table>
+                    <div style="font-size: 11px; color: rgba(134, 239, 172, 0.8); margin-top: 8px;">
+                        COMMIT 완료 → 새 트랜잭션에게는 이 값이 보임
+                    </div>
+                </div>
+
+                <div class="memory-section">
+                    <div class="memory-header">
+                        <div class="memory-icon undo"></div>
+                        <div class="memory-name">Undo Log</div>
+                    </div>
+                    <table class="record-table">
+                        <tr>
+                            <th>balance</th>
+                            <th>DB_TRX_ID</th>
+                            <th>DB_ROLL_PTR</th>
+                        </tr>
+                        <tr>
+                            <td>10,000</td>
+                            <td>100</td>
+                            <td class="pointer">NULL</td>
+                        </tr>
+                    </table>
+                    <div style="font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 8px;">
+                        Transaction B가 아직 참조 중 → 삭제 불가
+                    </div>
+                </div>
+            </div>
+
+            <div class="flow-section">
+                <div class="flow-step">
+                    <div class="flow-num">1</div>
+                    <div class="flow-text">
+                        <div class="flow-action">Redo Log를 디스크에 기록 (WAL)</div>
+                        <div class="flow-detail">COMMIT 시점에 Redo Log가 디스크에 fsync됨 → 영속성 보장</div>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="flow-num">2</div>
+                    <div class="flow-text">
+                        <div class="flow-action">트랜잭션 상태를 COMMITTED로 변경</div>
+                        <div class="flow-detail">이제 새로운 트랜잭션은 trx_id=200의 변경 사항을 볼 수 있음</div>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="flow-num">3</div>
+                    <div class="flow-text">
+                        <div class="flow-action">Undo Log는 아직 유지</div>
+                        <div class="flow-detail">Transaction B가 아직 이전 버전을 참조할 수 있으므로 삭제하지 않음</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 5: Transaction B 재조회 -->
+        <div class="step-content" id="step-5">
+            <div class="step-title">5단계: Transaction B가 다시 SELECT</div>
+            <div class="step-desc">Transaction A가 COMMIT한 후, Transaction B가 같은 레코드를 다시 조회합니다.</div>
+
+            <div class="tx-section">
+                <div class="tx-header">트랜잭션 상태</div>
+                <div class="tx-grid">
+                    <div class="tx-card">
+                        <div class="tx-name tx-a">Transaction A (trx_id=200)</div>
+                        <div class="tx-info">이미 종료됨</div>
+                        <div class="tx-status committed">커밋 완료</div>
+                    </div>
+                    <div class="tx-card active-b">
+                        <div class="tx-name tx-b">Transaction B (trx_id=201)</div>
+                        <div class="tx-info">
+                            <code>SELECT * FROM accounts WHERE id = 1</code> (두 번째)
+                        </div>
+                        <div class="tx-status reading">조회 중</div>
+
+                        <div class="read-view">
+                            <div class="read-view-title">REPEATABLE READ: 기존 Read View 재사용</div>
+                            <div class="read-view-fields">
+                                <div class="rv-field">m_ids: <code>[200]</code></div>
+                                <div class="rv-field" style="color: rgba(139, 92, 246, 0.8);">A가 커밋했지만 Read View에는 여전히 200이 있음</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="comparison">
+                <div class="comparison-box repeatable">
+                    <div class="comparison-title">REPEATABLE READ</div>
+                    <div class="comparison-value">10,000</div>
+                    <div class="comparison-reason">
+                        기존 Read View를 재사용<br>
+                        m_ids에 200이 있음 → trx_id=200은 안 보임<br>
+                        Undo Log의 이전 버전(10,000) 반환
+                    </div>
+                </div>
+                <div class="comparison-box read-committed">
+                    <div class="comparison-title">READ COMMITTED</div>
+                    <div class="comparison-value">7,000</div>
+                    <div class="comparison-reason">
+                        매 SELECT마다 새 Read View 생성<br>
+                        A가 커밋했으므로 m_ids에 200이 없음<br>
+                        Buffer Pool의 최신 값(7,000) 반환
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-box" style="margin-top: 24px;">
+                <div class="result-title">핵심 차이점</div>
+                <div class="result-content">
+                    <strong>REPEATABLE READ</strong>: 트랜잭션 시작 시점의 스냅샷을 계속 봄 → 일관된 읽기 보장<br>
+                    <strong>READ COMMITTED</strong>: 항상 최신 커밋된 데이터를 봄 → 같은 쿼리가 다른 결과 반환 가능 (NON-REPEATABLE READ)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showStep(stepNum) {
+            // Hide all steps
+            document.querySelectorAll('.step-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.querySelectorAll('.step-btn').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            // Show selected step
+            document.getElementById('step-' + stepNum).classList.add('active');
+            document.querySelectorAll('.step-btn')[stepNum - 1].classList.add('active');
+        }
+    </script>
+</body>
+</html>
