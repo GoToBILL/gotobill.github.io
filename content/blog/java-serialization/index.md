@@ -28,7 +28,7 @@ MyClass obj = (MyClass) ois.readObject();
 
 ### 1. 네트워크 전송
 
-객체를 다른 JVM으로 전송할 때 바이트 스트림으로 변환 필요
+객체를 네트워크 전송하거나 파일로 저장할 때 바이트 스트림으로 변환 필요
 
 ```java
 // RMI, 소켓 통신 등에서 객체 전송
@@ -87,18 +87,25 @@ public class User implements Serializable {
 // 부모 클래스가 Serializable을 구현하면 자식도 자동으로 직렬화 가능
 class Parent implements Serializable { }
 class Child extends Parent { }  // Serializable
+```
 
-// 부모가 Serializable이 아니면?
-class NonSerializableParent {
-    String data;
+#### 부모가 Serializable이 아니면?
+
+```java
+class Parent {  // Serializable 아님
+    String parentData = "초기값";
 }
-class Child extends NonSerializableParent implements Serializable {
-    // 역직렬화 시 부모의 무인자 생성자가 호출됨
-    // 부모 필드는 기본값으로 초기화
+
+class Child extends Parent implements Serializable {
+    String childData;
 }
 ```
 
-**주의**: 부모 클래스가 `Serializable`이 아니면, 부모 필드는 직렬화되지 않고 역직렬화 시 부모의 **무인자 생성자**가 호출됩니다.
+부모가 `Serializable`이 아니면 부모 필드는 직렬화되지 않습니다. 
+
+역직렬화 시 부모의 무인자 생성자가 호출되어 부모 필드는 초기값으로 리셋됩니다. 
+
+**초기값이 없으면 타입 기본값**(`null`, `0` 등)이 됩니다.
 
 ### Enum과 Record
 
@@ -142,21 +149,28 @@ public class User implements Serializable {
 
 **문제점**: 컴파일러 구현에 따라 같은 소스코드라도 다른 `serialVersionUID`가 생성될 수 있습니다.
 
+**배포 시 문제 시나리오**
+
+```
+1. v1 서버가 User 객체를 직렬화해서 Redis에 저장
+
+2. 서버를 v2로 업데이트 (age 필드 추가)
+
+3. v2 서버가 Redis에서 읽으려고 함
+   → InvalidClassException! (serialVersionUID 불일치)
+```
+
+`serialVersionUID`를 명시하지 않으면 JVM이 클래스 구조를 기반으로 자동 생성합니다. 
+
+필드가 추가되면 UID가 바뀌어서 "다른 클래스"로 인식합니다.
+
 ```java
-// 시나리오: 클래스에 필드 추가
-// v1
+// serialVersionUID 명시하면 배포 후에도 기존 데이터 읽기 가능
 class User implements Serializable {
+    private static final long serialVersionUID = 1L;
     String name;
+    int age;  // 새 필드는 기본값(0)으로 역직렬화
 }
-
-// v2 (필드 추가)
-class User implements Serializable {
-    String name;
-    int age;  // 새 필드
-}
-
-// serialVersionUID 명시 안 하면 → InvalidClassException
-// serialVersionUID 명시하면 → 새 필드는 기본값(0)으로 역직렬화
 ```
 
 **Oracle 공식 권장**: 모든 `Serializable` 클래스에 `serialVersionUID`를 명시적으로 선언하세요.
@@ -291,11 +305,13 @@ public class SecureUser implements Serializable {
 ```
 
 **규칙**:
-- 메서드는 반드시 `private`
+- 메서드는 반드시 `private`: 직렬화 메커니즘이 리플렉션으로 호출하며, 외부에서 직접 호출을 방지합니다.
 - `defaultWriteObject()` / `defaultReadObject()`를 먼저 호출
 - 쓴 순서대로 읽어야 함
 
 ### 불변식 검증
+
+직렬화된 바이트 스트림은 조작할 수 있습니다. 역직렬화는 생성자를 거치지 않으므로 생성자의 검증 로직이 실행되지 않습니다. `readObject`에서 별도로 검증해야 합니다.
 
 ```java
 private void readObject(ObjectInputStream ois)
@@ -368,7 +384,32 @@ public class Product implements Externalizable {
 
 ### 싱글톤 패턴 보호
 
-직렬화/역직렬화 시 객체를 다른 객체로 치환할 수 있습니다.
+역직렬화는 새로운 객체를 생성하기 때문에 싱글톤이 깨질 수 있습니다.
+
+```java
+Singleton original = Singleton.getInstance();
+
+// 직렬화 후 역직렬화
+ObjectOutputStream oos = new ObjectOutputStream(...);
+oos.writeObject(original);
+
+ObjectInputStream ois = new ObjectInputStream(...);
+Singleton restored = (Singleton) ois.readObject();
+
+original == restored  // false! 싱글톤이 깨짐
+```
+
+`readResolve`를 정의하면 JVM이 역직렬화 후 리플렉션으로 호출합니다.
+
+```
+ois.readObject() 호출
+    ↓
+JVM이 내부적으로 객체 역직렬화 (새 객체 생성)
+    ↓
+JVM이 readResolve() 있는지 확인
+    ↓
+있으면 readResolve() 반환값을 최종 결과로 사용
+```
 
 ```java
 public class Singleton implements Serializable {
@@ -387,32 +428,81 @@ public class Singleton implements Serializable {
 }
 ```
 
-### writeReplace - 직렬화 전 치환
+### writeReplace - 직렬화 프록시 패턴
+
+직렬화 프록시 패턴은 두 가지 핵심 장점이 있습니다.
+
+1. **보안**: 바이트 스트림 조작 공격 차단
+2. **생성자 검증**: 역직렬화 시에도 생성자의 유효성 검사 로직 실행
 
 ```java
-public class ComplexObject implements Serializable {
-    private String data;
+public class User implements Serializable {
+    private final String name;
+    private final int age;
 
-    // 직렬화 시 프록시 객체로 치환
+    public User(String name, int age) {
+        // 생성자에서 검증
+        if (name == null || name.isEmpty()) {
+            throw new IllegalArgumentException("이름은 필수");
+        }
+        if (age < 0 || age > 150) {
+            throw new IllegalArgumentException("나이가 유효하지 않음");
+        }
+        this.name = name;
+        this.age = age;
+    }
+
+    // 직렬화 시 User 대신 Proxy 저장
     private Object writeReplace() {
         return new SerializationProxy(this);
     }
 
-    private static class SerializationProxy implements Serializable {
-        private final String data;
+    // 공격자가 User를 직접 역직렬화하려 하면 차단
+    private void readObject(ObjectInputStream s) throws InvalidObjectException {
+        throw new InvalidObjectException("프록시를 통해서만 역직렬화 가능");
+    }
 
-        SerializationProxy(ComplexObject obj) {
-            this.data = obj.data;
+    private static class SerializationProxy implements Serializable {
+        private final String name;
+        private final int age;
+
+        SerializationProxy(User user) {
+            this.name = user.name;
+            this.age = user.age;
         }
 
+        // 역직렬화 시 생성자를 통해 User 생성 → 검증 로직 실행
         private Object readResolve() {
-            return new ComplexObject(data);
+            return new User(name, age);  // 생성자 검증이 여기서 실행됨
         }
     }
 }
 ```
 
-**직렬화 프록시 패턴**: 보안과 유연성을 위해 실제 객체 대신 프록시를 직렬화합니다.
+프록시 패턴 없이 일반 역직렬화를 하면 생성자가 호출되지 않아 `age = -100` 같은 잘못된 값도 그대로 복원됩니다. 
+
+프록시 패턴을 사용하면 `readResolve()`에서 `new User(name, age)`를 호출하므로 생성자의 검증 로직이 실행됩니다.
+
+`writeReplace`는 개발자가 직접 호출하는 게 아니라 JVM이 리플렉션으로 호출합니다.
+
+```java
+// 개발자가 작성하는 코드
+ObjectOutputStream oos = new ObjectOutputStream(...);
+oos.writeObject(user);  // 그냥 이렇게만 호출
+
+// JVM 내부에서 일어나는 일
+// 1. user 객체에 writeReplace() 있나? → 리플렉션으로 확인
+// 2. 있으면 writeReplace() 호출
+```
+
+#### 직렬화
+![직렬화 다이어그램](./serial.png)
+
+#### 역직렬화
+![역직렬화 다이어그램](./reverse.png)
+
+#### 공격 시나리오
+![공격 시나리오](./attack.png)
 
 ---
 
@@ -433,11 +523,6 @@ public class ComplexObject implements Serializable {
 // 3. 역직렬화 과정에서 연쇄적으로 메서드 호출
 // 4. 최종적으로 Runtime.exec() 등 위험한 메서드 실행
 ```
-
-**유명 사례**:
-- Apache Commons Collections (2015)
-- Spring Framework
-- Hibernate
 
 ### DoS 공격
 
@@ -587,15 +672,88 @@ ois.setObjectInputFilter(info -> {
 
 ObjectMapper mapper = new ObjectMapper();
 
-// 직렬화
+// JSON 문자열로 직렬화 (가장 일반적)
 String json = mapper.writeValueAsString(user);
+// 결과: {"name":"김철수","age":25}
+
+// 바이트 배열로 직렬화 (네트워크 전송용)
 byte[] bytes = mapper.writeValueAsBytes(user);
+// 결과: JSON 문자열을 UTF-8 바이트로 인코딩한 것
 
 // 역직렬화
 User user = mapper.readValue(json, User.class);
 List<User> users = mapper.readValue(json,
     new TypeReference<List<User>>() {});
 ```
+
+### Spring MVC에서는 누가 호출하는가?
+
+Spring MVC를 사용하면 `objectMapper.readValue()`를 직접 호출하지 않습니다.
+
+```java
+// 개발자가 작성하는 코드
+@PostMapping("/users")
+public ResponseEntity<User> createUser(@RequestBody User user) {
+    // user 객체가 이미 만들어져서 들어옴
+}
+```
+
+`@RequestBody`만 붙이면 Spring이 알아서 JSON을 객체로 변환해줍니다.
+
+**Spring 내부에서 일어나는 일**
+
+```java
+// spring-web.jar 안의 코드 (단순화)
+public class MappingJackson2HttpMessageConverter {
+
+    public Object read(Class<?> clazz, HttpInputMessage inputMessage) {
+        String json = readBody(inputMessage);
+        return objectMapper.readValue(json, clazz);  // Spring이 호출
+    }
+}
+```
+
+`clazz`(User.class)는 어디서 올까요?
+
+```java
+// Spring이 컨트롤러 메서드를 분석할 때 (리플렉션)
+Method method = controller.getClass().getMethod("createUser", User.class);
+Parameter[] params = method.getParameters();  // 리플렉션
+Class<?> paramType = params[0].getType();     // → User.class
+```
+
+Spring이 리플렉션으로 컨트롤러 메서드의 파라미터 타입을 알아내서 Jackson에 넘겨줍니다.
+
+**정리**
+
+```
+1. 클라이언트가 POST /users 요청 (JSON body)
+2. Spring이 컨트롤러 메서드 찾음
+3. 리플렉션으로 파라미터 타입 확인 → User.class
+4. Jackson에게 전달: objectMapper.readValue(json, User.class)
+5. Jackson이 리플렉션으로 User 객체 생성
+6. 컨트롤러 메서드 호출
+```
+
+**writeValueAsString() vs writeValueAsBytes()**
+
+| 메서드 | 반환 | 용도 |
+|------|------|------|
+| `writeValueAsString()` | String | 로그 출력, 디버깅, 파일 저장 |
+| `writeValueAsBytes()` | byte[] | 소켓 직접 사용, 메시지 큐 (Kafka 등) |
+
+네트워크 전송은 항상 byte[] 단위입니다. REST API에서는 Spring이 내부적으로 byte[]로 변환해주므로 개발자는 객체나 String만 다루면 됩니다.
+
+**UTF-8 vs Base64**
+
+| 구분 | UTF-8 | Base64 |
+|------|-------|--------|
+| 정체 | 문자 인코딩 | 바이너리를 텍스트로 변환 |
+| 용도 | 텍스트를 바이트로 | 바이너리를 텍스트로 |
+| 입력 | 문자열 | 바이너리 데이터 |
+| 출력 | 바이트 | ASCII 문자열 |
+
+Base64는 JSON이나 HTTP 헤더에 바이너리 데이터(이미지, 파일 등)를 넣을 수 없어서 ASCII 텍스트로 변환할 때 사용합니다.
 
 ### 대안 기술
 
