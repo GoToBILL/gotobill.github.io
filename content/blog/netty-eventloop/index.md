@@ -1,12 +1,12 @@
 ---
-title: "Netty 이벤트 루프 완전 정복"
+title: "Netty 이벤트 루프"
 date: "2025-10-09"
 description: "Netty의 이벤트 루프 방식이 어떻게 수천 개의 연결을 소수의 스레드로 처리하는지 깊이 있게 분석합니다"
 category: "개발"
 tags: ["Netty", "Event Loop", "NIO", "비동기", "네트워크"]
 ---
 
-# Netty 완전 정복 가이드
+# Netty 이벤트 루프
 
 Selector 기초부터 OS 레벨 동작, 순수 Java NIO vs Netty 구현, WebClient까지 모든 것을 다룹니다.
 
