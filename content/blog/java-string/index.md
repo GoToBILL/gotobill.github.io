@@ -519,7 +519,7 @@ javap -c -v Example.class
 
 컴파일 타임에 이미 "Hello World"로 합쳐져 있다.
 
-**concat2()의 바이트코드 (Java 9+)**
+**concat2()의 바이트코드**(Java 9+)
 
 ```
 0: aload_1

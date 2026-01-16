@@ -732,7 +732,7 @@ public Mono<User> getUser() {
 > \
 > 테스트 코드에서만 허용됩니다.
 
-**프로덕션 (잘못됨)**
+**프로덕션**(잘못됨)
 
 ```java
 public User getUser(Long id) {
@@ -744,7 +744,7 @@ public User getUser(Long id) {
 }
 ```
 
-**프로덕션 (올바름)**
+**프로덕션**(올바름)
 
 ```java
 public Mono<User> getUser(Long id) {
@@ -755,7 +755,7 @@ public Mono<User> getUser(Long id) {
 }
 ```
 
-**테스트 (허용)**
+**테스트**(허용)
 
 ```java
 @Test
@@ -813,13 +813,13 @@ Thread [reactor-http-nio-2]: 응답 수신
 
 ### 핵심 요약
 
-**메인 스레드 (http-nio-8080-exec-5)**: Mono 레시피 구성 및 subscribe() 호출 → 즉시 반환 (190ms)
+**메인 스레드**(http-nio-8080-exec-5): Mono 레시피 구성 및 subscribe() 호출 → 즉시 반환 (190ms)
 
-**Netty 스레드 (reactor-http-nio-2)**: 실제 HTTP 요청, 응답 처리, DB 저장 (5.8초)
+**Netty 스레드**(reactor-http-nio-2): 실제 HTTP 요청, 응답 처리, DB 저장 (5.8초)
 
 ### 스레드 전환 시점
 
-**Phase 1: 메인 스레드 (http-nio-8080-exec-5)**
+**Phase 1: 메인 스레드**(http-nio-8080-exec-5)
 
 ```java
 @PostMapping("/menu/extract")
@@ -854,7 +854,7 @@ public String startMenuExtraction(Long userId, Long storeId, MultipartFile image
 19:04:04.229 [http-nio-8080-exec-5] 즉시 반환 - Request ID: dcf4cb95-...
 ```
 
-**Phase 2: Netty 스레드 (reactor-http-nio-2)**
+**Phase 2: Netty 스레드**(reactor-http-nio-2)
 
 Netty 스레드가 비동기로 처리 시작
 

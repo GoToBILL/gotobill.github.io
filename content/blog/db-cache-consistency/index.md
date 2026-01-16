@@ -198,7 +198,7 @@ public void updateUser(Long userId, UserUpdateRequest request) {
 ## 해결 전략
 
 ### 전략 1: Cache Invalidation (삭제)
-Cache-Aside 패턴에서 **"DB 업데이트 후 캐시 삭제"**는 표준적인 베스트 프랙티스입니다.
+Cache-Aside 패턴에서 **DB 업데이트 후 캐시 삭제**는 표준적인 베스트 프랙티스입니다.
 
 ```java
 // 캐시 삭제 
@@ -328,7 +328,7 @@ public class UserServiceWithLock {
 
 **적용 범위 고려**
 - 모든 읽기에 락을 걸면 성능이 크게 저하됨
-- **"쓰기 작업"**이나 **"Cache Miss 시에만"** 락을 거는 것이 일반적
+- **쓰기 작업**이나 **Cache Miss 시에만** 락을 거는 것이 일반적
 - 특정 **핫키**(자주 접근되는 데이터)에만 선별적으로 적용하는 것을 권장
 
 ### 전략 4: Lease 기반 낙관적 동시성 제어
@@ -444,7 +444,7 @@ MySQL Binlog --> Debezium --> Kafka --> Consumer --> Redis Cache
 
 ### 전략 7: TTL 기반 최종 일관성
 
-완벽한 즉시 일관성 대신 TTL을 통해 **"일정 시간 내 수렴"**하는 **최종 일관성**(Eventual Consistency)을 보장합니다.
+완벽한 즉시 일관성 대신 TTL을 통해 **일정 시간 내 수렴**하는 **최종 일관성**(Eventual Consistency)을 보장합니다.
 
 ![ttl](./ttl.png)
 

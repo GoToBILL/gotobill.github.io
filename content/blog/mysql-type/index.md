@@ -193,7 +193,7 @@ WHERE emp_no BETWEEN 10001 AND 10005
 
 ## 6. ref_or_null
 
-ref와 동일하지만 **NULL 비교(IS NULL)** 가 추가된 형태입니다.
+ref와 동일하지만 **NULL 비교**(IS NULL)가 추가된 형태입니다.
 
 ```sql
 EXPLAIN

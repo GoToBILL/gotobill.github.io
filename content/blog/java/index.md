@@ -10,7 +10,7 @@ tags: ['Java', 'JVM', 'GC']
 
 프로그래밍 언어의 실행 방식은 크게 두 가지입니다.
 
-**컴파일 언어 (C, C++, Go)**
+**컴파일 언어**(C, C++, Go)
 
 ```
 소스 코드 → 컴파일러 → 기계어 (실행 파일) → 실행
@@ -18,7 +18,7 @@ tags: ['Java', 'JVM', 'GC']
 
 실행 전에 전체 코드를 기계어로 변환합니다. 실행 속도가 빠르지만 OS마다 실행 파일 형식과 시스템 콜이 다르기 때문에 플랫폼마다 다시 컴파일해야 합니다.
 
-**인터프리터 언어 (Python, JavaScript)**
+**인터프리터 언어**(Python, JavaScript)
 
 ```
 소스 코드 → 인터프리터 → 한 줄씩 해석하며 실행
@@ -95,7 +95,7 @@ public class Main {
    static 블록 실행, static 변수에 실제 값 할당
 ```
 
-**Class Loader 계층 (Delegation Model)**
+**Class Loader 계층**(Delegation Model)
 
 클래스 로딩 요청이 오면 먼저 부모에게 위임합니다. 부모가 찾지 못하면 자신이 찾습니다.
 
@@ -320,7 +320,7 @@ Heap
 | Minor GC | Young Generation | 자주 발생, 빠름 |
 | Major GC | Old Generation | 드물게 발생, 느림 |
 
-**GC 알고리즘 (Java 11+)**
+**GC 알고리즘**(Java 11+)
 
 | GC | 특징 | 사용 시점 |
 |----|------|-----------|

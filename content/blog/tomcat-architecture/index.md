@@ -92,17 +92,17 @@ BIO, NIO, NIO2는 OS 커널과 상호작용하는 방식이 다릅니다.
 
 ![BIO vs NIO vs NIO2 커널 레벨 비교](./bionio.png)
 
-**BIO (Blocking I/O)**:
+**BIO**(Blocking I/O):
 - `read()` 시스템콜 호출 시 데이터가 올 때까지 스레드가 sleep
 - 연결당 1개 스레드 필요 (1000 연결 = 1000 스레드)
 - 스레드 생성/관리 오버헤드 큼
 
-**NIO (Selector 기반)**:
+**NIO**(Selector 기반):
 - Linux의 `epoll`, macOS의 `kqueue` 활용
 - 1개 Poller 스레드가 수천 개 연결의 이벤트를 감지
 - 이벤트 발생 시에만 Worker 스레드 할당
 
-**NIO2 (Async I/O)**:
+**NIO2**(Async I/O):
 - 커널이 I/O 완료까지 전부 처리
 - 버퍼 복사까지 커널이 수행 후 콜백 호출
 - 애플리케이션은 요청만 하고 즉시 다른 일 가능

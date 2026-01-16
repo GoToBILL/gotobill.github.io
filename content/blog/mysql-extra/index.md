@@ -424,7 +424,7 @@ WHERE last_name='Acton' AND first_name LIKE '%sal';
 
 인덱스에 `(last_name, first_name)` 두 컬럼이 모두 포함되어 있지만, 기존 방식에서는 비효율적으로 동작합니다.
 
-**기존 방식 (ICP 없이)**
+**기존 방식**(ICP 없이)
 
 1. 스토리지 엔진 (InnoDB):
    - 인덱스에서 `last_name='Acton'` 조건만 확인

@@ -158,13 +158,13 @@ INSERT INTO users (name) VALUES ('김철수');  -- id=2 할당 (중복 없이)
 
 **락 방식의 차이**
 
-> **AUTO_INCREMENT 락 vs 경량 래치(Mutex)**
+> **AUTO_INCREMENT 락 vs 경량 래치**(Mutex)
 >
 > \
 > **AUTO_INCREMENT 락**: INSERT 문장이 완료될 때까지 락 유지 (느림)
 >
 > \
-> **경량 래치(Mutex)**: ID 값만 가져가면 즉시 해제 (빠름, 뮤텍스라고도 함)
+> **경량 래치**(Mutex): ID 값만 가져가면 즉시 해제 (빠름, 뮤텍스라고도 함)
 
 ```sql
 -- AUTO_INCREMENT 락 사용 시
@@ -183,7 +183,7 @@ INSERT INTO users (name) VALUES ('홍길동');
 -- → 다른 커넥션이 바로 ID=6 받아갈 수 있음
 ```
 
-**innodb_autoinc_lock_mode 설정 (MySQL 8.0 기준)**
+**innodb_autoinc_lock_mode 설정**(MySQL 8.0 기준)
 
 | 모드 | 잠금 방식 | 성능 | 연속성 |
 |------|----------|------|--------|

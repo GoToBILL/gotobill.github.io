@@ -30,7 +30,7 @@ WHERE de.from_date>'2005-01-01' AND e.emp_no<10904;
 
 ### 조인 버퍼 종류
 
-**Block Nested Loop (BNL)**
+**Block Nested Loop**(BNL)
 
 ```
 Using join buffer (Block Nested Loop)
@@ -59,7 +59,7 @@ WHERE de.from_date > '2005-01-01';
 
 ---
 
-**Batched Key Access (BKA)**
+**Batched Key Access**(BKA)
 
 ```
 Using join buffer (Batched Key Access)
@@ -93,7 +93,7 @@ WHERE de.from_date > '2005-01-01';
 
 ---
 
-**hash join (MySQL 8.0.18+)**
+**hash join**(MySQL 8.0.18+)
 
 ```
 Using join buffer (hash join)
@@ -242,7 +242,7 @@ ORDER BY MIN(emp_no);
 **Extra에 표시되지 않지만 사용하는 경우**
 
 1. **FROM 절의 서브쿼리**: 파생 테이블(Derived table)은 항상 임시 테이블
-2. **COUNT(DISTINCT column1)**: 인덱스를 사용할 수 없으면 임시 테이블
+2. **COUNT(DISTINCT column1)**: 인덱스를 사용할 수 없으면 임시 테이블 사용
 3. **UNION / UNION DISTINCT**: 결과 병합 시 임시 테이블 (MySQL 8.0에서 UNION ALL은 제외)
 4. **인덱스 없는 정렬**: 정렬 버퍼도 임시 테이블과 동일
 

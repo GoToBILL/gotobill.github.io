@@ -55,7 +55,7 @@ INNER JOIN order_items oi ON o.order_id = oi.order_id
 WHERE o.user_id = 1001;  -- VIP 고객 (50000건)
 ```
 
-**옵티마이저 판단 (히스토그램 없이)**
+**옵티마이저 판단**(히스토그램 없이)
 
 - user_id = 1001은 대략 100건일 것이다
 - orders 테이블을 먼저 읽고 order_items와 조인하면 되겠다

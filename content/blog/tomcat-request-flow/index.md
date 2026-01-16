@@ -248,7 +248,7 @@ Response
 
 ![Keep-Alive 동작 원리](./HTTPKeep.webp)
 
-**HTTP/1.0 (Keep-Alive 없음)**:
+**HTTP/1.0**(Keep-Alive 없음):
 ```
 Client → Server: GET /page1
 Client ← Server: 200 OK (연결 종료)
@@ -259,7 +259,7 @@ Client ← Server: 200 OK (연결 종료)
 → 요청마다 TCP 3-way handshake 반복 (비효율)
 ```
 
-**HTTP/1.1 (Keep-Alive 기본)**:
+**HTTP/1.1**(Keep-Alive 기본):
 ```
 Client → Server: GET /page1
 Client ← Server: 200 OK (Connection: keep-alive)

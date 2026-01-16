@@ -384,14 +384,14 @@ JLS 4.8에서 명시:
 - Heap Pollution (힙 오염)
 - 런타임 ClassCastException
 
-**왜 예외가 존재할까? (Type Erasure의 영향)**
+**왜 예외가 존재할까?** (Type Erasure의 영향)
 
 컴파일이 끝나고 런타임이 되면 `List<String>`이든 `List<Integer>`든 제네릭 타입 정보가 모두 지워지고 그냥 `List`가 됩니다. 
 즉, **런타임에는 제네릭 타입을 구별할 수 없습니다.**
 
 따라서 다음의 두 가지 경우에는 어쩔 수 없이 Raw Type을 사용해야 합니다.
 
-1. **클래스 리터럴 (.class)**
+1. **클래스 리터럴**(.class)
 
    ```java
    List.class          // (O) 가능
@@ -488,7 +488,7 @@ new Thread(() -> MyClass.staticMethod()).start();
 
 ### 모니터 락(Monitor Lock)과 재진입성(Reentrancy)
 
-**1. 모니터 락이란? (Intrinsic Lock)**
+**1. 모니터 락이란?** (Intrinsic Lock)
 - **질문**: "그냥 Mutex 아닌가요?"
 - **답변**: 네, 맞습니다! Java의 모든 객체에는 **Mutex가 하나씩 내장**되어 있다고 생각하면 됩니다. 이걸 Java에서는 '모니터 락' 또는 '고유 락(Intrinsic Lock)'이라고 부릅니다.
 - 별도의 `Mutex m = new Mutex();` 생성 없이, 그냥 `synchronized(this)`라고 쓰면 바로 그 내장된 Mutex를 사용하는 것입니다.
@@ -497,7 +497,7 @@ new Thread(() -> MyClass.staticMethod()).start();
 - **질문**: "이미 락을 건 스레드가 또 락을 걸면 데드락 걸리지 않나요?"
 - **답변**: Java의 모니터 락은 **같은 스레드**라면 **이미 잠긴 문을 통과**시켜줍니다. 이걸 '재진입 가능하다'고 합니다.
 
-**재진입이 필요한 이유 (예시)**:
+**재진입이 필요한 이유**(예시):
 
 ```java
 public synchronized void methodA() {
@@ -574,7 +574,7 @@ boolean success = counter.compareAndSet(expectedValue, newValue);
 
 **compareAndSet**: 현재 값이 예상 값과 같으면 업데이트 값으로 원자적으로 설정합니다.
 
-**CAS의 실제 동작 (AtomicInteger.incrementAndGet 내부)**:
+**CAS의 실제 동작**(AtomicInteger.incrementAndGet 내부):
 
 ```java
 public class AtomicInteger {

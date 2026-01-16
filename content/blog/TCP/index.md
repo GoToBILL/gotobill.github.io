@@ -220,9 +220,9 @@ curl ifconfig.me
 
 **NAT**(Network Address Translation, 네트워크 주소 변환)는 네트워크 주소를 변환하는 기술입니다. 인터넷에 연결하려면 내부의 사설 IP와 인터넷의 공인 IP 간 변환이 필요한데, NAT가 이걸 처리합니다.
 
-- **SNAT(Source NAT)**: 나가는 패킷의 출발지 변경 (AWS NAT Gateway)
+- **SNAT**(Source NAT): 나가는 패킷의 출발지 변경 (AWS NAT Gateway)
 ![snat](./4.png)
-- **DNAT(Destination NAT)**: 들어오는 패킷의 목적지 변경 (AWS ALB/NLB)
+- **DNAT**(Destination NAT): 들어오는 패킷의 목적지 변경 (AWS ALB/NLB)
 ![snat](./5.png)
 
 DNAT는 서버 구성할 때 많이 씁니다. 보통 보안이나 이중화를 위해 서버는 사설 IP를 쓰고, 공인 IP는 라우터나 방화벽 같은 네트워크 장비에 할당합니다.
@@ -263,8 +263,8 @@ TCP는 연결 기반 프로토콜입니다. 전화 통화처럼 먼저 연결을
 ```
 
 **Seq와 Ack가 뭔가요?**
-- **Seq(Sequence Number)**: "내가 보내는 데이터의 번호"
-- **Ack(Acknowledgment Number)**: "다음에 받고 싶은 상대방 데이터의 번호"
+- **Seq**(Sequence Number): 내가 보내는 데이터의 번호
+- **Ack**(Acknowledgment Number): 다음에 받고 싶은 상대방 데이터의 번호
 
 예를 들어 서버가 `Ack=1001`을 보내면 "클라이언트님, 1000번까지 잘 받았고 이제 1001번 주세요"라는 의미입니다.
 
@@ -443,8 +443,8 @@ HTTP/2는 응용 계층에서의 HOL 블로킹을 해결했지만, **TCP 레벨�
 **계층별 동작 이해:**
 
 네트워크는 계층으로 나뉘어 동작합니다:
-- **응용 계층 (HTTP/2)**: 프레임과 스트림으로 멀티플렉싱 구현
-- **전송 계층 (TCP)**: 순서를 보장하는 바이트 스트림 전송
+- **응용 계층**(HTTP/2): 프레임과 스트림으로 멀티플렉싱 구현
+- **전송 계층**(TCP): 순서를 보장하는 바이트 스트림 전송
 
 HTTP/2의 모든 스트림은 결국 **하나의 TCP 연결**을 통해 전송됩니다. TCP는 HTTP/2의 스트림 개념을 모르고, 단지 순서대로 바이트를 전달할 뿐입니다.
 

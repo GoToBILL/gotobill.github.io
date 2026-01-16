@@ -122,7 +122,7 @@ car.setEngine(new ElectricEngine());  // 전기차로 변경
 
 **정의**: 서로 다른 클래스의 객체들을 공통 슈퍼클래스의 객체로 취급할 수 있게 해주는 특성.
 
-**컴파일 타임 다형성 (Static Polymorphism)** - 오버로딩
+**컴파일 타임 다형성**(Static Polymorphism) - 오버로딩
 
 ```java
 public class Calculator {
@@ -132,7 +132,7 @@ public class Calculator {
 }
 ```
 
-**런타임 다형성 (Dynamic Polymorphism)** - 오버라이딩
+**런타임 다형성**(Dynamic Polymorphism) - 오버라이딩
 
 ```java
 public class Animal {
@@ -636,7 +636,7 @@ public class OrderController {
 }
 ```
 
-**2. 의존성 주입 (DI)**
+**2. 의존성 주입**(DI)
 
 ```java
 @Service
