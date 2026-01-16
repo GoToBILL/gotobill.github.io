@@ -11,7 +11,7 @@
   --maxWidth-3xl: 48rem;
   --maxWidth-4xl: 56rem;
   --maxWidth-full: "100%";
-  --maxWidth-wrapper: var(--maxWidth-2xl);
+  --maxWidth-wrapper: var(--maxWidth-3xl); /* 넓이를 좀 더 시원하게 확장 */
   --spacing-px: "1px";
   --spacing-0: 0;
   --spacing-1: 0.25rem;
@@ -27,37 +27,46 @@
   --spacing-20: 5rem;
   --spacing-24: 6rem;
   --spacing-32: 8rem;
-  --fontFamily-sans: "MontserratVariable", system-ui, -apple-system,
-    BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans",
-    sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
-    "Noto Color Emoji";
-  --fontFamily-serif: "Merriweather", "Georgia", Cambria, "Times New Roman",
-    Times, serif;
-  --font-body: var(--fontFamily-serif);
+  
+  /* Modern Font Stack (Pretendard) */
+  --fontFamily-sans: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+  --fontFamily-serif: "Pretendard", -apple-system, BlinkMacSystemFont, systems-ui, serif; /* 세리프 제거 */
+  
+  --font-body: var(--fontFamily-sans);
   --font-heading: var(--fontFamily-sans);
+  
   --fontWeight-normal: 400;
+  --fontWeight-medium: 500;
   --fontWeight-bold: 700;
   --fontWeight-black: 900;
+  
   --fontSize-root: 16px;
   --lineHeight-none: 1;
-  --lineHeight-tight: 1.1;
-  --lineHeight-normal: 1.5;
-  --lineHeight-relaxed: 1.625;
-  /* 1.200 Minor Third Type Scale */
-  --fontSize-0: 0.833rem;
+  --lineHeight-tight: 1.2;
+  --lineHeight-normal: 1.6;
+  --lineHeight-relaxed: 1.75;
+  
+  /* Scale adjusted for better hierarchy */
+  --fontSize-0: 0.875rem;
   --fontSize-1: 1rem;
-  --fontSize-2: 1.2rem;
-  --fontSize-3: 1.44rem;
-  --fontSize-4: 1.728rem;
-  --fontSize-5: 2.074rem;
-  --fontSize-6: 2.488rem;
-  --fontSize-7: 2.986rem;
-  --color-primary: #3b82f6;
-  --color-text: #2e353f;
-  --color-text-light: #4f5969;
-  --color-heading: #1a202c;
-  --color-heading-black: black;
-  --color-accent: #d1dce5;
+  --fontSize-2: 1.125rem;
+  --fontSize-3: 1.25rem;
+  --fontSize-4: 1.5rem;
+  --fontSize-5: 2rem;
+  --fontSize-6: 2.5rem;
+  --fontSize-7: 3rem;
+  
+  /* Modern Color Palette (Clean & Professional) */
+  --color-primary: #3182f6; /* Toss Blue style */
+  --color-primary-dark: #1b64da;
+  --color-text: #333d4b;
+  --color-text-light: #6b7684;
+  --color-heading: #191f28;
+  --color-heading-black: #000000;
+  --color-accent: #f2f4f6;
+  --color-border: #e5e8eb;
+  --color-background: #ffffff;
+  --color-code-bg: #f9fafb;
 }
 
 /* HTML elements */

@@ -6,13 +6,13 @@ import { motion } from 'framer-motion'
 const Card = styled(motion.article)`
   background: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: 1.5rem;
-  margin-bottom: 2rem;
+  border-radius: 14px;
+  padding: 1.75rem;
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
   &::before {
     content: '';
     position: absolute;
@@ -20,13 +20,19 @@ const Card = styled(motion.article)`
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
+    background: linear-gradient(90deg, #3182F6 0%, #6366f1 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
   }
-  
-  &:hover::before {
-    transform: translateX(0);
+
+  &:hover {
+    transform: translateY(-4px);
+    border-color: rgba(49, 130, 246, 0.3);
+    box-shadow: 0 12px 24px -8px rgba(49, 130, 246, 0.15);
+
+    &::before {
+      opacity: 1;
+    }
   }
 `;
 
@@ -75,16 +81,21 @@ const Tags = styled(motion.div)`
 `;
 
 const Tag = styled(motion.span)`
-  background: #E8F2FF;
+  background: rgba(49, 130, 246, 0.08);
   color: #3182F6;
-  padding: 0.25rem 0.75rem;
+  padding: 0.3rem 0.8rem;
   border-radius: 9999px;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
-  
+  transition: all 0.25s ease;
+
+  ${Card}:hover & {
+    background: linear-gradient(135deg, rgba(49, 130, 246, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%);
+  }
+
   &:hover {
-    background: #3182F6;
+    background: linear-gradient(135deg, #3182F6 0%, #6366f1 100%);
     color: white;
   }
 `;

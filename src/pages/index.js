@@ -19,6 +19,7 @@ const TAG_GROUPS = {
   "Async": ["NIO", "Netty", "Reactive", "WebFlux", "WebClient", "Non-Blocking", "Blocking", "Event Loop", "비동기", "비동기처리"],
   "분산시스템": ["분산시스템", "분산 시스템", "CAP이론", "복제", "CDC", "Kafka", "RabbitMQ", "메시지큐", "Debezium", "트랜잭션아웃박스"],
   "Java": ["Java", "JVM", "Thread", "가상 스레드"],
+  "Network": ["Network", "네트워크", "TCP", "HTTP", "HTTPS", "OSI", "CORS", "gRPC", "REST", "SSL", "TLS"],
 }
 
 const HeroSection = styled(motion.section)`
@@ -47,64 +48,81 @@ const HeroTitle = styled(motion.h1)`
   color: var(--color-text);
   font-weight: 700;
   line-height: 1.4;
-  
+  letter-spacing: -0.02em;
+
   .highlight {
-    color: #3182F6;
+    background: linear-gradient(135deg, #3182F6 0%, #6366f1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
-  
+
   @media (max-width: 768px) {
     font-size: 1.5rem;
   }
 `;
 
 const HeroDescription = styled(motion.p)`
-  font-size: 1.125rem;
+  font-size: 1.05rem;
   color: var(--color-text-light);
   margin: 0;
+  opacity: 0.85;
+  letter-spacing: -0.01em;
 `;
 
 const PostList = styled(motion.div)`
   display: flex;
   flex-direction: column;
-  gap: 0.1 rem;
+  gap: 1.25rem;
 `;
 
 const GitHubLink = styled(motion.a)`
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.6rem 1rem;
-  background: var(--color-background);
+  gap: 0.5rem;
+  padding: 0.6rem 1.1rem;
+  background: var(--color-background-secondary);
   border: 1px solid var(--color-border);
   border-radius: 10px;
   color: var(--color-text);
   text-decoration: none;
-  transition: all 0.3s ease;
-  font-size: 0.9rem;
-  
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.875rem;
+  font-weight: 500;
+
   &:hover {
     border-color: #3182F6;
-    box-shadow: 0 4px 12px rgba(49, 130, 246, 0.15);
+    background: linear-gradient(135deg, rgba(49, 130, 246, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%);
+    box-shadow: 0 4px 16px rgba(49, 130, 246, 0.12);
     transform: translateY(-2px);
   }
-  
+
   svg {
     width: 16px;
     height: 16px;
+    transition: transform 0.25s ease;
+  }
+
+  &:hover svg {
+    transform: scale(1.1);
   }
 `;
 
 const PostCount = styled.div`
-  padding: 1rem 1.5rem;
+  padding: 0.875rem 1.25rem;
   background: var(--color-background-secondary);
-  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
   margin-bottom: 1.5rem;
   text-align: center;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: var(--color-text-light);
-  
+
   strong {
-    color: var(--color-primary);
+    background: linear-gradient(135deg, #3182F6 0%, #6366f1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     font-weight: 600;
   }
 `;
@@ -130,15 +148,21 @@ const CategoryTab = styled.button`
   padding: 0.5rem 1rem;
   border: none;
   border-radius: 8px;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
-  background: ${props => props.$active ? '#3182F6' : 'var(--color-background-secondary)'};
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  background: ${props => props.$active
+    ? 'linear-gradient(135deg, #3182F6 0%, #6366f1 100%)'
+    : 'var(--color-background-secondary)'};
   color: ${props => props.$active ? '#ffffff' : 'var(--color-text-light)'};
+  box-shadow: ${props => props.$active ? '0 2px 8px rgba(49, 130, 246, 0.25)' : 'none'};
 
   &:hover {
-    background: ${props => props.$active ? '#3182F6' : 'var(--color-border)'};
+    background: ${props => props.$active
+      ? 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)'
+      : 'var(--color-border)'};
+    transform: ${props => props.$active ? 'none' : 'translateY(-1px)'};
   }
 `;
 
@@ -150,19 +174,62 @@ const TagFilterWrapper = styled.div`
 
 const TagChip = styled.button`
   padding: 0.35rem 0.75rem;
-  border: 1px solid ${props => props.$active ? '#3182F6' : 'var(--color-border)'};
+  border: 1px solid ${props => props.$active ? 'transparent' : 'var(--color-border)'};
   border-radius: 20px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   cursor: pointer;
-  transition: all 0.2s ease;
-  background: ${props => props.$active ? 'rgba(49, 130, 246, 0.1)' : 'transparent'};
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  background: ${props => props.$active
+    ? 'linear-gradient(135deg, rgba(49, 130, 246, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%)'
+    : 'transparent'};
   color: ${props => props.$active ? '#3182F6' : 'var(--color-text-light)'};
 
   &:hover {
-    border-color: #3182F6;
+    border-color: rgba(49, 130, 246, 0.5);
     color: #3182F6;
+    background: rgba(49, 130, 246, 0.05);
   }
 `;
+
+const POSTS_PER_PAGE = 10
+
+const Pagination = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 2.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--color-border);
+`
+
+const PageButton = styled.button`
+  min-width: 40px;
+  height: 40px;
+  padding: 0 0.75rem;
+  border: 1px solid ${props => props.$active ? 'transparent' : 'var(--color-border)'};
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  background: ${props => props.$active
+    ? 'linear-gradient(135deg, #3182F6 0%, #6366f1 100%)'
+    : 'var(--color-background)'};
+  color: ${props => props.$active ? '#ffffff' : 'var(--color-text-light)'};
+  box-shadow: ${props => props.$active ? '0 2px 8px rgba(49, 130, 246, 0.25)' : 'none'};
+
+  &:hover:not(:disabled) {
+    border-color: #3182F6;
+    color: ${props => props.$active ? '#ffffff' : '#3182F6'};
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+`
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -174,23 +241,13 @@ const containerVariants = {
   }
 }
 
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    transition: {
-      duration: 0.5
-    }
-  }
-}
-
 const BlogIndex = ({ data, location }) => {
   const siteTitle = data.site.siteMetadata?.title || `Title`
   const posts = data.allMarkdownRemark.nodes
 
   const [activeCategory, setActiveCategory] = useState("전체")
   const [selectedTags, setSelectedTags] = useState([])
+  const [currentPage, setCurrentPage] = useState(1)
 
   const categoryFilteredPosts = useMemo(() => {
     if (activeCategory === "전체") return posts
@@ -217,9 +274,16 @@ const BlogIndex = ({ data, location }) => {
     )
   }, [categoryFilteredPosts, selectedTags])
 
+  const totalPages = Math.ceil(filteredPosts.length / POSTS_PER_PAGE)
+  const paginatedPosts = useMemo(() => {
+    const startIndex = (currentPage - 1) * POSTS_PER_PAGE
+    return filteredPosts.slice(startIndex, startIndex + POSTS_PER_PAGE)
+  }, [filteredPosts, currentPage])
+
   const handleCategoryChange = (category) => {
     setActiveCategory(category)
     setSelectedTags([])
+    setCurrentPage(1)
   }
 
   const handleTagToggle = (tag) => {
@@ -228,6 +292,12 @@ const BlogIndex = ({ data, location }) => {
         ? prev.filter(t => t !== tag)
         : [...prev, tag]
     )
+    setCurrentPage(1)
+  }
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   if (posts.length === 0) {
@@ -254,7 +324,7 @@ const BlogIndex = ({ data, location }) => {
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
             >
-              <span className="highlight">끊임없이 노력</span>하고 <span className="highlight">성장</span>하는 개발자, <span className="highlight">주병주</span>입니다.
+              <span className="highlight">사용자 경험을 최우선</span>으로, <span className="highlight">기술적 깊이</span>를 추구하는 백엔드 엔지니어 <span className="highlight">주병주</span>입니다.
             </HeroTitle>
             <HeroDescription
               initial={{ y: 20, opacity: 0 }}
@@ -318,9 +388,9 @@ const BlogIndex = ({ data, location }) => {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          key={`${activeCategory}-${selectedTags.join(',')}`}
+          key={`${activeCategory}-${selectedTags.join(',')}-${currentPage}`}
         >
-          {filteredPosts.map((post, index) => (
+          {paginatedPosts.map((post, index) => (
             <AnimatedPostCard
               key={post.fields.slug}
               post={post}
@@ -329,6 +399,34 @@ const BlogIndex = ({ data, location }) => {
           ))}
         </PostList>
       </AnimatePresence>
+
+      {totalPages > 1 && (
+        <Pagination>
+          <PageButton
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            이전
+          </PageButton>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+            <PageButton
+              key={page}
+              $active={currentPage === page}
+              onClick={() => handlePageChange(page)}
+            >
+              {page}
+            </PageButton>
+          ))}
+
+          <PageButton
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            다음
+          </PageButton>
+        </Pagination>
+      )}
     </Layout>
   )
 }
