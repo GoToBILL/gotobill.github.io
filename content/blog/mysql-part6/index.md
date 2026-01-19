@@ -372,6 +372,21 @@ MVCC에서 SELECT 쿼리 실행 시 Read View를 참조하여 각 레코드의 �
 
 레코드의 `DB_TRX_ID`를 확인하여 다음 순서로 판단합니다.
 
+```
+                    m_up_limit_id          m_low_limit_id
+                         |                      |
+  -----------------------|----------------------|-------------------> trx_id
+        무조건 보임         |   m_ids 확인 필요      |   무조건 안 보임
+                         |                      |
+                    (Read View 생성 시점에      (Read View 생성 이후
+                     이미 활성 중인 트랜잭션)     시작된 트랜잭션)
+```
+
+| 영역 | 조건 | 결과 |
+|------|------|------|
+| trx_id < m_up_limit_id | Read View 생성 전에 이미 커밋됨 | 보임 |
+| m_up_limit_id <= trx_id < m_low_limit_id | m_ids 확인 필요 | m_ids에 있으면 안 보임, 없으면 보임 |
+| trx_id >= m_low_limit_id | Read View 생성 이후 시작됨 | 안 보임 |
 
 **예시 상황**
 
@@ -389,6 +404,46 @@ m_creator_trx_id = 205
 | 201 | 보임 | 200 < 201 < 210이고 m_ids에 없음 (이미 커밋됨) |
 | 205 | 보임 | 자기 자신 (m_creator_trx_id) |
 | 210 | 안 보임 | 210 >= 210 (m_low_limit_id) |
+
+### Read View 생성 이후 시작된 트랜잭션 처리
+
+Read View 생성 시점에 m_ids에 없던 트랜잭션이 이후에 시작되면 어떻게 처리될까요?
+
+**시나리오**
+
+```sql
+-- 시간순
+
+1. B: BEGIN
+2. B: SELECT → Read View 생성
+   ├─ m_ids = []  (현재 활성 트랜잭션 없음)
+   ├─ m_up_limit_id = 7  (다음 할당될 ID)
+   └─ m_low_limit_id = 7  (다음 할당될 ID)
+
+3. A: BEGIN
+4. A: UPDATE → trx_id = 7 할당, 버퍼풀 변경
+5. A: COMMIT
+
+6. B: SELECT (같은 트랜잭션 내)
+```
+
+**B의 두 번째 SELECT에서 가시성 판단**
+
+```
+레코드의 DB_TRX_ID = 7 (A가 변경)
+
+판단:
+├─ 7 >= m_low_limit_id (7) ?
+├─ → YES
+└─ → Read View 생성 이후에 시작된 트랜잭션이므로 안 보임
+```
+
+m_low_limit_id는 Read View 생성 시점에 **다음에 할당될 trx_id**를 기록합니다. 이 값보다 크거나 같은 trx_id를 가진 레코드는 Read View 생성 이후에 변경된 것이므로 무조건 안 보입니다.
+
+**핵심 정리**
+
+- **m_ids**: Read View 생성 시점에 **이미 활성 중**인 트랜잭션 처리
+- **m_low_limit_id**: Read View 생성 **이후에 시작될** 트랜잭션 처리
 
 ### 격리 수준에 따른 Read View 생성 시점
 
@@ -427,7 +482,7 @@ COMMIT;
 
 ## 트랜잭션 ID 할당 시점
 
-InnoDB에서 **트랜잭션 ID**(trx_id)는 트랜잭션이 시작될 때가 아니라, **처음으로 데이터를 변경할 때** 할당됩니다.
+InnoDB에서 **트랜잭션 ID**(trx_id)는 트랜잭션이 시작될 때가 아니라, **처음으로 데이터를 변경할 때** 할당됩니다. 이를 **Lazy Allocation**이라고 합니다.
 
 ### 할당 규칙
 
@@ -452,6 +507,121 @@ COMMIT;
 - **읽기 전용 트랜잭션 최적화**: SELECT만 실행하는 트랜잭션에는 ID를 할당할 필요가 없음
 - **리소스 절약**: 트랜잭션 ID는 전역 카운터를 증가시키므로, 불필요한 할당을 피함
 - **MVCC 효율성**: 읽기 전용 트랜잭션은 Read View만 사용하고, 다른 트랜잭션의 가시성에 영향을 주지 않음
+
+### 소스코드 레벨 증명
+
+MySQL 공식 Worklog WL#6047에서 정의한 trx_id 할당 조건은 다음과 같습니다.
+
+1. Read-only 트랜잭션이 TEMP 테이블에 쓰기할 때
+2. 트랜잭션이 X 또는 IX 락을 획득할 때 (쓰기 작업)
+3. 명시적으로 read-write 트랜잭션으로 선언된 경우
+
+**트랜잭션 초기화 (trx0trx.cc - trx_init)**
+
+```c
+static void trx_init(trx_t *trx) {
+  trx->id = 0;  // 초기값은 0 (ID 없음)
+  trx->no = TRX_ID_MAX;
+  // ...
+}
+```
+
+BEGIN 시점에는 `trx->id = 0`으로 초기화됩니다.
+
+**실제 ID 할당 (trx0trx.cc - trx_start_low)**
+
+```c
+if (!trx->read_only && (trx->mysql_thd == nullptr ||
+    read_write || trx->ddl_operation)) {
+
+  trx_assign_rseg_durable(trx);
+
+  trx_sys_mutex_enter();
+  trx->id = trx_sys_allocate_trx_id();  // 여기서 비로소 ID 할당
+  trx_sys->rw_trx_ids.push_back(trx->id);
+  trx_add_to_rw_trx_list(trx);
+  trx->state.store(TRX_STATE_ACTIVE, std::memory_order_relaxed);
+  trx_sys_mutex_exit();
+}
+```
+
+`read_write = true`일 때만 `trx_sys_allocate_trx_id()`가 호출되어 trx_id가 할당됩니다.
+
+**트랜잭션 상태 전환 흐름**
+
+```
+[BEGIN]
+├─ trx->id = 0
+├─ ro_trx_list에 배치
+└─ 롤백 세그먼트 미할당
+
+      ↓ (첫 번째 쓰기 연산)
+
+[INSERT/UPDATE/DELETE]
+├─ trx_start_if_not_started(trx, true) 호출
+├─ trx->id = trx_sys_allocate_trx_id()
+├─ rw_trx_list로 이동
+└─ 롤백 세그먼트 할당
+```
+
+> **참고**: 일부 자료에서 BEGIN 시점에 trx_id가 할당되는 것처럼 설명하는 경우가 있습니다. 이는 개념 설명을 위한 단순화이며, 실제 InnoDB 구현은 Lazy Allocation 방식입니다.
+
+### 명시적 READ ONLY 트랜잭션의 이점
+
+`START TRANSACTION READ ONLY`를 명시적으로 선언하면 InnoDB가 최적화를 더 적극적으로 적용합니다.
+
+**암묵적 vs 명시적 읽기 전용**
+
+```sql
+-- 암묵적 읽기 전용 (InnoDB가 추론)
+BEGIN;
+SELECT * FROM users;  -- 첫 SELECT 후에야 읽기 전용으로 판단
+
+-- 명시적 읽기 전용
+START TRANSACTION READ ONLY;
+SELECT * FROM users;  -- 시작부터 읽기 전용으로 확정
+```
+
+암묵적인 경우 InnoDB는 "혹시 쓰기가 올 수도 있다"고 가정하고 준비 상태를 유지합니다. 명시적 선언은 이 불확실성을 제거합니다.
+
+**최적화 항목**
+
+| 항목 | READ ONLY 선언 시 |
+|------|------------------|
+| trx_id | 할당 안 함 (0 유지) |
+| 롤백 세그먼트 | 할당 안 함 |
+| rw_trx_list | 등록 안 함 (ro_trx_list만) |
+| redo log | 기록 안 함 |
+| 락 획득 준비 | 안 함 |
+
+**동시성 향상 효과**
+
+```
+rw_trx_list 크기가 작아짐
+    ↓
+다른 트랜잭션의 Read View 생성 시 m_ids 스캔 비용 감소
+    ↓
+전체 시스템 동시성 향상
+```
+
+Read View 생성 시 `rw_trx_list`를 스캔해서 `m_ids`를 구성합니다. READ ONLY 트랜잭션은 이 리스트에 들어가지 않으므로 스캔 대상이 줄어듭니다.
+
+**실수 방지 (안전장치)**
+
+```sql
+START TRANSACTION READ ONLY;
+UPDATE users SET name = 'test';
+-- ERROR 1792: Cannot execute statement in a READ ONLY transaction
+```
+
+실수로 쓰기 쿼리를 날려도 DB가 거부합니다.
+
+**사용 권장 상황**
+
+- 대량 조회 배치 작업
+- 리포트 생성
+- 데이터 검증/감사 작업
+- 읽기 전용 API 엔드포인트
 
 ### Read View와의 관계
 
