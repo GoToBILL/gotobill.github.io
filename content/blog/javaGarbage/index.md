@@ -168,6 +168,61 @@ GC 스레드:              [GC 실행]
 
 STW 시간을 줄이는 것이 GC 튜닝의 핵심입니다.
 
+### Concurrent GC
+
+**Concurrent**(동시) 처리란 GC 스레드가 애플리케이션 스레드와 **동시에 실행**되는 것을 의미합니다.
+
+STW 없이 GC 작업을 수행할 수 있어서 애플리케이션 응답 시간이 크게 개선됩니다.
+
+```
+[Parallel GC - 전체 STW]
+애플리케이션: ────[정지]────────────────────>
+GC 스레드:       [Mark + Sweep + Compact]
+
+[G1 GC - 부분적 Concurrent]
+애플리케이션: ══════════════[정지]══════════>
+GC 스레드:       [Concurrent Mark]  [Evacuation]
+                 (앱과 동시 실행)     (STW)
+
+[ZGC - 거의 모든 작업 Concurrent]
+애플리케이션: ══════════════════════════════>
+GC 스레드:       [Concurrent Mark]  [Concurrent Relocate]
+                 (앱과 동시 실행)    (앱과 동시 실행)
+                            ↑              ↑
+                         STW 1ms 미만   STW 1ms 미만
+```
+
+**Parallel GC vs G1 GC**
+
+Parallel GC는 Mark, Sweep, Compact **모든 단계에서 STW**가 발생합니다. 여러 GC 스레드가 병렬로 작업하지만, 그동안 애플리케이션은 멈춰있습니다.
+
+G1 GC는 **Mark 단계의 대부분을 Concurrent로** 처리합니다. 애플리케이션이 실행되는 동안 GC가 살아있는 객체를 마킹합니다. STW는 Evacuation(객체 이동) 단계에서만 발생합니다.
+
+| 단계 | Parallel GC | G1 GC |
+|------|-------------|-------|
+| Mark | STW | Concurrent (대부분) |
+| Sweep/Evacuate | STW | STW |
+| Compact | STW | STW (선택적) |
+
+**G1 GC vs ZGC**
+
+G1 GC는 객체를 이동시키는 **Evacuation 단계에서 STW**가 필요합니다. 객체가 이동하면 해당 객체를 참조하는 모든 포인터를 갱신해야 하는데, 애플리케이션이 동시에 실행되면 참조가 꼬일 수 있기 때문입니다.
+
+ZGC는 **Load Barrier**와 **Colored Pointer**를 사용해서 객체 이동(Relocate)도 Concurrent로 처리합니다.
+
+```
+G1 GC: 객체 이동 → 모든 참조 일괄 갱신 (STW 필요)
+ZGC:   객체 이동 → 접근 시점에 참조 갱신 (Load Barrier, STW 불필요)
+```
+
+ZGC에서 객체가 이동하면 Forwarding Table에 이전 주소 → 새 주소 매핑을 저장합니다. 애플리케이션이 해당 객체에 접근할 때 Load Barrier가 색상 비트를 확인하고, 필요하면 포인터를 갱신합니다. 모든 참조를 한 번에 갱신할 필요가 없으므로 STW가 1ms 미만으로 줄어듭니다.
+
+| GC | STW 발생 구간 | 일반적인 STW 시간 |
+|----|--------------|------------------|
+| Parallel GC | Mark + Sweep + Compact 전체 | 수백 ms ~ 수 초 |
+| G1 GC | Initial Mark, Evacuation | 수십 ~ 수백 ms |
+| ZGC | GC Root 스캔 시점만 | 1ms 미만 |
+
 ---
 
 ## 객체 할당 최적화
