@@ -53,6 +53,64 @@ UPDATE users SET name = '홍길동' WHERE age = 30;
 - **유니크 인덱스**: 해당 값이 딱 1건만 존재 → 중간에 끼어들 여지가 없음 → 갭 락 불필요
 - **일반 인덱스**: 같은 값이 여러 개 → 그 사이에 새로운 레코드 INSERT 가능 → 갭 락 필요
 
+### INSERT, UPDATE, DELETE의 락 구조
+
+각 DML 문은 서로 다른 락 조합을 사용합니다.
+
+**INSERT의 락 구조**
+
+```
+테이블 레벨: IX (Intention Exclusive) 락
+    ↓
+갭 레벨: Insert Intention Lock (특수한 갭 락)
+    ↓
+레코드 레벨: X 락 (삽입된 레코드에)
+```
+
+Insert Intention Lock은 갭 락의 일종이지만, 다른 Insert Intention Lock과 **충돌하지 않습니다.** 같은 갭에 여러 트랜잭션이 동시에 INSERT할 수 있습니다. 단, 삽입 위치가 달라야 합니다.
+
+```sql
+-- id가 1, 5, 10인 레코드가 있을 때
+
+-- 트랜잭션 A
+INSERT INTO users (id) VALUES (3);
+-- IX 락 (테이블) + Insert Intention Lock (1~5 갭) + X 락 (id=3)
+
+-- 트랜잭션 B (동시에)
+INSERT INTO users (id) VALUES (7);
+-- IX 락 (테이블) + Insert Intention Lock (5~10 갭) + X 락 (id=7)
+-- → 충돌 없음, 둘 다 진행
+```
+
+**UPDATE/DELETE의 락 구조**
+
+```
+테이블 레벨: IX (Intention Exclusive) 락
+    ↓
+레코드 레벨: Next-Key Lock (X) = Record Lock + Gap Lock
+```
+
+UPDATE와 DELETE는 Next-Key Lock을 사용하여 레코드와 그 앞의 갭을 함께 잠급니다.
+
+```sql
+-- id가 1, 5, 10인 레코드가 있을 때
+UPDATE users SET name = 'test' WHERE id = 5;
+
+-- 락 범위
+Record Lock: id = 5 (X 락)
+Gap Lock: (1, 5) 구간
+-- 즉, Next-Key Lock = (1, 5] 범위
+```
+
+**DML별 락 비교**
+
+| 연산 | 테이블 락 | 레코드 락 |
+|------|-----------|-----------|
+| INSERT | IX | Insert Intention Lock + X (삽입 레코드) |
+| UPDATE | IX | Next-Key Lock (X) = Record + Gap |
+| DELETE | IX | Next-Key Lock (X) = Record + Gap |
+| SELECT ... FOR UPDATE | IX | Next-Key Lock (X) |
+
 ### 갭 락
 
 **갭 락**(Gap Lock)은 레코드 자체가 아니라 **레코드와 바로 인접한 레코드 사이의 간격만을 잠급니다.**
