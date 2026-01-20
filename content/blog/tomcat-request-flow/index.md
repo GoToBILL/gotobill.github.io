@@ -66,7 +66,7 @@ class Acceptor implements Runnable {
             // 1. 새 연결 대기 (블로킹)
             SocketChannel socket = serverSocket.accept();
 
-            // 2. Non-blocking 모드로 전환
+            // 2. Non-blocking 모드로 전환 (Selector에 등록하려면 논블로킹 모드여야 함)
             socket.configureBlocking(false);
 
             // 3. Poller에 등록 요청
@@ -79,6 +79,15 @@ class Acceptor implements Runnable {
 **특징**:
 - 보통 1개로 충분 (accept()는 매우 빠름)
 - 병목 가능성 거의 없음
+
+### TCP 연결 관리 역할 분담
+
+| 단계 | 담당 | 하는 일 |
+|------|------|--------|
+| 3-way handshake | OS 커널 | SYN → SYN-ACK → ACK |
+| 연결 수락 | Acceptor | accept()로 커널의 완료 큐에서 소켓 꺼냄 |
+| 연결 유지/관리 | Poller | Selector로 이벤트 감시, 타임아웃 체크 |
+| 연결 종료 | Worker | close() 호출 또는 Keep-Alive 만료 시 |
 
 ### Poller Thread
 
@@ -96,6 +105,9 @@ class Poller implements Runnable {
             registerPending();
 
             // 2. I/O 이벤트 대기 (타임아웃: 1초)
+            // 내부적으로 epoll_wait 호출, 이벤트 없으면 커널 레벨 슬립
+            // 타임아웃을 주는 이유: 주기적으로 깨어나서 registerPending() 처리
+            // 급한 경우 Acceptor가 selector.wakeup()으로 즉시 깨움
             selector.select(1000);
 
             // 3. 준비된 이벤트 처리
@@ -156,6 +168,87 @@ class SocketProcessor implements Runnable {
     }
 }
 ```
+
+### NIO에서 헤더 읽기 vs Body 읽기
+
+| 구분 | 헤더 읽기 | Body 읽기 |
+|------|-----------|-----------|
+| 방식 | Non-Blocking | Blocking |
+| 데이터 부족 시 | 상태 저장 후 스레드 반환 | 데이터 올 때까지 대기 |
+
+**헤더 읽기가 Non-Blocking인 이유**
+
+헤더가 여러 패킷에 나눠서 올 수 있습니다. 데이터가 아직 다 안 왔을 때 스레드가 블로킹하며 기다리면 낭비입니다.
+
+```
+1. Poller: "소켓에 데이터 왔어" → Worker 할당
+2. Worker: read() → "GET /api HTT" (헤더 일부만 도착)
+3. Worker: 파싱 상태 저장 → 스레드 반환 → Poller에 다시 등록
+4. Poller: "데이터 더 왔어" → Worker 할당
+5. Worker: 저장된 상태부터 파싱 재개 → 헤더 완료 → Servlet 호출
+```
+
+Tomcat은 `Http11InputBuffer`에 파싱 상태를 저장해서 나중에 이어서 파싱할 수 있습니다.
+
+```java
+// Http11InputBuffer - 파싱 상태 저장
+private int parsingRequestLinePhase;  // 현재 파싱 단계
+
+// Http11Processor - 헤더 불완전 시 즉시 반환
+if (!inputBuffer.parseHeaders()) {
+    readComplete = false;
+    break;  // 블로킹하지 않고 반환
+}
+```
+
+**Body 읽기가 Blocking인 이유**
+
+Servlet API 스펙에서 `request.getInputStream().read()`는 블로킹 방식으로 동작해야 합니다. 헤더 파싱이 완료되어 Servlet에 진입한 시점부터는 해당 요청을 끝까지 처리할 책임이 있습니다.
+
+### 요청 처리 컴포넌트 흐름
+
+```
+Worker Thread
+    ↓
+Http11Processor.service()
+    ├── inputBuffer.parseRequestLine()  → GET /api HTTP/1.1
+    ├── inputBuffer.parseHeaders()      → Host, Content-Type 등
+    ↓
+CoyoteAdapter.service()
+    ├── Coyote Request → HttpServletRequest 변환
+    ├── Coyote Response → HttpServletResponse 변환
+    ↓
+Container Pipeline (Engine → Host → Context → Wrapper)
+    ↓
+Servlet.service()
+    └── 필요시 request.getInputStream().read()로 Body 읽기
+```
+
+**핵심 포인트**
+
+| 컴포넌트 | 역할 |
+|----------|------|
+| Http11Processor | 바이트 스트림 → HTTP 파싱 (Request Line, Headers) |
+| CoyoteAdapter | Coyote 내부 객체 → Servlet API 객체로 변환 |
+| Servlet | 비즈니스 로직, 필요시 Body 읽기 |
+
+**Body는 왜 미리 안 읽는가**
+
+Request 객체가 생성될 때 Body는 아직 읽지 않습니다. InputStream만 소켓과 연결해둡니다.
+
+```java
+// Request 객체 내부 (단순화)
+class HttpServletRequest {
+    private Map<String, String> headers;  // 헤더는 이미 파싱됨
+    private InputStream inputStream;       // Body는 소켓과 연결만 됨
+}
+```
+
+- GET 요청은 Body가 없으므로 읽을 필요 없음
+- Body가 수 GB일 수 있음 (파일 업로드)
+- 스트리밍 처리가 필요할 수 있음
+
+Servlet이 `getInputStream().read()`를 호출할 때 비로소 소켓에서 Body를 읽습니다. 이때 커널 버퍼에 데이터가 없으면 블로킹됩니다.
 
 ## Thread Pool 구조
 
