@@ -245,12 +245,7 @@ public class Outer {
 
 ### 메모리 저장 위치
 
-| Java 버전 | 저장 위치 |
-|----------|----------|
-| Java 7 이전 | PermGen (Method Area) |
-| Java 8 이후 | **Heap** (Metaspace는 클래스 메타데이터만) |
-
-static 변수는 **모든 스레드가 공유**하며, JVM 프로세스 생명주기 동안 유지된다.
+static 변수는 **Method Area**(Java 8 이후 Metaspace)에 저장되며, **모든 스레드가 공유**한다. JVM 프로세스 생명주기 동안 유지된다.
 
 ### 초기화 순서 (JLS 12.4)
 
