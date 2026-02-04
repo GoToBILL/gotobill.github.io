@@ -141,6 +141,7 @@
   width: 100%;
   border-collapse: collapse;
   margin: 1.5rem 0;
+  table-layout: fixed;
 }
 
 .blog-post-content th {
@@ -150,15 +151,85 @@
   font-weight: 600;
   color: var(--color-text, #1e293b);
   border-bottom: 2px solid var(--color-border, #cbd5e1);
+  white-space: nowrap;
 }
 
 .blog-post-content td {
   padding: 0.75rem;
   border-bottom: 1px solid var(--color-border, #e2e8f0);
+  white-space: nowrap;
 }
 
 .blog-post-content tbody tr:hover {
   background: var(--color-background-secondary, #f8fafc);
+}
+
+/* Spring DI 비교 테이블 - 표 1: 핵심 차이 (4열) */
+.blog-post-content .di-table-1 th:nth-child(1),
+.blog-post-content .di-table-1 td:nth-child(1) {
+  width: 15%;
+}
+
+.blog-post-content .di-table-1 th:nth-child(2),
+.blog-post-content .di-table-1 td:nth-child(2) {
+  width: 30%;
+}
+
+.blog-post-content .di-table-1 th:nth-child(3),
+.blog-post-content .di-table-1 td:nth-child(3) {
+  width: 30%;
+}
+
+.blog-post-content .di-table-1 th:nth-child(4),
+.blog-post-content .di-table-1 td:nth-child(4) {
+  width: 25%;
+}
+
+/* Spring DI 비교 테이블 - 표 2: 주입 방식별 비교표 (5열) */
+.blog-post-content .di-table-2 th:nth-child(1),
+.blog-post-content .di-table-2 td:nth-child(1) {
+  width: 12%;
+}
+
+.blog-post-content .di-table-2 th:nth-child(2),
+.blog-post-content .di-table-2 td:nth-child(2) {
+  width: 18%;
+}
+
+.blog-post-content .di-table-2 th:nth-child(3),
+.blog-post-content .di-table-2 td:nth-child(3) {
+  width: 25%;
+}
+
+.blog-post-content .di-table-2 th:nth-child(4),
+.blog-post-content .di-table-2 td:nth-child(4) {
+  width: 30%;
+}
+
+.blog-post-content .di-table-2 th:nth-child(5),
+.blog-post-content .di-table-2 td:nth-child(5) {
+  width: 15%;
+}
+
+/* Spring DI 비교 테이블 - 표 3: 결론 (4열) */
+.blog-post-content .di-table-3 th:nth-child(1),
+.blog-post-content .di-table-3 td:nth-child(1) {
+  width: 15%;
+}
+
+.blog-post-content .di-table-3 th:nth-child(2),
+.blog-post-content .di-table-3 td:nth-child(2) {
+  width: 25%;
+}
+
+.blog-post-content .di-table-3 th:nth-child(3),
+.blog-post-content .di-table-3 td:nth-child(3) {
+  width: 40%;
+}
+
+.blog-post-content .di-table-3 th:nth-child(4),
+.blog-post-content .di-table-3 td:nth-child(4) {
+  width: 20%;
 }
 
 /* 첫 문단 강조 */
