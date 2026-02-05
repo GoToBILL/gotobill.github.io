@@ -27,6 +27,278 @@ tags: ["Spring", "WebClient", "Reactive", "Netty"]
 > \
 > Netty의 이벤트 루프 방식이 어떻게 동작하는지 자세히 알고 싶다면 [Netty 이벤트 루프 완전 정복](../netty-eventloop)을 참고하세요.
 
+## Project Reactor와 Reactive Types
+
+### Project Reactor란?
+
+**Project Reactor**는 Pivotal(현 VMware)이 개발한 리액티브 프로그래밍 라이브러리입니다.
+
+Reactive Streams 표준을 구현한 JVM 기반 라이브러리로, 비동기 논블로킹 애플리케이션을 쉽게 작성할 수 있게 해줍니다.
+
+Spring WebFlux는 내부적으로 Project Reactor를 사용합니다. WebClient가 반환하는 Mono와 Flux가 바로 Project Reactor가 제공하는 타입입니다.
+
+**계층 구조:**
+
+```
+Reactive Streams (스펙)
+    ↓ 구현체
+Project Reactor (라이브러리) ← Mono/Flux/Scheduler 제공
+    ↓ Spring 통합
+Spring WebFlux 모듈 ← Netty + Reactor 조합
+    ├─ WebFlux Server: 논블로킹 웹 서버 (@Controller, @RestController)
+    └─ WebClient: 논블로킹 HTTP 클라이언트 (RestTemplate 대체)
+```
+
+**Spring WebFlux vs WebClient:**
+
+| 구분 | Spring WebFlux | WebClient |
+|------|---------------|-----------|
+| **역할** | 서버 사이드 프레임워크 | 클라이언트 사이드 HTTP 클라이언트 |
+| **용도** | 리액티브 웹 애플리케이션 구축 | 외부 API 호출 |
+| **포함 관계** | 모듈 전체 | WebFlux 모듈의 일부 |
+| **예시** | `@RestController`로 API 제공 | `webClient.get()`으로 API 호출 |
+
+**@RestController는 MVC와 WebFlux 모두 사용합니다:**
+
+```groovy
+// Spring MVC (Tomcat, 블로킹)
+implementation 'org.springframework.boot:spring-boot-starter-web'
+```
+
+```java
+@RestController
+public class UserController {
+    @GetMapping("/users/{id}")
+    public User getUser(@PathVariable Long id) {  // 블로킹 방식
+        return userService.getUser(id);  // User 객체 반환
+    }
+}
+```
+
+```groovy
+// Spring WebFlux (Netty, 논블로킹)
+implementation 'org.springframework.boot:spring-boot-starter-webflux'
+```
+
+```java
+@RestController
+public class UserController {
+    @GetMapping("/users/{id}")
+    public Mono<User> getUser(@PathVariable Long id) {  // 논블로킹 방식
+        return userService.getUser(id);  // Mono<User> 반환
+    }
+}
+```
+
+**차이점:**
+
+| 구분 | Spring MVC | Spring WebFlux |
+|------|-----------|---------------|
+| **의존성** | spring-boot-starter-web | spring-boot-starter-webflux |
+| **서버** | Tomcat (블로킹) | Netty (논블로킹) |
+| **애노테이션** | `@RestController` | `@RestController` (동일!) |
+| **반환 타입** | `User`, `List<User>` | `Mono<User>`, `Flux<User>` |
+| **스레드 모델** | 요청당 스레드 | 이벤트 루프 |
+
+>
+> **Project Reactor는 Spring이 만든 것이 아닙니다.**
+>
+> \
+> Pivotal(VMware)이 개발한 독립적인 라이브러리입니다.
+>
+> \
+> Spring WebFlux와 WebClient가 이를 채택하여 사용하는 것입니다.
+
+**가장 흔한 조합: Spring MVC + WebClient**
+
+서버는 Spring MVC를 사용하고, HTTP 클라이언트만 WebClient를 사용하는 경우가 많습니다.
+
+```groovy
+// 서버: Spring MVC (Tomcat), 클라이언트: WebClient (Netty)
+implementation 'org.springframework.boot:spring-boot-starter-web'      // MVC 서버
+implementation 'org.springframework.boot:spring-boot-starter-webflux'  // WebClient 사용
+```
+
+```java
+@RestController  // MVC 컨트롤러 (Tomcat에서 실행)
+@RequiredArgsConstructor
+public class UserController {
+
+    private final WebClient webClient;  // WebClient만 사용 (Netty)
+
+    @GetMapping("/users/{id}")
+    public Mono<User> getUser(@PathVariable Long id) {
+        // 외부 API 호출은 WebClient (논블로킹)
+        return webClient.get()
+            .uri("/external-api/users/{id}", id)
+            .retrieve()
+            .bodyToMono(User.class);
+    }
+}
+```
+
+**정리:**
+
+- **서버 선택**: Spring MVC (Tomcat) 또는 Spring WebFlux (Netty)
+- **클라이언트 선택**: RestTemplate (블로킹) 또는 WebClient (논블로킹)
+- **조합 가능**: MVC 서버 + WebClient 클라이언트 (가장 흔함)
+
+### Mono와 Flux
+
+Project Reactor는 두 가지 핵심 타입을 제공합니다.
+
+**Mono<T>**
+
+0개 또는 1개의 데이터를 비동기로 전달합니다.
+
+단일 결과를 반환하는 API 호출에 사용합니다.
+
+```java
+Mono<User> user = webClient.get()
+    .uri("/users/1")
+    .retrieve()
+    .bodyToMono(User.class);  // 단일 User 객체
+```
+
+**Flux<T>**
+
+0개 이상의 데이터를 비동기로 전달합니다.
+
+여러 결과를 반환하는 API 호출이나 스트리밍에 사용합니다.
+
+```java
+Flux<User> users = webClient.get()
+    .uri("/users")
+    .retrieve()
+    .bodyToFlux(User.class);  // 여러 User 객체
+```
+
+### 왜 Mono/Flux를 사용하는가?
+
+**핵심: User 객체를 반환하려면 User 객체가 있어야 합니다.**
+
+```java
+// 동기 방식: User를 반환하려면 User 객체를 만들어야 함
+public User getUser(Long id) {
+    // 1. API 호출
+    // 2. 응답 대기... (5초)
+    // 3. User 객체 생성
+    User user = restTemplate.getForObject("/users/" + id, User.class);
+    return user;  // 4. 반환 (5초 후)
+}
+
+// 호출
+User user = getUser(1L);  // 5초 블로킹
+System.out.println(user.getName());
+```
+
+User 객체를 만들려면 API 응답이 필요합니다.
+
+API 응답이 올 때까지 스레드는 아무것도 못하고 대기합니다.
+
+**그럼 Mono는 뭐가 다른가?**
+
+Mono는 User 객체가 없어도 만들 수 있습니다.
+
+```java
+// 비동기 방식: Mono는 User 없이도 만들 수 있음
+public Mono<User> getUser(Long id) {
+    return webClient.get()
+        .uri("/users/{id}", id)
+        .retrieve()
+        .bodyToMono(User.class);  // Mono 생성 (User 객체 없음!)
+    // 즉시 반환 (HTTP 요청도 아직 안 보냄)
+}
+
+// 호출
+Mono<User> mono = getUser(1L);  // 0.001초 (즉시 반환)
+mono.subscribe(user -> {
+    System.out.println(user.getName());  // subscribe 시점에 HTTP 요청
+});
+```
+
+**Mono = "나중에 User가 올 거야"라는 약속**
+
+User 객체가 실제로 없어도 Mono는 만들 수 있습니다. 그래서 즉시 반환 가능합니다.
+
+**구체적인 예시: 1000명 동시 요청**
+
+**동기 방식의 문제점**
+
+```java
+// 1000명이 동시에 요청
+for (int i = 1; i <= 1000; i++) {
+    User user = getUser(i);  // 각각 5초 블로킹
+}
+
+// 필요한 것:
+// - 1000개 스레드 (각 요청마다 1개)
+// - 각 스레드는 5초 동안 블로킹
+// - 메모리: 1000개 × 1MB (스택) = 1GB
+```
+
+**비동기 방식의 해결책**
+
+```java
+// 1000명이 동시에 요청
+for (int i = 1; i <= 1000; i++) {
+    Mono<User> mono = getUser(i);  // 즉시 반환 (0.001초)
+    mono.subscribe(user -> process(user));
+}
+
+// 필요한 것:
+// - 4개 Netty 스레드 (CPU 코어 수)
+// - 블로킹 없음
+// - 메모리: 4개 × 1MB = 4MB
+```
+
+Netty 스레드 4개가 1000개 요청을 논블로킹으로 처리합니다.
+
+**핵심 차이**
+
+| 방식 | 반환 | 메서드 완료 시점 | 1000명 요청 시 필요 스레드 |
+|------|------|----------------|------------------------|
+| **동기** | User 객체 | API 응답 후 (5초 후) | 1000개 |
+| **비동기** | Mono (약속) | 즉시 (0.001초) | 4개 |
+
+**그냥 객체를 쓰면 안 되는 이유**
+
+객체를 반환하려면 객체를 만들어야 하고, 객체를 만들려면 API 응답이 필요하고, API 응답을 기다리면 스레드가 블로킹됩니다.
+
+Mono를 쓰면 객체 없이도 "나중에 줄게"라는 약속을 반환할 수 있어서, 스레드가 블로킹되지 않습니다.
+
+### Mono/Flux 실행 방식
+
+Mono와 Flux는 subscribe 전까지 실행되지 않습니다.
+
+```java
+// 1. Mono 생성 (아직 HTTP 요청 안 보냄, 레시피만 작성)
+Mono<User> mono = webClient.get()
+    .uri("/users/1")
+    .retrieve()
+    .bodyToMono(User.class);
+
+// 2-1. Controller에서 반환 (Spring이 subscribe)
+return mono;  // Spring이 자동으로 subscribe → 실제 HTTP 요청 전송
+
+// 2-2. 직접 subscribe (즉시 실행)
+mono.subscribe(user -> {
+    log.info("User: {}", user.getName());
+});  // subscribe 호출 시점에 HTTP 요청 전송
+```
+
+>
+> **Lazy Execution**
+>
+> \
+> Mono/Flux는 subscribe를 호출하기 전까지 아무것도 실행하지 않습니다.
+>
+> \
+> 이를 **Lazy Execution**(지연 실행)이라고 합니다.
+>
+> \
+> Controller에서 Mono를 반환하면 Spring이 자동으로 subscribe를 호출합니다.
+
 ## 의존성 설정
 
 ```groovy
