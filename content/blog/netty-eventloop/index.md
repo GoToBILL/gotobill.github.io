@@ -777,7 +777,7 @@ if (unexpectedSelectorWakeup(selectCnt)) {
 
 | 항목 | Tomcat NIO | Netty |
 |---|---|---|
-| 루프 | `while(true)` | `for(;;)` + 종료 처리 |
+| 무한 루프 | `while(true)` | `for(;;)`|
 | select() | 매번 호출 | 전략 패턴 (Task 있으면 skip) |
 | Task 처리 | 없음 | I/O와 Task 비율 조절 (ioRatio) |
 | 예외 처리 | 기본 try-catch | epoll bug 감지 및 재구성 |
@@ -832,15 +832,7 @@ if (hasTasks()) {
 | 성능 | Iterator 생성 오버헤드 | 캐시 친화적 순차 접근 |
 
 
-### 4. 이벤트 처리
-
-| 항목 | Tomcat NIO | Netty |
-|---|---|---|
-| 처리 방식 | 직접 I/O 호출 | Unsafe 클래스 위임 |
-| 에러 처리 | 간단한 예외 처리 | 세밀한 상태 관리 |
-| 확장성 | 하드코딩 | 채널 타입별 다형성 |
-
-### 5. 스레드 모델
+### 4. 스레드 모델
 
 | 항목 | Tomcat NIO | Netty |
 |---|---|---|
@@ -848,10 +840,6 @@ if (hasTasks()) {
 | Worker 스레드 | 200개 (기본값) | CPU 코어 * 2 (기본값) |
 | 스레드 안전성 | 동기화 필요 | Thread Affinity로 자동 보장 |
 | 작업 제출 | Worker 스레드 풀 | EventLoop.execute(Runnable) |
-
-### 전체 비교표
-
-![네티 vs 톰캣](./nettyvstomcat.png)
 
 ---
 
@@ -946,7 +934,7 @@ HttpObjectAggregator가 병합
 
 ### Codec과 Connector
 
-#### Codec
+#### Codec (webclient)
 
 **HTTP 메시지 ↔ 바이트 변환**을 담당합니다.
 
