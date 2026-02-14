@@ -25,6 +25,180 @@ InnoDB 스토리지 엔진은 **레코드 기반 잠금 기능**을 제공합니
 
 ![락 종류](./5.1.png)
 
+## MySQL 락의 계층 구조
+
+MySQL의 락은 크게 **테이블 레벨 락**과 **레코드 레벨 락**으로 나뉩니다.
+
+```
+MySQL 잠금 계층
+
+1. 테이블 레벨 락
+   ├─ 테이블 잠금 (LOCK TABLES)
+   ├─ 메타데이터 락 (Metadata Lock)
+   ├─ AUTO_INCREMENT 락
+   └─ 의도 락 (Intention Lock)
+       ├─ IS (Intention Shared)
+       └─ IX (Intention Exclusive)
+
+2. 레코드 레벨 락 (InnoDB 엔진)
+   ├─ 레코드 락 (Record Lock)
+   ├─ 갭 락 (Gap Lock)
+   ├─ 넥스트 키 락 (Next-Key Lock)
+   └─ Insert Intention Lock
+```
+
+### 테이블 레벨 락
+
+**테이블 전체에 영향을 미치는 락**입니다. 테이블의 모든 레코드에 대한 접근을 제어합니다.
+
+#### 1. 테이블 잠금 (LOCK TABLES)
+
+명시적으로 테이블 전체를 잠급니다.
+
+```sql
+LOCK TABLES users WRITE;  -- 쓰기 잠금 (다른 커넥션은 읽기/쓰기 모두 대기)
+-- 작업 수행
+UNLOCK TABLES;
+
+LOCK TABLES users READ;   -- 읽기 잠금 (다른 커넥션은 쓰기만 대기)
+-- 조회 작업
+UNLOCK TABLES;
+```
+
+**특징:**
+- InnoDB에서는 거의 사용하지 않음
+- 레코드 락으로 충분한 경합 제어 가능
+- 전체 테이블을 잠그므로 동시성 매우 낮음
+
+#### 2. 메타데이터 락 (Metadata Lock)
+
+테이블 구조를 변경하는 DDL 실행 시 자동으로 획득됩니다.
+
+```sql
+-- Connection 1
+BEGIN;
+SELECT * FROM users WHERE id = 1;  -- 메타데이터 락 획득 (공유 락)
+
+-- Connection 2
+ALTER TABLE users ADD COLUMN age INT;  -- 대기! (배타적 메타데이터 락 필요)
+
+-- Connection 1
+COMMIT;  -- 메타데이터 락 해제 → Connection 2가 진행
+```
+
+**특징:**
+- 명시적으로 획득하는 것이 아니라 **자동으로 획득**
+- 트랜잭션이 테이블을 사용하는 동안 테이블 구조 변경 방지
+- 트랜잭션 종료 시 자동 해제
+
+**메타데이터 락의 2가지 종류:**
+
+| 락 타입 | 획득 상황 | 다른 트랜잭션 |
+|---------|----------|--------------|
+| **공유 메타데이터 락** | SELECT, INSERT, UPDATE, DELETE | 읽기/쓰기 가능, DDL 대기 |
+| **배타적 메타데이터 락** | ALTER TABLE, DROP TABLE | 모든 작업 대기 |
+
+#### 3. AUTO_INCREMENT 락
+
+AUTO_INCREMENT 컬럼의 값을 생성할 때 사용하는 **테이블 레벨 락**입니다.
+
+```sql
+-- Connection 1
+INSERT INTO users (name) VALUES ('홍길동');
+-- 1. AUTO_INCREMENT 락 획득 (테이블 레벨)
+-- 2. id 값 생성 (예: 5)
+-- 3. AUTO_INCREMENT 락 즉시 해제
+-- 4. INSERT 계속 진행
+
+-- Connection 2 (동시에)
+INSERT INTO users (name) VALUES ('김철수');
+-- AUTO_INCREMENT 락 획득 가능 (Connection 1이 이미 해제)
+-- id 값 생성 (예: 6)
+```
+
+**특징:**
+- **매우 짧게 유지** (ID 생성 후 즉시 해제)
+- INSERT 문장 완료를 기다리지 않음
+- 테이블 레벨이지만 동시성에 거의 영향 없음
+
+#### 4. 의도 락 (Intention Lock)
+
+레코드 락을 걸기 전에 **이 테이블에 레코드 락을 걸 예정**이라고 선언하는 테이블 레벨 락입니다.
+
+```sql
+-- Connection 1
+BEGIN;
+UPDATE users SET name = '홍길동' WHERE id = 1;
+-- 1. 테이블에 IX 락 획득 (의도 표시)
+-- 2. id=1 레코드에 X 락 획득
+
+-- Connection 2 (다른 레코드)
+UPDATE users SET name = '김철수' WHERE id = 2;
+-- 1. 테이블에 IX 락 획득 (성공! IX끼리는 충돌 안 함)
+-- 2. id=2 레코드에 X 락 획득 (성공! 다른 레코드)
+
+-- Connection 3 (테이블 전체 잠금 시도)
+LOCK TABLES users WRITE;
+-- 대기! IX 락이 있으므로 테이블 잠금 불가
+```
+
+**의도 락의 종류:**
+
+| 락 타입 | 의미 | 실제 레코드 락 |
+|---------|------|---------------|
+| **IS** (Intention Shared) | "공유 레코드 락을 걸 예정" | S (Shared) |
+| **IX** (Intention Exclusive) | "배타적 레코드 락을 걸 예정" | X (Exclusive) |
+
+**의도 락의 역할:**
+
+```sql
+-- 의도 락이 없다면?
+-- LOCK TABLES users WRITE; 실행 시
+-- 1. 모든 레코드를 일일이 확인 (30만 건)
+-- 2. 하나라도 레코드 락이 있으면 실패
+-- 3. 매우 느림!
+
+-- 의도 락이 있으면?
+-- 1. 테이블의 IX/IS 락만 확인
+-- 2. 있으면 즉시 대기
+-- 3. 매우 빠름!
+```
+
+**충돌 매트릭스:**
+
+|  | IS | IX | S (테이블 락) | X (테이블 락) |
+|--|----|----|---------------|---------------|
+| **IS** | ✅ | ✅ | ✅ | ❌ |
+| **IX** | ✅ | ✅ | ❌ | ❌ |
+| **S** | ✅ | ❌ | ✅ | ❌ |
+| **X** | ❌ | ❌ | ❌ | ❌ |
+
+**핵심:**
+- **IS/IX끼리는 절대 충돌하지 않음** (여러 트랜잭션이 동시에 다른 레코드 잠금 가능)
+- **LOCK TABLES로 테이블 전체를 잠그려는 시도와만 충돌** (IS/IX가 있으면 테이블 전체 락 불가)
+
+### 레코드 레벨 락
+
+**개별 레코드 또는 레코드 범위**에 대한 락입니다. InnoDB 엔진만 제공합니다.
+
+- **레코드 락** (Record Lock): 인덱스 레코드 하나만 잠금
+- **갭 락** (Gap Lock): 레코드 사이의 간격만 잠금 (INSERT 방지)
+- **넥스트 키 락** (Next-Key Lock): 레코드 락 + 갭 락 조합
+- **Insert Intention Lock**: INSERT 시 사용하는 특수한 갭 락 (다른 Insert Intention Lock과 충돌하지 않음)
+
+### 락 레벨별 정리
+
+| 락 레벨 | 락 종류 | 자동/수동 | 용도 |
+|---------|---------|-----------|------|
+| **테이블** | LOCK TABLES | 수동 | 테이블 전체 잠금 (거의 안 씀) |
+| **테이블** | 메타데이터 락 | 자동 | DDL 중 구조 변경 방지 |
+| **테이블** | AUTO_INCREMENT | 자동 | ID 생성 동기화 |
+| **테이블** | IS/IX | 자동 | 레코드 락 의도 표시 |
+| **레코드** | Record Lock | 자동 | 특정 레코드 잠금 |
+| **레코드** | Gap Lock | 자동 | 레코드 사이 INSERT 방지 |
+| **레코드** | Next-Key Lock | 자동 | Record + Gap 조합 |
+| **레코드** | Insert Intention | 자동 | INSERT 시 갭 락 (충돌 완화) |
+
 ### 레코드 락
 
 레코드 자체만을 잠그는 것을 **레코드 락**(Record Lock, Record Only Lock)이라고 합니다. 다른 상용 DBMS의 레코드 락과 동일한 역할을 하지만, 중요한 차이점이 있습니다.
