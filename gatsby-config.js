@@ -11,10 +11,10 @@ module.exports = {
   siteMetadata: {
     title: `GoToBill`,
     author: {
-      name: `GoToBill`,
-      summary: `개발자 GoToBill의 기술 블로그`,
+      name: `주병주`,
+      summary: `서비스의 신호를 관찰하고 검증하는 백엔드 엔지니어`,
     },
-    description: `개발 이야기를 다루는 기술 블로그`,
+    description: `백엔드 엔지니어 주병주의 포트폴리오와 기술 기록`,
     siteUrl: `https://gotobill.github.io`,
     social: {
       github: `gotobill`,

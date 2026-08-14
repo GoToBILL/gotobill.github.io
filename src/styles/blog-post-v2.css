@@ -1,5 +1,37 @@
 /* 블로그 포스트 전문적인 스타일 - 더 깔끔한 버전 */
 
+.blog-post-content {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.blog-post-content h1,
+.blog-post-content h2,
+.blog-post-content h3,
+.blog-post-content h4,
+.blog-post-content h5,
+.blog-post-content h6,
+.blog-post-content p,
+.blog-post-content li,
+.blog-post-content a {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.blog-post-content ul,
+.blog-post-content ol,
+.blog-post-content li {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.blog-post-content :not(pre) > code {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .blog-post-content h2 {
   position: relative;
   font-size: 1.8rem;
@@ -283,15 +315,29 @@
 }
 
 /* 테이블 - 더 모던하게 */
-.blog-post-content table {
+.blog-post-content .table-scroll {
+  display: block;
   width: 100%;
+  max-width: 100%;
+  margin: 2rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.blog-post-content table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  margin: 2rem 0;
+  margin: 0;
   font-size: 0.95rem;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .blog-post-content th {

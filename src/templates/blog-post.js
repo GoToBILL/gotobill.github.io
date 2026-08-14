@@ -10,9 +10,9 @@ import Comments from "../components/Comments"
 import "../styles/blog-post-v2.css"
 
 const PageWrapper = styled.div`
-  max-width: 800px;
+  max-width: var(--prose-width);
   margin: 0 auto;
-  padding: 2rem;
+  padding: 0;
 `;
 
 const PostContainer = styled.div`
@@ -24,7 +24,7 @@ const TOCWrapper = styled.aside``;
 const PostHeader = styled.header`
   margin-bottom: 3rem;
   padding-bottom: 2rem;
-  border-bottom: 2px solid #E8F2FF;
+  border-bottom: 1px solid var(--line);
 `;
 
 const PostTitle = styled.h1`
@@ -32,10 +32,12 @@ const PostTitle = styled.h1`
   font-weight: 800;
   line-height: 1.2;
   margin: 0 0 1rem 0;
-  background: linear-gradient(135deg, #667eea 0%, #3182F6 100%);
+  background: linear-gradient(135deg, var(--signal-bright) 0%, var(--signal-deep) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 
   @media (max-width: 768px) {
     font-size: 2rem;
@@ -46,7 +48,7 @@ const PostMeta = styled.div`
   display: flex;
   align-items: center;
   gap: 1rem;
-  color: #64748b;
+  color: var(--ink-muted);
   font-size: 0.95rem;
 `;
 
@@ -62,9 +64,12 @@ const ReadingTime = styled.span`
 `;
 
 const PostContent = styled.section`
+  min-width: 0;
   font-size: 1.125rem;
   line-height: 1.8;
-  color: #334155;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  word-break: normal;
 
   h1, h2, h3, h4, h5, h6 {
     scroll-margin-top: 100px;
@@ -72,18 +77,20 @@ const PostContent = styled.section`
     margin-bottom: 1rem;
     font-weight: 700;
     line-height: 1.3;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   h2 {
     font-size: 1.75rem;
-    color: #1e293b;
+    color: var(--ink-strong);
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--line);
   }
 
   h3 {
     font-size: 1.375rem;
-    color: #334155;
+    color: var(--ink-strong);
   }
 
   p {
@@ -91,13 +98,13 @@ const PostContent = styled.section`
   }
 
   a {
-    color: #3182F6;
+    color: var(--signal);
     text-decoration: none;
     border-bottom: 1px solid transparent;
     transition: border-bottom 0.2s ease;
 
     &:hover {
-      border-bottom: 1px solid #3182F6;
+      border-bottom: 1px solid var(--signal);
     }
   }
 
@@ -111,11 +118,11 @@ const PostContent = styled.section`
   }
 
   code {
-    background: #f1f5f9;
+    background: var(--paper-soft);
     padding: 0.2rem 0.4rem;
     border-radius: 4px;
     font-size: 0.9em;
-    color: #e11d48;
+    color: var(--signal-deep);
   }
 
   pre {
@@ -139,31 +146,39 @@ const PostContent = styled.section`
     max-width: 100%;
     height: auto;
     border-radius: 8px;
-    margin: 2rem 0;
+    margin: 0;
   }
 
   table {
+    display: block;
     width: 100%;
+    max-width: 100%;
     border-collapse: collapse;
     margin: 2rem 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 
     th, td {
       padding: 0.75rem;
       text-align: left;
-      border-bottom: 1px solid #e2e8f0;
+      border-bottom: 1px solid var(--line);
     }
 
     th {
-      background: #f8fafc;
+      background: var(--paper-soft);
       font-weight: 600;
     }
   }
 `;
 
+const wrapTables = html => html
+  .replace(/<table(?=\s|>)/g, '<div class="table-scroll"><table')
+  .replace(/<\/table>/g, '</table></div>')
+
 const NavSection = styled.nav`
   margin-top: -4rem;
   padding-top: 2rem;
-  border-top: 2px solid #E8F2FF;
+  border-top: 1px solid var(--line);
 `;
 
 const NavList = styled.ul`
@@ -184,30 +199,32 @@ const NavLink = styled(Link)`
   display: flex;
   flex-direction: column;
   padding: 1.25rem;
-  background: #f8fafc;
+  background: var(--paper-raised);
   border-radius: 12px;
   text-decoration: none;
   transition: all 0.3s ease;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--line);
 
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-    border-color: #3182F6;
-    background: #ffffff;
+    border-color: var(--signal);
+    background: var(--signal-wash);
   }
 `;
 
 const NavLabel = styled.span`
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--ink-muted);
   margin-bottom: 0.5rem;
 `;
 
 const NavTitle = styled.span`
   font-size: 1.125rem;
-  color: #1e293b;
+  color: var(--ink-strong);
   font-weight: 600;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 `;
 
 const BlogPostTemplate = ({
@@ -235,10 +252,10 @@ const BlogPostTemplate = ({
             </PostHeader>
             <PostContent
               className="blog-post-content"
-              dangerouslySetInnerHTML={{ __html: post.html }}
+              dangerouslySetInnerHTML={{ __html: wrapTables(post.html) }}
               itemProp="articleBody"
             />
-            <hr style={{ marginTop: '2rem', marginBottom: '0rem', border: '0', borderTop: '1px solid #E8F2FF' }} />
+            <hr style={{ marginTop: '2rem', marginBottom: '0rem', border: '0', borderTop: '1px solid var(--line)' }} />
             <footer>
               <Bio />
             </footer>
@@ -273,11 +290,13 @@ const BlogPostTemplate = ({
   )
 }
 
-export const Head = ({ data: { markdownRemark: post } }) => {
+export const Head = ({ data: { markdownRemark: post }, location }) => {
   return (
     <Seo
       title={post.frontmatter.title}
       description={post.frontmatter.description || post.excerpt}
+      pathname={location.pathname}
+      article
     />
   )
 }

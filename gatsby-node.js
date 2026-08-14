@@ -9,6 +9,17 @@ const { createFilePath } = require(`gatsby-source-filesystem`)
 
 // Define the template for blog post
 const blogPost = path.resolve(`./src/templates/blog-post.js`)
+const workDetail = path.resolve(`./src/templates/work-detail.js`)
+const workSlugs = [
+  `metering`,
+  `monitoring`,
+  `cloudtrail`,
+  `iceberg-schema-evolution`,
+  `ai-harness`,
+  `cherrydan`,
+  `chefriend`,
+  `runtale`,
+]
 
 /**
  * @type {import('gatsby').GatsbyNode['createPages']}
@@ -60,6 +71,14 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
       })
     })
   }
+
+  workSlugs.forEach(slug => {
+    createPage({
+      path: `/work/${slug}/`,
+      component: workDetail,
+      context: { slug },
+    })
+  })
 }
 
 /**
@@ -105,6 +124,7 @@ exports.createSchemaCustomization = ({ actions }) => {
 
     type Social {
       twitter: String
+      github: String
     }
 
     type MarkdownRemark implements Node {
