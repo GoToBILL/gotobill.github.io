@@ -1,194 +1,110 @@
-import { createGlobalStyle } from 'styled-components';
+import { createGlobalStyle } from "styled-components"
 
 const GlobalStyle = createGlobalStyle`
   :root {
-    --color-primary: #3b82f6;
-    --color-primary-dark: #2563eb;
-    --color-text: #191F28;
-    --color-text-light: #6B7280;
-    --color-background: #FFFFFF;
-    --color-background-secondary: #F9FAFB;
-    --color-border: #E5E7EB;
-    --max-width: 768px;
-    --spacing-unit: 8px;
-    --radius: 8px;
-    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    color-scheme: light;
+    --ink-strong: #111318;
+    --ink: #2e3338;
+    --ink-muted: #697078;
+    --ink-faint: #9aa0a6;
+    --paper: #ffffff;
+    --paper-raised: #f7f8fa;
+    --paper-soft: #f1f3f5;
+    --surface: var(--paper-raised);
+    --line: rgba(17, 19, 24, 0.1);
+    --line-strong: rgba(17, 19, 24, 0.18);
+    --dusk: #125de6;
+    --dusk-deep: #1446c8;
+    --dusk-soft: #e9f1ff;
+    --signal: var(--dusk);
+    --signal-bright: var(--dusk);
+    --signal-deep: var(--dusk-deep);
+    --signal-wash: color-mix(in srgb, var(--dusk-soft) 68%, transparent);
+    --shadow: none;
+    --shadow-hover: none;
+    --max-width: 1180px;
+    --prose-width: 760px;
+    --header-height: 72px;
+    --radius-sm: 10px;
+    --radius: 18px;
+    --radius-lg: 28px;
+
+    /* Backward-compatible aliases used by the existing article template. */
+    --color-primary: var(--signal);
+    --color-primary-dark: var(--signal-deep);
+    --color-text: var(--ink-strong);
+    --color-text-light: var(--ink-muted);
+    --color-background: var(--paper);
+    --color-background-secondary: var(--paper-soft);
+    --color-border: var(--line);
+    --shadow-lg: var(--shadow-hover);
   }
 
-  [data-theme="dark"] {
-    --color-primary: #60A5FA;
-    --color-primary-dark: #3B82F6;
-    --color-text: #F3F4F6;
-    --color-text-light: #9CA3AF;
-    --color-background: #111827;
-    --color-background-secondary: #1F2937;
-    --color-border: #374151;
-    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
-    --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
-  }
-
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
+  *, *::before, *::after { box-sizing: border-box; }
 
   html {
-    font-size: 16px;
+    color-scheme: light;
+    scroll-behavior: smooth;
+    scroll-padding-top: calc(var(--header-height) + 1.5rem);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   body {
-    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    color: var(--color-text);
-    background-color: var(--color-background);
+    margin: 0;
+    min-width: 320px;
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background: var(--paper);
     line-height: 1.7;
-    font-weight: 400;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-  }
-  
-  /* 코드 블록과 입력 필드는 선택 가능 */
-  pre, code, input, textarea {
-    -webkit-user-select: text;
-    -moz-user-select: text;
-    -ms-user-select: text;
-    user-select: text;
+    transition: background-color 180ms ease, color 180ms ease;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-weight: 700;
-    line-height: 1.3;
-    margin-top: 2rem;
-    margin-bottom: 1rem;
-    color: var(--color-text);
-  }
-
-  h1 {
-    font-size: 2.5rem;
-    @media (max-width: 768px) {
-      font-size: 2rem;
-    }
-  }
-
-  h2 {
-    font-size: 2rem;
-    @media (max-width: 768px) {
-      font-size: 1.75rem;
-    }
-  }
-
-  h3 {
-    font-size: 1.5rem;
-    @media (max-width: 768px) {
-      font-size: 1.25rem;
-    }
-  }
-
-  p {
-    margin-bottom: 1.5rem;
-  }
+  button, input, textarea { font: inherit; }
+  button, a { -webkit-tap-highlight-color: transparent; }
+  button { color: inherit; }
 
   a {
-    color: var(--color-primary);
-    text-decoration: none;
-    transition: color 0.2s ease;
-
-    &:hover {
-      color: var(--color-primary-dark);
-    }
+    color: var(--signal);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
   }
 
-  code {
-    font-family: 'Fira Code', 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace;
-    background-color: var(--color-background-secondary);
-    padding: 0.2em 0.4em;
-    border-radius: 3px;
-    font-size: 0.9em;
-  }
+  a:hover { color: var(--signal-deep); }
 
-  pre {
-    background-color: #1F2937;
-    border-radius: var(--radius);
-    padding: 1.5rem;
-    overflow-x: auto;
-    margin-bottom: 1.5rem;
-    
-    code {
-      background-color: transparent;
-      padding: 0;
-      font-size: 0.9rem;
-    }
-  }
-
-  /* blockquote 스타일 제거 - blog-post-v2.css에서 처리 */
-
-  ul, ol {
-    margin-left: 2rem;
-    margin-bottom: 1.5rem;
-  }
-
-  li {
-    margin-bottom: 0.5rem;
-  }
-
-  hr {
-    border: none;
-    border-top: 1px solid var(--color-border);
-    margin: 2rem 0;
-  }
-
-  img {
-    max-width: 100%;
-    height: auto;
-    border-radius: var(--radius);
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 1.5rem;
-  }
-
-  th, td {
-    padding: 0.75rem;
-    text-align: left;
-    border-bottom: 1px solid var(--color-border);
-  }
-
-  th {
-    font-weight: 600;
-    background-color: var(--color-background-secondary);
-  }
-
-  /* 스크롤바 스타일 */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: var(--color-background-secondary);
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: var(--color-border);
+  :focus-visible {
+    outline: 3px solid var(--signal-bright);
+    outline-offset: 3px;
     border-radius: 4px;
   }
 
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-text-light);
+  ::selection { background: var(--dusk-soft); color: var(--ink-strong); }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--ink-strong);
+    letter-spacing: -0.035em;
   }
 
-  /* 선택 영역 스타일 */
-  ::selection {
-    background-color: var(--color-primary);
-    color: white;
-  }
-`;
+  p { text-wrap: pretty; }
+  img { max-width: 100%; height: auto; }
 
-export default GlobalStyle;
+  code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  }
+
+  @media (max-width: 720px) {
+    :root { --header-height: 64px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+`
+
+export default GlobalStyle

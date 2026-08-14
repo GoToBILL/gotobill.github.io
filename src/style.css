@@ -57,16 +57,16 @@
   --fontSize-7: 3rem;
   
   /* Modern Color Palette (Clean & Professional) */
-  --color-primary: #3182f6; /* Toss Blue style */
-  --color-primary-dark: #1b64da;
-  --color-text: #333d4b;
-  --color-text-light: #6b7684;
-  --color-heading: #191f28;
-  --color-heading-black: #000000;
-  --color-accent: #f2f4f6;
-  --color-border: #e5e8eb;
+  --color-primary: #416b82;
+  --color-primary-dark: #244f68;
+  --color-text: #2e3338;
+  --color-text-light: #697078;
+  --color-heading: #111318;
+  --color-heading-black: #111318;
+  --color-accent: #f1f3f5;
+  --color-border: rgba(17, 19, 24, 0.1);
   --color-background: #ffffff;
-  --color-code-bg: #f9fafb;
+  --color-code-bg: #f1f3f5;
 }
 
 /* HTML elements */
