@@ -348,7 +348,7 @@ const ResumePage = ({ location }) => {
   const activityGroups = [
     { ...career.find(item => item.title === "소프트웨어 마에스트로 16기"), projects: selectedProjects.filter(project => project.title === "Chefriend") },
     { ...activities.find(item => item.title === "Prography 10기"), projects: selectedProjects.filter(project => project.title === "Cherrydan") },
-    { ...activities.find(item => item.title === "멋쟁이사자처럼 12기"), projects: selectedProjects.filter(project => project.title === "Runtale") },
+    { ...activities.find(item => item.title === "멋쟁이사자처럼 12기"), projects: [] },
     { ...activities.find(item => item.title === "42 Seoul"), projects: [] },
   ]
 

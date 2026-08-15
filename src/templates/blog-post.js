@@ -149,14 +149,24 @@ const PostContent = styled.section`
     margin: 0;
   }
 
-  table {
+  .table-scroll {
     display: block;
     width: 100%;
     max-width: 100%;
-    border-collapse: collapse;
     margin: 2rem 0;
     overflow-x: auto;
+    overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .table-scroll > table {
+    display: table;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    border-collapse: collapse;
+    table-layout: auto;
+    overflow: visible;
 
     th, td {
       padding: 0.75rem;
@@ -168,6 +178,10 @@ const PostContent = styled.section`
       background: var(--paper-soft);
       font-weight: 600;
     }
+  }
+
+  @media (max-width: 620px) {
+    .table-scroll > table { min-width: 35rem; }
   }
 `;
 
