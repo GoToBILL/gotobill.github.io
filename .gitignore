@@ -58,6 +58,10 @@ typings/
 .cache/
 public
 .omc/
+CLAUDE.md
+docs/company-context/
+tmp/
+DESIGN-IS-2026-08-09/
 
 # Mac files
 .DS_Store
