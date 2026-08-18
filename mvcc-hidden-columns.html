@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InnoDB MVCC 히든 컬럼</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #111827;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 48px;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .title {
+            text-align: center;
+            color: #e0e7ff;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 36px;
+        }
+
+        .section-title {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+
+        /* Row Structure */
+        .row-structure {
+            margin-bottom: 40px;
+        }
+
+        .row-diagram {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .row-bar {
+            display: flex;
+            border-radius: 8px;
+            overflow: hidden;
+            height: 72px;
+        }
+
+        .column-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 8px 12px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .column-section:last-child {
+            border-right: none;
+        }
+
+        .column-section.trx-id {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            flex: 6;
+        }
+
+        .column-section.roll-ptr {
+            background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%);
+            flex: 7;
+        }
+
+        .column-section.row-id {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+            flex: 6;
+        }
+
+        .column-section.user-data {
+            background: linear-gradient(135deg, #14532d 0%, #15803d 100%);
+            flex: 20;
+        }
+
+        .column-label {
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .column-size {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 10px;
+            margin-top: 4px;
+        }
+
+        .column-name {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 9px;
+            margin-top: 2px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+        }
+
+        /* Hidden Column Details */
+        .hidden-columns {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .hidden-column-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .card-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .card-icon.trx {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            color: #e0e7ff;
+        }
+
+        .card-icon.roll {
+            background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%);
+            color: #bfdbfe;
+        }
+
+        .card-icon.rowid {
+            background: linear-gradient(135deg, #713f12 0%, #a16207 100%);
+            color: #fef3c7;
+        }
+
+        .card-title {
+            color: #e0e7ff;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+        }
+
+        .card-subtitle {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+        }
+
+        .card-desc {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 11px;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .card-detail {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            padding: 10px 12px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+        }
+
+        .detail-row:not(:last-child) {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .detail-label {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 10px;
+        }
+
+        .detail-value {
+            color: #86efac;
+            font-size: 11px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+        }
+
+        /* Undo Log Chain */
+        .undo-section {
+            margin-bottom: 32px;
+        }
+
+        .undo-diagram {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 24px;
+            position: relative;
+        }
+
+        .undo-chain {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 16px 0;
+        }
+
+        .undo-node {
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            padding: 16px;
+            min-width: 160px;
+        }
+
+        .undo-node.current {
+            border-color: rgba(134, 239, 172, 0.4);
+            background: rgba(134, 239, 172, 0.05);
+        }
+
+        .undo-node.history {
+            border-color: rgba(147, 197, 253, 0.3);
+            background: rgba(147, 197, 253, 0.03);
+        }
+
+        .node-label {
+            font-size: 10px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .node-label.current {
+            background: rgba(134, 239, 172, 0.2);
+            color: #86efac;
+        }
+
+        .node-label.history {
+            background: rgba(147, 197, 253, 0.2);
+            color: #93c5fd;
+        }
+
+        .node-content {
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .node-field {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+        }
+
+        .node-field-name {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .node-field-value {
+            color: #e0e7ff;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 10px;
+        }
+
+        .chain-arrow {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .undo-desc {
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        /* Row ID Section */
+        .rowid-section {
+            margin-bottom: 32px;
+        }
+
+        .rowid-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .rowid-box {
+            padding: 16px;
+            border-radius: 12px;
+        }
+
+        .rowid-box.with-pk {
+            background: rgba(134, 239, 172, 0.1);
+            border: 1px solid rgba(134, 239, 172, 0.3);
+        }
+
+        .rowid-box.without-pk {
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .rowid-title {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .rowid-box.with-pk .rowid-title {
+            color: #86efac;
+        }
+
+        .rowid-box.without-pk .rowid-title {
+            color: #fbbf24;
+        }
+
+        .rowid-desc {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .rowid-code {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Summary */
+        .summary {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .summary-title {
+            color: #e0e7ff;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .summary-list {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .summary-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+        }
+
+        .summary-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .summary-dot.trx {
+            background: #818cf8;
+        }
+
+        .summary-dot.roll {
+            background: #38bdf8;
+        }
+
+        .summary-dot.rowid {
+            background: #fbbf24;
+        }
+
+        .summary-text {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 11px;
+        }
+
+        .summary-text strong {
+            color: #e0e7ff;
+        }
+
+        @media (max-width: 768px) {
+            .hidden-columns {
+                grid-template-columns: 1fr;
+            }
+
+            .rowid-comparison {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-list {
+                grid-template-columns: 1fr;
+            }
+
+            .row-bar {
+                flex-wrap: wrap;
+                height: auto;
+            }
+
+            .column-section {
+                flex: 1 1 45%;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">InnoDB MVCC 히든 컬럼 구조</div>
+
+        <!-- Row Structure -->
+        <div class="row-structure">
+            <div class="section-title">InnoDB 레코드 내부 구조</div>
+            <div class="row-diagram">
+                <div class="row-bar">
+                    <div class="column-section trx-id">
+                        <span class="column-label">트랜잭션 ID</span>
+                        <span class="column-size">6 bytes</span>
+                        <span class="column-name">DB_TRX_ID</span>
+                    </div>
+                    <div class="column-section roll-ptr">
+                        <span class="column-label">롤백 포인터</span>
+                        <span class="column-size">7 bytes</span>
+                        <span class="column-name">DB_ROLL_PTR</span>
+                    </div>
+                    <div class="column-section row-id">
+                        <span class="column-label">Row ID</span>
+                        <span class="column-size">6 bytes</span>
+                        <span class="column-name">DB_ROW_ID</span>
+                    </div>
+                    <div class="column-section user-data">
+                        <span class="column-label">사용자 데이터</span>
+                        <span class="column-size">가변</span>
+                        <span class="column-name">col1, col2, ...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden Column Details -->
+        <div class="section-title">히든 컬럼 상세</div>
+        <div class="hidden-columns">
+            <div class="hidden-column-card">
+                <div class="card-header">
+                    <div class="card-icon trx">T</div>
+                    <div>
+                        <div class="card-title">DB_TRX_ID</div>
+                        <div class="card-subtitle">트랜잭션 식별자</div>
+                    </div>
+                </div>
+                <div class="card-desc">
+                    해당 레코드를 마지막으로 수정한 트랜잭션의 ID를 저장합니다. MVCC에서 데이터 가시성을 판단하는 핵심 컬럼입니다.
+                </div>
+                <div class="card-detail">
+                    <div class="detail-row">
+                        <span class="detail-label">크기</span>
+                        <span class="detail-value">6 bytes</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">최대값</span>
+                        <span class="detail-value">281조</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">용도</span>
+                        <span class="detail-value">스냅샷 읽기</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hidden-column-card">
+                <div class="card-header">
+                    <div class="card-icon roll">R</div>
+                    <div>
+                        <div class="card-title">DB_ROLL_PTR</div>
+                        <div class="card-subtitle">언두 로그 포인터</div>
+                    </div>
+                </div>
+                <div class="card-desc">
+                    언두 로그 세그먼트에 저장된 이전 버전 레코드를 가리키는 포인터입니다. 롤백과 MVCC 읽기에 사용됩니다.
+                </div>
+                <div class="card-detail">
+                    <div class="detail-row">
+                        <span class="detail-label">크기</span>
+                        <span class="detail-value">7 bytes</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">구성</span>
+                        <span class="detail-value">rseg + page + offset</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">용도</span>
+                        <span class="detail-value">버전 체인 탐색</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hidden-column-card">
+                <div class="card-header">
+                    <div class="card-icon rowid">I</div>
+                    <div>
+                        <div class="card-title">DB_ROW_ID</div>
+                        <div class="card-subtitle">묵시적 Row ID</div>
+                    </div>
+                </div>
+                <div class="card-desc">
+                    PK나 Unique NOT NULL 인덱스가 없는 테이블에서 InnoDB가 자동 생성하는 클러스터링 키입니다.
+                </div>
+                <div class="card-detail">
+                    <div class="detail-row">
+                        <span class="detail-label">크기</span>
+                        <span class="detail-value">6 bytes</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">생성 조건</span>
+                        <span class="detail-value">PK 없을 때만</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">타입</span>
+                        <span class="detail-value">단조 증가</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Undo Log Chain -->
+        <div class="undo-section">
+            <div class="section-title">DB_ROLL_PTR을 통한 버전 체인</div>
+            <div class="undo-diagram">
+                <div class="undo-chain">
+                    <div class="undo-node current">
+                        <div class="node-label current">현재 레코드</div>
+                        <div class="node-content">
+                            <div class="node-field">
+                                <span class="node-field-name">DB_TRX_ID</span>
+                                <span class="node-field-value">150</span>
+                            </div>
+                            <div class="node-field">
+                                <span class="node-field-name">name</span>
+                                <span class="node-field-value">'김철수'</span>
+                            </div>
+                            <div class="node-field">
+                                <span class="node-field-name">age</span>
+                                <span class="node-field-value">30</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chain-arrow">→</div>
+
+                    <div class="undo-node history">
+                        <div class="node-label history">Undo Log #1</div>
+                        <div class="node-content">
+                            <div class="node-field">
+                                <span class="node-field-name">DB_TRX_ID</span>
+                                <span class="node-field-value">120</span>
+                            </div>
+                            <div class="node-field">
+                                <span class="node-field-name">name</span>
+                                <span class="node-field-value">'김철수'</span>
+                            </div>
+                            <div class="node-field">
+                                <span class="node-field-name">age</span>
+                                <span class="node-field-value">28</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chain-arrow">→</div>
+
+                    <div class="undo-node history">
+                        <div class="node-label history">Undo Log #2</div>
+                        <div class="node-content">
+                            <div class="node-field">
+                                <span class="node-field-name">DB_TRX_ID</span>
+                                <span class="node-field-value">100</span>
+                            </div>
+                            <div class="node-field">
+                                <span class="node-field-name">name</span>
+                                <span class="node-field-value">'김영희'</span>
+                            </div>
+                            <div class="node-field">
+                                <span class="node-field-name">age</span>
+                                <span class="node-field-value">25</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chain-arrow">→</div>
+
+                    <div class="undo-node history" style="opacity: 0.5;">
+                        <div class="node-label history">...</div>
+                        <div class="node-content">
+                            <div class="node-field">
+                                <span class="node-field-name">더 오래된</span>
+                                <span class="node-field-value">버전들</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="undo-desc">
+                    트랜잭션 130에서 시작된 SELECT는 DB_TRX_ID가 130 이하인 버전을 찾아 Undo Log #1의 데이터(age=28)를 읽습니다.<br>
+                    이것이 MVCC의 핵심 원리입니다. 각 트랜잭션은 자신의 스냅샷 시점에 맞는 데이터를 읽을 수 있습니다.
+                </div>
+            </div>
+        </div>
+
+        <!-- Row ID Comparison -->
+        <div class="rowid-section">
+            <div class="section-title">DB_ROW_ID 생성 조건</div>
+            <div class="rowid-comparison">
+                <div class="rowid-box with-pk">
+                    <div class="rowid-title">PK가 있는 테이블</div>
+                    <div class="rowid-desc">
+                        사용자가 정의한 PK가 클러스터링 키로 사용됩니다.<br>
+                        DB_ROW_ID 컬럼이 생성되지 않습니다.
+                    </div>
+                    <div class="rowid-code">
+                        CREATE TABLE users (<br>
+                        &nbsp;&nbsp;id BIGINT PRIMARY KEY,<br>
+                        &nbsp;&nbsp;name VARCHAR(100)<br>
+                        );
+                    </div>
+                </div>
+
+                <div class="rowid-box without-pk">
+                    <div class="rowid-title">PK가 없는 테이블</div>
+                    <div class="rowid-desc">
+                        InnoDB가 DB_ROW_ID를 자동 생성하여 클러스터링 키로 사용합니다.<br>
+                        6바이트 크기로 단조 증가합니다.
+                    </div>
+                    <div class="rowid-code">
+                        CREATE TABLE logs (<br>
+                        &nbsp;&nbsp;message TEXT,<br>
+                        &nbsp;&nbsp;created_at DATETIME<br>
+                        );
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="summary">
+            <div class="summary-title">요약</div>
+            <div class="summary-list">
+                <div class="summary-item">
+                    <div class="summary-dot trx"></div>
+                    <div class="summary-text"><strong>DB_TRX_ID</strong> - 데이터 가시성 판단</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-dot roll"></div>
+                    <div class="summary-text"><strong>DB_ROLL_PTR</strong> - 이전 버전 탐색</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-dot rowid"></div>
+                    <div class="summary-text"><strong>DB_ROW_ID</strong> - 묵시적 PK</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spring 주입 방식 비교표</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #111827;
+            color: #e5e7eb;
+            padding: 40px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #f3f4f6;
+            font-weight: 600;
+        }
+
+        .table-wrapper {
+            margin-bottom: 60px;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            table-layout: fixed;
+        }
+
+        th {
+            padding: 16px 20px;
+            text-align: left;
+            font-weight: 600;
+            color: #f3f4f6;
+            font-size: 15px;
+        }
+
+        /* 표 1: 핵심 차이 - 보라색 */
+        .table-wrapper:nth-child(1) th {
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* 표 2: 주입 방식별 비교표 - 파란색 */
+        .table-wrapper:nth-child(2) th {
+            background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* 표 3: 결론 - 청록색 */
+        .table-wrapper:nth-child(3) th {
+            background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        td {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #d1d5db;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        /* 표 1: 핵심 차이 - 4열 */
+        .table-wrapper:nth-child(1) th:nth-child(1),
+        .table-wrapper:nth-child(1) td:nth-child(1) {
+            width: 15%;
+        }
+
+        .table-wrapper:nth-child(1) th:nth-child(2),
+        .table-wrapper:nth-child(1) td:nth-child(2) {
+            width: 30%;
+        }
+
+        .table-wrapper:nth-child(1) th:nth-child(3),
+        .table-wrapper:nth-child(1) td:nth-child(3) {
+            width: 30%;
+        }
+
+        .table-wrapper:nth-child(1) th:nth-child(4),
+        .table-wrapper:nth-child(1) td:nth-child(4) {
+            width: 25%;
+        }
+
+        /* 표 2: 주입 방식별 비교표 - 5열 */
+        .table-wrapper:nth-child(2) th:nth-child(1),
+        .table-wrapper:nth-child(2) td:nth-child(1) {
+            width: 12%;
+        }
+
+        .table-wrapper:nth-child(2) th:nth-child(2),
+        .table-wrapper:nth-child(2) td:nth-child(2) {
+            width: 18%;
+        }
+
+        .table-wrapper:nth-child(2) th:nth-child(3),
+        .table-wrapper:nth-child(2) td:nth-child(3) {
+            width: 25%;
+        }
+
+        .table-wrapper:nth-child(2) th:nth-child(4),
+        .table-wrapper:nth-child(2) td:nth-child(4) {
+            width: 30%;
+        }
+
+        .table-wrapper:nth-child(2) th:nth-child(5),
+        .table-wrapper:nth-child(2) td:nth-child(5) {
+            width: 15%;
+        }
+
+        /* 표 3: 결론 - 4열 */
+        .table-wrapper:nth-child(3) th:nth-child(1),
+        .table-wrapper:nth-child(3) td:nth-child(1) {
+            width: 15%;
+        }
+
+        .table-wrapper:nth-child(3) th:nth-child(2),
+        .table-wrapper:nth-child(3) td:nth-child(2) {
+            width: 25%;
+        }
+
+        .table-wrapper:nth-child(3) th:nth-child(3),
+        .table-wrapper:nth-child(3) td:nth-child(3) {
+            width: 40%;
+        }
+
+        .table-wrapper:nth-child(3) th:nth-child(4),
+        .table-wrapper:nth-child(3) td:nth-child(4) {
+            width: 20%;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        code {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        strong {
+            color: #f3f4f6;
+            font-weight: 600;
+        }
+
+        .highlight {
+            color: #fbbf24;
+        }
+
+        /* 첫 번째 열 강조 */
+        td:first-child {
+            font-weight: 600;
+            color: #93c5fd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 표 1: 핵심 차이 -->
+        <div class="table-wrapper">
+            <h2>핵심 차이</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>주입 방식</th>
+                        <th>객체 생성</th>
+                        <th>의존성 주입</th>
+                        <th>순환 참조 해결</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>필드 주입</td>
+                        <td><code>new ServiceA()</code> 먼저 실행</td>
+                        <td>이후 필드에 값 할당</td>
+                        <td>가능 (early reference)</td>
+                    </tr>
+                    <tr>
+                        <td>생성자 주입</td>
+                        <td><code>new ServiceA(serviceB)</code> 동시 실행</td>
+                        <td>생성자 파라미터로 전달</td>
+                        <td><strong class="highlight">불가능</strong> (객체가 없음)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 표 2: 주입 방식별 비교표 -->
+        <div class="table-wrapper">
+            <h2>주입 방식별 비교표</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>주입 방식</th>
+                        <th>객체 생성</th>
+                        <th>의존성 주입</th>
+                        <th>내부 메커니즘</th>
+                        <th>순환 참조 해결</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>필드 주입</strong></td>
+                        <td><code>new ServiceA()</code> 먼저</td>
+                        <td>이후 <code>Field.set()</code> 리플렉션으로 직접 할당</td>
+                        <td><code>field.setAccessible(true)</code> + <code>field.set(instance, proxy)</code></td>
+                        <td>가능 (early reference)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>세터 주입</strong></td>
+                        <td><code>new ServiceA()</code> 먼저</td>
+                        <td>이후 <code>setServiceB()</code> 메서드 호출</td>
+                        <td><code>Method.invoke(instance, proxy)</code></td>
+                        <td>가능 (early reference)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>생성자 주입</strong></td>
+                        <td><code>new ServiceA(proxy)</code> 동시</td>
+                        <td>생성자 파라미터로 전달</td>
+                        <td><code>constructor.newInstance(proxy)</code></td>
+                        <td><strong class="highlight">불가능</strong> (의존성이 없으면 객체 생성 불가)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 표 3: 결론 -->
+        <div class="table-wrapper">
+            <h2>결론</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>주입 방식</th>
+                        <th>객체 생성 시점</th>
+                        <th>프록시 필요 시점</th>
+                        <th>순환 참조 해결</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>생성자 주입</td>
+                        <td>생성자 호출 중</td>
+                        <td>생성자 파라미터 (프록시 아직 없음)</td>
+                        <td><strong class="highlight">불가능</strong></td>
+                    </tr>
+                    <tr>
+                        <td>필드 주입</td>
+                        <td>객체 생성 후</td>
+                        <td>필드 할당 시 (프록시 이미 생성됨)</td>
+                        <td>가능</td>
+                    </tr>
+                    <tr>
+                        <td>세터 주입</td>
+                        <td>객체 생성 후</td>
+                        <td>세터 호출 시 (프록시 이미 생성됨)</td>
+                        <td>가능</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
