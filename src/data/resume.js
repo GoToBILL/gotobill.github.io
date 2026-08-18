@@ -90,6 +90,11 @@ export const selectedProjects = [
     headline: "검색 API 3.6초를 P95 22ms로 줄이고, 검증에서 기존 조회를 유지하며 검색 테이블을 교체하기까지",
     status: "2025.05–2025.09 · 팀 프로젝트",
     summary: "약 80만 건을 훑던 검색 병목을 관측하고, 전날 데이터 전용 검색 구조와 원자적 테이블 교체로 개선했습니다.",
+    highlights: [
+      "체험단 공고 플랫폼 ‘Cherrydan’에서 검색·알림 API 개발 및 CI/CD 파이프라인을 구축했습니다.",
+      "MySQL 실행 계획 분석과 일별 전용 검색 테이블 설계로 검색 지연 시간을 99.4% 단축했습니다. (3.6s → 0.02s)",
+      "Prometheus·Grafana 모니터링 환경과 응답 속도 500ms 초과 알림을 구축해 장애 대응 체계를 마련했습니다.",
+    ],
     stack: ["Spring Boot", "MySQL", "Prometheus", "Grafana", "Loki", "Promtail", "Locust"],
     context: "캠페인 탐색에서 검색 응답과 관측 체계가 중요했습니다.",
     problem: "검색 지연과 자원 사용률을 한 흐름에서 비교하기 어려웠습니다.",
@@ -104,6 +109,11 @@ export const selectedProjects = [
     title: "Chefriend",
     status: "팀 프로젝트 · 성능 검증",
     summary: "외부 분석 API 호출과 이미지 전송의 대기 비용을 줄여 처리량과 응답성을 개선했습니다.",
+    highlights: [
+      "고객 리워드 기반 맛집 평가 서비스 ‘Chefriend’에서 백엔드 개발 및 Terraform을 이용한 인프라를 구축했습니다.",
+      "외부 API 호출을 WebClient로 전환해 스레드 고갈을 방지하고 처리량을 47배 향상했습니다. (18 → 866 RPS)",
+      "Lambda@Edge 기반 이미지 리사이징을 도입해 응답 속도를 85% 단축했습니다. (200ms → 30ms)",
+    ],
     stack: ["Spring Boot", "WebClient", "AWS", "Terraform", "Docker"],
     context: "외부 분석 API 호출과 이미지 전달이 사용자 대기시간을 좌우했습니다.",
     problem: "동기 호출이 스레드를 점유하고 원본 이미지가 전송을 지연시켰습니다.",

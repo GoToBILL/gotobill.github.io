@@ -306,7 +306,7 @@ const OrganizationRows = ({ items }) => (
               ) : (
                 <GroupProjectCard key={project.slug}>
                   <h3>{project.title}</h3>
-                  <p>{project.summary}</p>
+                  {(project.highlights || [project.summary]).map(line => <p key={line}>{line}</p>)}
                 </GroupProjectCard>
               )
             ))}
