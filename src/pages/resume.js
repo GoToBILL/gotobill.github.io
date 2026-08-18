@@ -240,27 +240,35 @@ const GroupProjects = styled.div`
   }
 `
 
-const GroupProjectLink = styled(Link)`
+const GroupProjectCard = styled.article`
   min-height: 60px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.8rem;
-  align-items: center;
   padding: 0.75rem 0;
   color: inherit;
-  text-decoration: none;
 
-  p { margin: 0; color: var(--ink); font-size: 0.94rem; line-height: 1.65; }
-  > span { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; color: var(--ink-muted); }
+  h3 { margin: 0; color: var(--ink-strong); font-size: 1rem; line-height: 1.45; }
+  p { margin: 0.65rem 0 0; color: var(--ink); font-size: 0.94rem; line-height: 1.65; }
+`
 
-  &:hover { color: inherit; }
-  &:hover > span { color: var(--signal); }
-  &:hover > span { border-color: var(--signal); background: var(--signal-wash); }
+const CompanyProject = styled.article`
+  padding: 1.15rem 0;
+  border-top: 1px solid var(--line);
 
-  @media (max-width: 720px) {
-    grid-template-columns: 1fr auto;
-    gap: 0.8rem;
-  }
+  &:first-child { padding-top: 0; border-top: 0; }
+
+  h3 { margin: 0; color: var(--ink-strong); font-size: 1rem; line-height: 1.45; }
+  p { margin: 0.35rem 0 0; color: var(--ink); font-size: 0.92rem; line-height: 1.65; }
+  p:first-of-type { margin-top: 0.65rem; }
+`
+
+const ProjectStack = styled.ul`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+
+  li { margin: 0; padding: 0.2rem 0.45rem; border: 1px solid var(--line); border-radius: 999px; color: var(--ink-muted); font-size: 0.72rem; font-weight: 650; }
 `
 
 const OrganizationRows = ({ items }) => (
@@ -287,9 +295,20 @@ const OrganizationRows = ({ items }) => (
         {organization.projects.length > 0 && (
           <GroupProjects>
             {organization.projects.map(project => (
-              <GroupProjectLink key={project.slug} to={`/work/${project.slug}/`} aria-label={`${project.title} 상세 보기`}>
-                <p>{project.summary}</p><span aria-hidden="true">→</span>
-              </GroupProjectLink>
+              project.publicSummary ? (
+                <CompanyProject key={project.slug}>
+                  <h3>{project.title}</h3>
+                  {project.publicSummary.map(line => <p key={line}>{line}</p>)}
+                  <ProjectStack aria-label={`${project.title} 사용 기술`}>
+                    {project.stack.map(skill => <li key={skill}>{skill}</li>)}
+                  </ProjectStack>
+                </CompanyProject>
+              ) : (
+                <GroupProjectCard key={project.slug}>
+                  <h3>{project.title}</h3>
+                  {(project.highlights || [project.summary]).map(line => <p key={line}>{line}</p>)}
+                </GroupProjectCard>
+              )
             ))}
           </GroupProjects>
         )}
@@ -360,7 +379,7 @@ const ResumePage = ({ location }) => {
         <ProfileMeta aria-label="기본 정보">
           <span>{profile.role}</span>
           <span>{profile.birth}</span>
-          <span>{profile.education}</span>
+          <span>{profile.workplace}</span>
         </ProfileMeta>
         <ProfileLinks>
           <a href={profile.github} target="_blank" rel="noreferrer">GitHub ↗</a>

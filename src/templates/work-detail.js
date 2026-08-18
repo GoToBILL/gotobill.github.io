@@ -5,7 +5,6 @@ import Layout from "../components/layout"
 import Seo from "../components/seo"
 import ArchitectureDiagram from "../components/ArchitectureDiagram"
 import { projects } from "../data/resume"
-import { workArticles } from "../data/workArticles"
 
 const Article = styled.article`
   width: min(100%, 1120px);
@@ -221,15 +220,14 @@ const FooterNav = styled.nav`
 
 const WorkDetailTemplate = ({ pageContext, location }) => {
   const project = projects.find(item => item.slug === pageContext.slug)
-  const article = project ? workArticles[project.slug] : undefined
-  const story = article?.story || project?.story || (project ? [
+  const story = project?.story || (project ? [
     { title: "문제의 시작", paragraphs: [project.problem] },
     { title: "설계 선택", paragraphs: [project.decision] },
     { title: "실패를 막는 장치", paragraphs: [project.reliability] },
     { title: "검증", paragraphs: [project.validation] },
     { title: "결과와 배운 점", paragraphs: [project.outcome] },
   ] : [])
-  const opening = article?.opening || project?.opening || (project ? [project.context] : [])
+  const opening = project?.opening || (project ? [project.context] : [])
   const sectionIds = story.map((_, index) => `section-${index + 1}`)
   const [activeSection, setActiveSection] = React.useState(sectionIds[0])
 
@@ -344,14 +342,14 @@ const WorkDetailTemplate = ({ pageContext, location }) => {
             ))}</ol>
           </TableOfContents>
           <Narrative>
-            <Opening>{opening.map(paragraph => <p key={paragraph}>{renderInline(paragraph, article?.emphasis)}</p>)}</Opening>
+            <Opening>{opening.map(paragraph => <p key={paragraph}>{renderInline(paragraph)}</p>)}</Opening>
             {story.map((section, sectionIndex) => {
             const diagrams = section.diagrams || (section.title === "설계 선택" && project.diagram ? [project.diagram] : [])
             const isResult = /결과/.test(section.title)
             return (
               <Section id={sectionIds[sectionIndex]} key={section.title} $result={isResult}>
                 <h2>{section.title}</h2>
-                {section.paragraphs.map(paragraph => <p key={paragraph}>{renderInline(paragraph, article?.emphasis)}</p>)}
+                {section.paragraphs.map(paragraph => <p key={paragraph}>{renderInline(paragraph)}</p>)}
                 {section.table && (
                   <ResultTableWrap tabIndex="0" role="region" aria-label={`${section.table.caption}, 좌우로 스크롤 가능`}>
                     <table>
