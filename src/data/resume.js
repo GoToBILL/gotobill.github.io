@@ -65,9 +65,9 @@ export const companyProjects = [
     title: "Iceberg 스키마 에볼루션 구현",
     stack: ["Java 21", "Spring Batch", "Apache Iceberg", "Nessie", "MySQL"],
     publicSummary: [
-      "스키마 변경 시 기존 데이터와 과거 스냅샷의 호환성이 깨지는 문제를 해결했습니다.",
-      "컬럼 추가만 허용하고, 이름 기반 매핑과 Iceberg 컬럼 ID 추적을 구현했습니다.",
-      "다양한 호환성·CSV 추론 시나리오를 검증해 데이터를 재생성하지 않고 과거 스냅샷을 읽게 했습니다.",
+      "데이터 플랫폼의 Iceberg 영역을 담당하며 스키마 에볼루션 기능을 개발했습니다.",
+      "기존 데이터를 유지하면서 컬럼을 추가하고, 연결된 StarRocks 적재·조회 구조까지 새로운 스키마로 동기화했습니다.",
+      "이전 형식의 CSV도 누락된 컬럼을 `NULL`로 처리해 계속 적재할 수 있도록 호환성을 유지했습니다.",
     ],
   },
   {
