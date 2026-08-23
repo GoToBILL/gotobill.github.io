@@ -70,7 +70,7 @@ const HeroCopy = styled.div`
   z-index: 1;
   width: 72%;
   max-width: 900px;
-  padding: clamp(2rem, 3.3vw, 3rem);
+  padding: clamp(2rem, 3.3vw, 3rem) 0;
 
   @media (max-width: 960px) { width: 100%; padding: 2.5rem 0 0; }
 `
@@ -91,13 +91,18 @@ const Title = styled.h1`
 `
 
 const Description = styled.div`
-  max-width: 64ch;
+  max-width: 50rem;
   margin: 1rem 0 0;
   color: #2e3338;
   font-size: clamp(1rem, 1.2vw, 1.05rem);
   line-height: 1.7;
 
-  p { margin: 0; }
+  p {
+    margin: 0;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    text-wrap: pretty;
+  }
   p + p { margin-top: 1rem; }
 
   @media (max-width: 960px) { max-width: 62ch; color: var(--ink); }
